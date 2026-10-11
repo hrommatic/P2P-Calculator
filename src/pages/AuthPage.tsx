@@ -1,0 +1,390 @@
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { ShieldCheck, Lock, User, Send, CheckCircle2, AlertCircle, ArrowRight, Sun, Moon, Globe } from 'lucide-react';
+import { Language } from '../types';
+
+export const AuthPage: React.FC = () => {
+  const { login, register, siteSettings, theme, setTheme, language, setLanguage, t } = useAuth();
+
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [nickname, setNickname] = useState('');
+  const [telegram, setTelegram] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
+
+  // Curator handle
+  const curator = siteSettings?.curatorTelegram || '@Chromatik';
+
+  // Password strength check
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, text: '' };
+    let score = 0;
+    if (pwd.length >= 6) score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+    if (score <= 2) return { score: 1, label: language === 'en' ? 'Weak' : language === 'ru' ? 'Слабый' : 'Слабкий', color: 'bg-rose-500' };
+    if (score <= 3) return { score: 2, label: language === 'en' ? 'Moderate' : language === 'ru' ? 'Средний' : 'Середній', color: 'bg-amber-500' };
+    return { score: 3, label: language === 'en' ? 'Strong' : language === 'ru' ? 'Надёжный' : 'Надійний', color: 'bg-emerald-500' };
+  };
+
+  const strength = getPasswordStrength(password);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      if (mode === 'login') {
+        if (!nickname.trim() || !password) {
+          throw new Error(language === 'en' ? 'Please fill in all fields' : language === 'ru' ? 'Заполните все поля' : 'Будь ласка, заповніть усі поля');
+        }
+        await login(nickname.trim(), password);
+      } else {
+        if (!nickname.trim() || !telegram.trim() || !password || !confirmPassword) {
+          throw new Error(language === 'en' ? 'Please fill in all fields' : language === 'ru' ? 'Заполните все поля' : 'Заповніть усі обов’язкові поля');
+        }
+        if (password !== confirmPassword) {
+          throw new Error(language === 'en' ? 'Passwords do not match' : language === 'ru' ? 'Пароли не совпадают' : 'Паролі не співпадають');
+        }
+        if (password.length < 6) {
+          throw new Error(language === 'en' ? 'Password must be at least 6 characters' : language === 'ru' ? 'Пароль должен быть не менее 6 символов' : 'Пароль має містити щонайменше 6 символів');
+        }
+        await register(nickname.trim(), telegram.trim(), password, confirmPassword);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Quick fill helper for review
+  const handleQuickFill = (role: 'student' | 'admin') => {
+    setMode('login');
+    setError(null);
+    if (role === 'admin') {
+      setNickname('admin');
+      setPassword('AdminP2P#2026!');
+    } else {
+      setNickname('danilo');
+      setPassword('Danilo#2026!');
+    }
+  };
+
+  const languages: { code: Language; label: string }[] = [
+    { code: 'uk', label: 'УКР' },
+    { code: 'ru', label: 'РУС' },
+    { code: 'en', label: 'ENG' },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col justify-between transition-colors bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100">
+      
+      {/* Top Bar for Auth Page */}
+      <div className="w-full max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-sm shadow-blue-500/20">
+            P2P
+          </div>
+          <span className="font-extrabold text-lg tracking-tight">P2P Calculator</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Language Selector */}
+          <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700/60 shadow-xs">
+            {languages.map(l => (
+              <button
+                key={l.code}
+                onClick={() => setLanguage(l.code)}
+                className={`px-2 py-1 text-xs font-semibold rounded ${
+                  language === l.code
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setTheme(theme === 'navy' ? 'light' : 'navy')}
+            className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 shadow-xs"
+            title="Toggle theme"
+          >
+            {theme === 'navy' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Auth Form Container */}
+      <div className="w-full max-w-md mx-auto px-4 py-8">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm p-6 sm:p-8">
+          
+          {/* Header */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              {mode === 'login' ? t('loginTitle') : t('registerTitle')}
+            </h1>
+            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+              {mode === 'login' ? t('loginSubtitle') : t('registerSubtitle')}
+            </p>
+          </div>
+
+          {/* Mode Switch Tabs */}
+          <div className="flex p-1 mb-6 rounded-xl bg-slate-100 dark:bg-slate-800/80">
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(null); }}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                mode === 'login'
+                  ? 'bg-white text-slate-900 dark:bg-[#1c2541] dark:text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              {t('signInBtn')}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('register'); setError(null); }}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                mode === 'register'
+                  ? 'bg-white text-slate-900 dark:bg-[#1c2541] dark:text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              {t('signUpBtn')}
+            </button>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 rounded-lg text-xs flex items-start gap-2.5 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Nickname field */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                {t('nickname')}
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                <input
+                  type="text"
+                  required
+                  value={nickname}
+                  onChange={e => setNickname(e.target.value)}
+                  placeholder={t('nicknamePlaceholder')}
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Telegram field (in register mode) */}
+            {mode === 'register' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  {t('telegram')}
+                </label>
+                <div className="relative">
+                  <Send className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                  <input
+                    type="text"
+                    required
+                    value={telegram}
+                    onChange={e => setTelegram(e.target.value)}
+                    placeholder={t('telegramPlaceholder')}
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  {language === 'en' ? 'Format: @username for curator support' : language === 'ru' ? 'Формат: @username для связи с куратором' : 'Формат: @username для зв’язку з куратором'}
+                </p>
+              </div>
+            )}
+
+            {/* Password field */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                {t('password')}
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={t('passwordPlaceholder')}
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                />
+              </div>
+
+              {/* Password strength indicator in register mode */}
+              {mode === 'register' && password && (
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {language === 'en' ? 'Password strength:' : language === 'ru' ? 'Надёжность пароля:' : 'Надійність пароля:'}
+                    </span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{strength.label}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${strength.color} transition-all duration-300`}
+                      style={{ width: `${(strength.score / 3) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password field (in register mode) */}
+            {mode === 'register' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  {t('confirmPassword')}
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder={t('confirmPasswordPlaceholder')}
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Forgot password link */}
+            {mode === 'login' && (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => setForgotModalOpen(true)}
+                  className="text-xs text-blue-600 dark:text-sky-400 hover:underline font-medium"
+                >
+                  {t('forgotPassword')}
+                </button>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <span>{language === 'en' ? 'Processing...' : language === 'ru' ? 'Обработка...' : 'Обробка...'}</span>
+              ) : (
+                <>
+                  <span>{mode === 'login' ? t('signInBtn') : t('signUpBtn')}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Fill Test Credentials Banner */}
+          <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800 text-center">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
+              {language === 'en' ? 'Quick demo accounts (one-click fill)' : language === 'ru' ? 'Быстрый вход для проверки' : 'Швидкий вхід для тестування'}
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('student')}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                👤 Danilo (Student)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickFill('admin')}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-sky-300 dark:hover:bg-blue-900/60 transition-colors"
+              >
+                🛡️ Admin
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Forgot Password Modal */}
+      {forgotModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-sky-950/40 text-blue-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  {t('forgotPasswordModalTitle')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t('appName')}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+              {t('forgotPasswordModalText', { curator })}
+            </p>
+
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
+              <span className="text-slate-500 dark:text-slate-400 block mb-0.5">Telegram куратора:</span>
+              <span className="font-mono font-bold text-blue-600 dark:text-sky-400 text-sm select-all">
+                {curator}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setForgotModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+              >
+                {t('close')}
+              </button>
+              <a
+                href={`https://t.me/${curator.replace('@', '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{t('contactCuratorBtn')}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="w-full text-center py-4 text-xs text-slate-400 dark:text-slate-600">
+        © 2026 P2P Calculator. All rights reserved.
+      </footer>
+
+    </div>
+  );
+};

@@ -1,0 +1,6 @@
+{
+  "name": "P2P Calculator",
+  "description": "Закрытая веб-платформа для учеников P2P-торговли: расчёт прибыли, учёт оборота по банкам, личная статистика и административная панель.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
