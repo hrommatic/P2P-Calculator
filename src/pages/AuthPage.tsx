@@ -135,8 +135,8 @@ export const AuthPage: React.FC = () => {
               onClick={() => { setMode('login'); setError(null); }}
               className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                 mode === 'login'
-                  ? 'bg-white text-slate-900 dark:bg-[#1c2541] dark:text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200 dark:bg-slate-600 dark:text-white dark:ring-slate-500/50'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               {t('signInBtn')}
@@ -146,8 +146,8 @@ export const AuthPage: React.FC = () => {
               onClick={() => { setMode('register'); setError(null); }}
               className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                 mode === 'register'
-                  ? 'bg-white text-slate-900 dark:bg-[#1c2541] dark:text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200 dark:bg-slate-600 dark:text-white dark:ring-slate-500/50'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               {t('signUpBtn')}

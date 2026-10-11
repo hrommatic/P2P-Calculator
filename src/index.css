@@ -32,7 +32,7 @@
   }
 
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-page);
     color: var(--text-primary);
     min-height: 100vh;

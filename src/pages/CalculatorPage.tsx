@@ -146,42 +146,6 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     setErrorMessage(null);
   };
 
-  const handleApplyPreset = (type: 'standard' | 'maker' | 'interbank') => {
-    if (type === 'standard') {
-      // 10 000 UAH @ 44 -> 46
-      setBuyRate('44.00');
-      setBuyAmountUah('10000');
-      setBuyCommission('0');
-      setSellRate('46.00');
-      setSellUsdtAmount('');
-      setSellCommission('0');
-      setExtraExpensesUah('0');
-      setNotes('Связка Binance: 10 000 ₴ @ 44.00 -> 46.00');
-    } else if (type === 'maker') {
-      // Bybit maker order with 0.1% taker fee on sell
-      setBuyRate('44.15');
-      setBuyAmountUah('25000');
-      setBuyCommission('0');
-      setSellRate('45.30');
-      setSellUsdtAmount('');
-      setSellCommission('0.1');
-      setSellCommissionType('percent');
-      setExtraExpensesUah('10');
-      setNotes('Мейкер ордер Bybit із комісією продажу 0.1%');
-    } else if (type === 'interbank') {
-      // Interbank spread
-      setBuyRate('44.20');
-      setBuyAmountUah('50000');
-      setBuyCommission('0');
-      setSellRate('45.10');
-      setSellUsdtAmount('');
-      setSellCommission('15');
-      setSellCommissionType('fixed_uah');
-      setExtraExpensesUah('0');
-      setNotes('Міжбанківський круг: Mono -> Privat');
-    }
-  };
-
   const handleSaveTrade = async () => {
     if (!buyBankId || !sellBankId) {
       setErrorMessage('Оберіть банки покупки та продажу');
@@ -259,40 +223,15 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   return (
     <div className="space-y-6">
       
-      {/* Header & Quick Presets */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-            <CalcIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
-            <span>{t('calcTitle')}</span>
-          </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {t('calcSubtitle')}
-          </p>
-        </div>
-
-        {/* Quick Presets for Convenient Testing */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs shrink-0">
-          <span className="text-[11px] font-semibold px-2 text-slate-500 dark:text-slate-400">Приклади:</span>
-          <button
-            onClick={() => handleApplyPreset('standard')}
-            className="px-2.5 py-1 font-semibold rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:text-blue-600 shadow-2xs transition-colors"
-          >
-            10k @ 44→46
-          </button>
-          <button
-            onClick={() => handleApplyPreset('maker')}
-            className="px-2.5 py-1 font-semibold rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:text-blue-600 shadow-2xs transition-colors"
-          >
-            25k Мейкер
-          </button>
-          <button
-            onClick={() => handleApplyPreset('interbank')}
-            className="px-2.5 py-1 font-semibold rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:text-blue-600 shadow-2xs transition-colors"
-          >
-            50k Міжбанк
-          </button>
-        </div>
+      {/* Header */}
+      <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+          <CalcIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
+          <span>{t('calcTitle')}</span>
+        </h1>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {t('calcSubtitle')}
+        </p>
       </div>
 
       {/* Notifications / Alerts */}
