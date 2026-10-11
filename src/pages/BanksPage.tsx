@@ -9,16 +9,13 @@ import {
   Archive,
   ArrowDownLeft,
   ArrowUpRight,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
   X,
   CreditCard,
-  Percent,
 } from 'lucide-react';
+import { ButtonLoader, PageLoader } from '../components/ui/Loader';
 
 export const BanksPage: React.FC = () => {
-  const { t, language } = useAuth();
+  const { t } = useAuth();
 
   const [banks, setBanks] = useState<UserBank[]>([]);
   const [globalBanks, setGlobalBanks] = useState<GlobalBank[]>([]);
@@ -36,6 +33,7 @@ export const BanksPage: React.FC = () => {
   const [color, setColor] = useState('#2563EB');
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Archive Confirm Modal
   const [archiveTarget, setArchiveTarget] = useState<UserBank | null>(null);
@@ -66,6 +64,7 @@ export const BanksPage: React.FC = () => {
     setColor('#2563EB');
     setNotes('');
     setFormError(null);
+    setIsSaving(false);
     setIsModalOpen(true);
   };
 
@@ -78,6 +77,7 @@ export const BanksPage: React.FC = () => {
     setColor(bank.color || '#2563EB');
     setNotes(bank.notes || '');
     setFormError(null);
+    setIsSaving(false);
     setIsModalOpen(true);
   };
 
@@ -92,11 +92,23 @@ export const BanksPage: React.FC = () => {
     }
   };
 
+  const normalizeBankName = (value: string) => value.trim().toLowerCase();
+
+  const hasDuplicateName = (candidate: string, excludeBankId?: string) =>
+    banks.some(
+      (b) =>
+        b.id !== excludeBankId &&
+        normalizeBankName(b.name) === normalizeBankName(candidate),
+    );
+
   const handleSaveBank = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+
     setFormError(null);
 
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setFormError('Вкажіть назву банку');
       return;
     }
@@ -107,10 +119,16 @@ export const BanksPage: React.FC = () => {
       return;
     }
 
+    if (hasDuplicateName(trimmedName, editingBank?.id)) {
+      setFormError('Банк з такою назвою вже існує');
+      return;
+    }
+
+    setIsSaving(true);
     try {
       if (editingBank) {
         await api.updateBank(editingBank.id, {
-          name: name.trim(),
+          name: trimmedName,
           turnoverLimitUah: limitNum,
           initialTurnoverUah: parseFloat(initialTurnover) || 0,
           color,
@@ -118,7 +136,7 @@ export const BanksPage: React.FC = () => {
         });
       } else {
         await api.createBank({
-          name: name.trim(),
+          name: trimmedName,
           globalBankId: globalBankId || undefined,
           turnoverLimitUah: limitNum,
           initialTurnoverUah: parseFloat(initialTurnover) || 0,
@@ -131,6 +149,8 @@ export const BanksPage: React.FC = () => {
       fetchBanks();
     } catch (err: any) {
       setFormError(err.message || 'Помилка збереження банку');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -178,9 +198,7 @@ export const BanksPage: React.FC = () => {
 
       {/* Banks Cards Grid */}
       {isLoading ? (
-        <div className="p-12 text-center text-xs text-slate-500">
-          Завантаження банківських рахунків...
-        </div>
+        <PageLoader label="Завантаження банківських рахунків..." />
       ) : banks.length === 0 ? (
         <div className="p-12 text-center bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
           <CreditCard className="w-8 h-8 text-slate-400 mx-auto" />
@@ -341,7 +359,8 @@ export const BanksPage: React.FC = () => {
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                disabled={isSaving}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -449,15 +468,17 @@ export const BanksPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  disabled={isSaving}
+                  className="px-4 py-2 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 disabled:opacity-50"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isSaving}
+                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {t('saveBankBtn')}
+                  {isSaving ? <ButtonLoader label="Збереження..." /> : t('saveBankBtn')}
                 </button>
               </div>
             </form>

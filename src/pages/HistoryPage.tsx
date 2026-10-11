@@ -6,16 +6,12 @@ import {
   History as HistoryIcon,
   Search,
   Download,
-  Filter,
   Trash2,
   Edit,
   Eye,
-  Calendar,
   X,
-  Check,
-  AlertCircle,
-  Building2,
 } from 'lucide-react';
+import { ButtonLoader, PageLoader } from '../components/ui/Loader';
 
 export const HistoryPage: React.FC = () => {
   const { t, language } = useAuth();
@@ -24,6 +20,8 @@ export const HistoryPage: React.FC = () => {
   const [banks, setBanks] = useState<UserBank[]>([]);
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filters & Search
   const [search, setSearch] = useState('');
@@ -107,8 +105,9 @@ export const HistoryPage: React.FC = () => {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingTrade) return;
+    if (!editingTrade || isSavingEdit) return;
 
+    setIsSavingEdit(true);
     try {
       await api.updateTrade(editingTrade.id, {
         buyExchange: editBuyExchange,
@@ -128,17 +127,22 @@ export const HistoryPage: React.FC = () => {
       fetchHistory();
     } catch (err: any) {
       setEditError(err.message || 'Помилка оновлення угоди');
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
     try {
       await api.deleteTrade(deleteTarget.id);
       setDeleteTarget(null);
       fetchHistory();
     } catch (err) {
       console.error('Failed to delete trade:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -237,9 +241,7 @@ export const HistoryPage: React.FC = () => {
       {/* Trades Table */}
       <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            Завантаження журналу угод...
-          </div>
+          <PageLoader label="Завантаження журналу угод..." />
         ) : trades.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-500">
             Угод за вказаними фільтрами не знайдено.
@@ -547,9 +549,10 @@ export const HistoryPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
                 >
-                  Зберегти зміни
+                  {isSavingEdit ? <ButtonLoader label="Збереження..." /> : 'Зберегти зміни'}
                 </button>
               </div>
             </form>
@@ -577,9 +580,10 @@ export const HistoryPage: React.FC = () => {
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
+                disabled={isDeleting}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-60"
               >
-                {t('deleteTrade')}
+                {isDeleting ? <ButtonLoader label="Видалення..." /> : t('deleteTrade')}
               </button>
             </div>
           </div>

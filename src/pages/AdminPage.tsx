@@ -29,13 +29,10 @@ import {
   Check,
   AlertTriangle,
   X,
-  ExternalLink,
   Eye,
   RefreshCw,
-  Clock,
-  ArrowDownLeft,
-  ArrowUpRight,
 } from 'lucide-react';
+import { PageLoader } from '../components/ui/Loader';
 
 export const AdminPage: React.FC = () => {
   const { user, t } = useAuth();
@@ -396,8 +393,12 @@ export const AdminPage: React.FC = () => {
         })}
       </div>
 
+      {isLoading && (
+        <PageLoader label="Завантаження..." className="py-16" />
+      )}
+
       {/* SECTION 1: OVERVIEW */}
-      {activeSection === 'overview' && overview && (
+      {!isLoading && activeSection === 'overview' && overview && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             
@@ -444,7 +445,7 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* SECTION 2: ACCOUNTS */}
-      {activeSection === 'accounts' && (
+      {!isLoading && activeSection === 'accounts' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="relative max-w-sm w-full">
@@ -546,7 +547,7 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* SECTION 3: STUDENTS & RESULTS */}
-      {activeSection === 'students' && (
+      {!isLoading && activeSection === 'students' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
             <table className="w-full text-left text-xs whitespace-nowrap">
@@ -612,7 +613,7 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* SECTION 4: GLOBAL BANKS DIRECTORY */}
-      {activeSection === 'banks' && (
+      {!isLoading && activeSection === 'banks' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -681,7 +682,7 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* SECTION 5: EXCHANGES */}
-      {activeSection === 'exchanges' && (
+      {!isLoading && activeSection === 'exchanges' && (
         <div className="space-y-6 max-w-2xl">
           {/* Add Exchange Form */}
           <form onSubmit={handleAddExchange} className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3">
@@ -734,7 +735,7 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* SECTION 6: SITE SETTINGS */}
-      {activeSection === 'settings' && siteSettings && (
+      {!isLoading && activeSection === 'settings' && siteSettings && (
         <form onSubmit={handleSaveSiteSettings} className="space-y-4 max-w-xl bg-white dark:bg-[#111827] p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
           {settingsSuccess && (
             <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-700 flex items-center gap-2">
@@ -811,7 +812,7 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* SECTION 7: AUDIT LOGS */}
-      {activeSection === 'audit' && (
+      {!isLoading && activeSection === 'audit' && (
         <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 border-b border-slate-200 dark:border-slate-800 font-semibold">
@@ -845,7 +846,7 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* SECTION 8: BACKUPS */}
-      {activeSection === 'backups' && (
+      {!isLoading && activeSection === 'backups' && (
         <div className="space-y-4 max-w-xl">
           <div className="flex items-center justify-between">
             <div>
@@ -1029,7 +1030,7 @@ export const AdminPage: React.FC = () => {
 
             <div className="p-5 overflow-y-auto flex-1">
               {loadingInspection ? (
-                <div className="p-12 text-center text-xs text-slate-500">Завантаження операцій учня...</div>
+                <PageLoader label="Завантаження операцій учня..." />
               ) : inspectedStudentTrades.length === 0 ? (
                 <div className="p-8 text-center text-xs text-slate-500">Учень ще не має збережених угод.</div>
               ) : (

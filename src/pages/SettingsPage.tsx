@@ -15,8 +15,8 @@ import {
   LogOut,
   Moon,
   Sun,
-  ShieldCheck,
 } from 'lucide-react';
+import { ButtonLoader } from '../components/ui/Loader';
 import { Language, ThemeMode } from '../types';
 
 export const SettingsPage: React.FC = () => {
@@ -36,13 +36,17 @@ export const SettingsPage: React.FC = () => {
 
   // Copy Curator Handle
   const [copied, setCopied] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   const curatorHandle = siteSettings?.curatorTelegram || '@Chromatik';
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingProfile) return;
     setProfileError(null);
     setProfileSuccess(false);
+    setIsSavingProfile(true);
 
     try {
       await api.updateProfile({ telegram });
@@ -50,11 +54,14 @@ export const SettingsPage: React.FC = () => {
       setTimeout(() => setProfileSuccess(false), 3000);
     } catch (err: any) {
       setProfileError(err.message || 'Помилка оновлення профілю');
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingPassword) return;
     setPasswordError(null);
     setPasswordSuccess(false);
 
@@ -68,6 +75,7 @@ export const SettingsPage: React.FC = () => {
       return;
     }
 
+    setIsSavingPassword(true);
     try {
       await api.changePassword({
         currentPassword,
@@ -81,6 +89,8 @@ export const SettingsPage: React.FC = () => {
       setTimeout(() => setPasswordSuccess(false), 3000);
     } catch (err: any) {
       setPasswordError(err.message || 'Не вдалося змінити пароль');
+    } finally {
+      setIsSavingPassword(false);
     }
   };
 
@@ -172,9 +182,10 @@ export const SettingsPage: React.FC = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                disabled={isSavingProfile}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
               >
-                Зберегти Telegram
+                {isSavingProfile ? <ButtonLoader label="Збереження..." /> : 'Зберегти Telegram'}
               </button>
             </div>
           </form>
@@ -246,9 +257,10 @@ export const SettingsPage: React.FC = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                disabled={isSavingPassword}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
               >
-                {t('updatePasswordBtn')}
+                {isSavingPassword ? <ButtonLoader label="Збереження..." /> : t('updatePasswordBtn')}
               </button>
             </div>
           </form>

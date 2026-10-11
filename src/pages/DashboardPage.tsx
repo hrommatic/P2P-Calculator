@@ -13,8 +13,8 @@ import {
   PlusCircle,
   Clock,
   ArrowRight,
-  Percent,
 } from 'lucide-react';
+import { PageLoader } from '../components/ui/Loader';
 
 interface DashboardPageProps {
   onNavigateToCalculator: () => void;
@@ -221,9 +221,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
 
         {/* Table View */}
         {isLoading ? (
-          <div className="p-8 text-center text-xs text-slate-500 dark:text-slate-400">
-            Завантаження даних...
-          </div>
+          <PageLoader label="Завантаження даних..." className="p-8" />
         ) : trades.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">

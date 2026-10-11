@@ -7,22 +7,17 @@ import {
   Check,
   RefreshCw,
   Save,
-  ArrowRight,
   TrendingUp,
-  Percent,
-  Wallet,
-  Building2,
-  DollarSign,
   AlertTriangle,
   ArrowDown,
   ArrowUp,
 } from 'lucide-react';
+import { ButtonLoader, PageLoader } from '../components/ui/Loader';
 
 const fieldSelectClass =
   'select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
-const fieldNumberClass =
-  'number-input w-full px-3 py-2 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
-const fieldNumberSuffixClass = `${fieldNumberClass} number-input-suffix`;
+const fieldNumberSuffixClass =
+  'number-input number-input-suffix w-full px-3 py-2 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
 const fieldNumberSmClass =
   'number-input w-full px-3 py-2 text-xs font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
 
@@ -258,11 +253,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   };
 
   if (loadingInitial) {
-    return (
-      <div className="p-12 text-center text-xs text-slate-500">
-        Завантаження калькулятора...
-      </div>
-    );
+    return <PageLoader label="Завантаження калькулятора..." />;
   }
 
   return (
@@ -722,7 +713,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSaving ? (
-                  <span>{t('savingTrade')}</span>
+                  <ButtonLoader label={t('savingTrade')} />
                 ) : (
                   <>
                     <Save className="w-4 h-4" />

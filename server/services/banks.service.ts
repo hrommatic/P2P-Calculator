@@ -5,6 +5,26 @@ import type { UserBank, GlobalBank } from '../schemas/banks.schema.js';
 import type { Trade } from '../schemas/trades.schema.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
 
+function normalizeBankName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+function findDuplicateBankName(
+  db: Awaited<ReturnType<typeof getDb>>,
+  userId: string,
+  name: string,
+  excludeBankId?: string,
+): UserBank | undefined {
+  const normalized = normalizeBankName(name);
+  return db.userBanks.find(
+    (b) =>
+      b.userId === userId &&
+      !b.isArchived &&
+      b.id !== excludeBankId &&
+      normalizeBankName(b.name) === normalized,
+  );
+}
+
 export async function syncUserBankStats(userId: string, existingDb?: Awaited<ReturnType<typeof getDb>>) {
   const db = existingDb ?? await getDb();
   const userTrades = db.trades.filter(t => t.userId === userId);
@@ -59,6 +79,11 @@ const db = await getDb();
     return res.status(400).json({ error: 'Вкажіть назву банку' });
   }
 
+  const trimmedName = name.trim();
+  if (findDuplicateBankName(db, user.id, trimmedName)) {
+    return res.status(409).json({ error: 'Банк з такою назвою вже існує' });
+  }
+
   const limit = Math.max(1000, Number(turnoverLimitUah) || 100000);
   const initial = Math.max(0, Number(initialTurnoverUah) || 0);
 
@@ -71,7 +96,7 @@ const db = await getDb();
     id: `ub_${user.id}_${Date.now().toString(36)}`,
     userId: user.id,
     globalBankId: matchedGlobal?.id,
-    name: name.trim(),
+    name: trimmedName,
     turnoverLimitUah: limit,
     initialTurnoverUah: initial,
     buyTurnoverUah: 0,
@@ -106,7 +131,11 @@ const db = await getDb();
   const notes = body.notes;
   const color = body.color;
   if (name && typeof name === 'string' && name.trim()) {
-    bank.name = name.trim();
+    const trimmedName = name.trim();
+    if (findDuplicateBankName(db, bank.userId, trimmedName, bank.id)) {
+      return res.status(409).json({ error: 'Банк з такою назвою вже існує' });
+    }
+    bank.name = trimmedName;
   }
   if (turnoverLimitUah !== undefined) {
     bank.turnoverLimitUah = Math.max(1000, Number(turnoverLimitUah) || 0);

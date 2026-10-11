@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Lock, User, Send, CheckCircle2, AlertCircle, ArrowRight, Sun, Moon, Globe } from 'lucide-react';
+import { ShieldCheck, Lock, User, Send, AlertCircle, ArrowRight, Sun, Moon } from 'lucide-react';
+import { ButtonLoader } from '../components/ui/Loader';
 import { Language } from '../types';
 
 export const AuthPage: React.FC = () => {
@@ -293,7 +294,7 @@ export const AuthPage: React.FC = () => {
               className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <span>{language === 'en' ? 'Processing...' : language === 'ru' ? 'Обработка...' : 'Обробка...'}</span>
+                <ButtonLoader label={language === 'en' ? 'Processing...' : language === 'ru' ? 'Обработка...' : 'Обробка...'} />
               ) : (
                 <>
                   <span>{mode === 'login' ? t('signInBtn') : t('signUpBtn')}</span>

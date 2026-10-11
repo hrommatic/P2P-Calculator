@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#2563EB"/>
+  <rect x="14" y="12" width="36" height="40" rx="6" fill="#EFF6FF" stroke="#DBEAFE" stroke-width="1.5"/>
+  <rect x="18" y="16" width="28" height="10" rx="3" fill="#1D4ED8"/>
+  <text x="32" y="24" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="7" font-weight="800">P2P</text>
+  <rect x="18" y="30" width="8" height="6" rx="1.5" fill="#93C5FD"/>
+  <rect x="28" y="30" width="8" height="6" rx="1.5" fill="#93C5FD"/>
+  <rect x="38" y="30" width="8" height="6" rx="1.5" fill="#BFDBFE"/>
+  <rect x="18" y="39" width="8" height="6" rx="1.5" fill="#BFDBFE"/>
+  <rect x="28" y="39" width="8" height="6" rx="1.5" fill="#93C5FD"/>
+  <rect x="38" y="39" width="8" height="6" rx="1.5" fill="#22C55E"/>
+  <path d="M48 46 L52 42 L48 38" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 18 L12 22 L16 26" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

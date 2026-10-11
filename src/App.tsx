@@ -8,7 +8,8 @@ import { BanksPage } from './pages/BanksPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
-import { AlertCircle, Bell, X } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
+import { PageLoader } from './components/ui/Loader';
 
 function AppContent() {
   const { user, isLoading, siteSettings } = useAuth();
@@ -17,13 +18,8 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0a0f1d] text-slate-500">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm animate-pulse">
-            P2P
-          </div>
-          <span className="text-xs font-semibold">Завантаження P2P Calculator...</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0a0f1d]">
+        <PageLoader label="Завантаження P2P Calculator..." />
       </div>
     );
   }
