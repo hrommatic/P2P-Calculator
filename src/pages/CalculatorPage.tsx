@@ -14,7 +14,6 @@ import {
   Building2,
   DollarSign,
   AlertTriangle,
-  Sparkles,
 } from 'lucide-react';
 
 interface CalculatorPageProps {

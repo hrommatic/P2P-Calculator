@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                 String    @id
+  nickname           String
+  telegram           String
+  passwordHash       String    @map("password_hash")
+  role               String
+  status             String
+  createdAt          DateTime  @map("created_at")
+  updatedAt          DateTime  @map("updated_at")
+  lastLoginAt        DateTime? @map("last_login_at")
+  themePreference    String    @map("theme_preference")
+  languagePreference String    @map("language_preference")
+
+  sessions  Session[]
+  userBanks UserBank[]
+  trades    Trade[]
+
+  @@unique([nickname])
+  @@map("users")
+}
+
+model Session {
+  token     String   @id
+  userId    String   @map("user_id")
+  createdAt DateTime @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model GlobalBank {
+  id              String  @id
+  name            String
+  code            String
+  defaultLimitUah Float   @map("default_limit_uah")
+  color           String
+  logoSvg         String? @map("logo_svg")
+  isActive        Boolean @map("is_active")
+  createdAt       DateTime @map("created_at")
+
+  userBanks UserBank[]
+
+  @@map("global_banks")
+}
+
+model UserBank {
+  id                 String   @id
+  userId             String   @map("user_id")
+  globalBankId       String?  @map("global_bank_id")
+  name               String
+  turnoverLimitUah   Float    @map("turnover_limit_uah")
+  initialTurnoverUah Float    @map("initial_turnover_uah")
+  buyTurnoverUah     Float    @map("buy_turnover_uah")
+  sellTurnoverUah    Float    @map("sell_turnover_uah")
+  netProfitUah       Float    @map("net_profit_uah")
+  tradesCount        Int      @map("trades_count")
+  notes              String?
+  color              String?
+  logoSvg            String?  @map("logo_svg")
+  isArchived         Boolean  @map("is_archived")
+  createdAt          DateTime @map("created_at")
+  updatedAt          DateTime @map("updated_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  globalBank GlobalBank? @relation(fields: [globalBankId], references: [id])
+
+  @@index([userId])
+  @@map("user_banks")
+}
+
+model Exchange {
+  id        String   @id
+  name      String
+  code      String
+  isActive  Boolean  @map("is_active")
+  createdAt DateTime @map("created_at")
+
+  @@map("exchanges")
+}
+
+model Trade {
+  id                   String    @id
+  userId               String    @map("user_id")
+  createdAt            DateTime  @map("created_at")
+  updatedAt            DateTime? @map("updated_at")
+  buyExchange          String    @map("buy_exchange")
+  buyBankId            String    @map("buy_bank_id")
+  buyBankName          String    @map("buy_bank_name")
+  buyRate              Float     @map("buy_rate")
+  buyAmountUah         Float     @map("buy_amount_uah")
+  buyCommission        Float     @map("buy_commission")
+  buyCommissionType    String    @map("buy_commission_type")
+  buyUsdtAmount        Float     @map("buy_usdt_amount")
+  sellExchange         String    @map("sell_exchange")
+  sellBankId           String    @map("sell_bank_id")
+  sellBankName         String    @map("sell_bank_name")
+  sellRate             Float     @map("sell_rate")
+  sellUsdtAmount       Float     @map("sell_usdt_amount")
+  sellAmountUah        Float     @map("sell_amount_uah")
+  sellCommission       Float     @map("sell_commission")
+  sellCommissionType   String    @map("sell_commission_type")
+  extraExpensesUah     Float     @map("extra_expenses_uah")
+  totalCostUah         Float     @map("total_cost_uah")
+  grossRevenueUah      Float     @map("gross_revenue_uah")
+  totalCommissionsUah  Float     @map("total_commissions_uah")
+  grossProfitUah       Float     @map("gross_profit_uah")
+  netProfitUah         Float     @map("net_profit_uah")
+  roiPercent           Float     @map("roi_percent")
+  spreadPerUnit        Float     @map("spread_per_unit")
+  spreadPercent        Float     @map("spread_percent")
+  notes                String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("trades")
+}
+
+model SiteSettings {
+  id                Int     @id @default(1)
+  siteName          String  @map("site_name")
+  curatorTelegram   String  @map("curator_telegram")
+  defaultLanguage   String  @map("default_language")
+  defaultTheme      String  @map("default_theme")
+  bankLimitMode     String  @map("bank_limit_mode")
+  announcement      String?
+  allowRegistration Boolean @map("allow_registration")
+
+  @@map("site_settings")
+}
+
+model AuditLog {
+  id            String   @id
+  timestamp     DateTime
+  actionType    String   @map("action_type")
+  adminId       String   @map("admin_id")
+  adminNickname String   @map("admin_nickname")
+  targetUserId  String?  @map("target_user_id")
+  details       String
+
+  @@index([timestamp(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model FailedAttempt {
+  rateKey     String @id @map("rate_key")
+  count       Int
+  lockedUntil BigInt? @map("locked_until")
+
+  @@map("failed_attempts")
+}
+
+model SystemBackup {
+  filename  String   @id
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("system_backups")
+}

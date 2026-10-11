@@ -1,0 +1,8 @@
+{
+  "buildCommand": "prisma generate && prisma migrate deploy && vite build",
+  "devCommand": "vite",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
