@@ -1,108 +1,105 @@
 import fs from 'fs';
 import path from 'path';
 
-/** @typedef {{ file: string, module: string, handlers: { method: string, export: string }[] }} RouteDef */
+/** @typedef {{ path: string, module: string, method: string, export: string }} RouteDef */
 
 /** @type {RouteDef[]} */
 const routes = [
-  { file: 'api/auth/register.ts', module: 'auth.routes', handlers: [{ method: 'POST', export: 'registerHandler' }] },
-  { file: 'api/auth/login.ts', module: 'auth.routes', handlers: [{ method: 'POST', export: 'loginHandler' }] },
-  { file: 'api/auth/logout.ts', module: 'auth.routes', handlers: [{ method: 'POST', export: 'logoutHandler' }] },
-  { file: 'api/auth/me.ts', module: 'auth.routes', handlers: [{ method: 'GET', export: 'meHandler' }] },
-  { file: 'api/auth/change-password.ts', module: 'auth.routes', handlers: [{ method: 'POST', export: 'changePasswordHandler' }] },
-  { file: 'api/auth/update-profile.ts', module: 'auth.routes', handlers: [{ method: 'POST', export: 'updateProfileHandler' }] },
-  { file: 'api/exchanges.ts', module: 'auth.routes', handlers: [{ method: 'GET', export: 'exchangesHandler' }] },
-  { file: 'api/settings/public.ts', module: 'auth.routes', handlers: [{ method: 'GET', export: 'settingsPublicHandler' }] },
-  { file: 'api/trades/index.ts', module: 'trades.routes', handlers: [
-    { method: 'GET', export: 'tradesIndexHandler' },
-    { method: 'POST', export: 'tradesCreateHandler' },
-  ]},
-  { file: 'api/trades/export-csv.ts', module: 'trades.routes', handlers: [{ method: 'GET', export: 'tradesExportCsvHandler' }] },
-  { file: 'api/trades/[id].ts', module: 'trades.routes', handlers: [
-    { method: 'PUT', export: 'tradeUpdateHandler' },
-    { method: 'DELETE', export: 'tradeDeleteHandler' },
-  ]},
-  { file: 'api/banks/index.ts', module: 'banks.routes', handlers: [
-    { method: 'GET', export: 'banksIndexGetHandler' },
-    { method: 'POST', export: 'banksIndexPostHandler' },
-  ]},
-  { file: 'api/banks/[id].ts', module: 'banks.routes', handlers: [
-    { method: 'PUT', export: 'bankUpdateHandler' },
-    { method: 'DELETE', export: 'bankDeleteHandler' },
-  ]},
-  { file: 'api/dashboard/stats.ts', module: 'dashboard.routes', handlers: [{ method: 'GET', export: 'dashboardStatsHandler' }] },
-  { file: 'api/admin/overview.ts', module: 'admin.routes', handlers: [{ method: 'GET', export: 'adminOverviewHandler' }] },
-  { file: 'api/admin/users.ts', module: 'admin.routes', handlers: [{ method: 'GET', export: 'adminUsersHandler' }] },
-  { file: 'api/admin/users/[id]/status.ts', module: 'admin.routes', handlers: [{ method: 'PUT', export: 'adminUserStatusHandler' }] },
-  { file: 'api/admin/users/[id]/profile.ts', module: 'admin.routes', handlers: [{ method: 'PUT', export: 'adminUserProfileHandler' }] },
-  { file: 'api/admin/users/[id]/reset-password.ts', module: 'admin.routes', handlers: [{ method: 'POST', export: 'adminUserResetPasswordHandler' }] },
-  { file: 'api/admin/users/[id].ts', module: 'admin.routes', handlers: [{ method: 'DELETE', export: 'adminUserDeleteHandler' }] },
-  { file: 'api/admin/students-stats.ts', module: 'admin.routes', handlers: [{ method: 'GET', export: 'adminStudentsStatsHandler' }] },
-  { file: 'api/admin/global-banks/index.ts', module: 'admin.routes', handlers: [
-    { method: 'GET', export: 'adminGlobalBanksGetHandler' },
-    { method: 'POST', export: 'adminGlobalBanksPostHandler' },
-  ]},
-  { file: 'api/admin/global-banks/[id].ts', module: 'admin.routes', handlers: [
-    { method: 'PUT', export: 'adminGlobalBankUpdateHandler' },
-    { method: 'DELETE', export: 'adminGlobalBankDeleteHandler' },
-  ]},
-  { file: 'api/admin/exchanges/index.ts', module: 'admin.routes', handlers: [
-    { method: 'GET', export: 'adminExchangesGetHandler' },
-    { method: 'POST', export: 'adminExchangesPostHandler' },
-  ]},
-  { file: 'api/admin/exchanges/[id].ts', module: 'admin.routes', handlers: [{ method: 'PUT', export: 'adminExchangeUpdateHandler' }] },
-  { file: 'api/admin/settings.ts', module: 'admin.routes', handlers: [
-    { method: 'GET', export: 'adminSettingsGetHandler' },
-    { method: 'PUT', export: 'adminSettingsPutHandler' },
-  ]},
-  { file: 'api/admin/audit-logs.ts', module: 'admin.routes', handlers: [{ method: 'GET', export: 'adminAuditLogsHandler' }] },
-  { file: 'api/admin/backup.ts', module: 'admin.routes', handlers: [{ method: 'POST', export: 'adminBackupHandler' }] },
-  { file: 'api/admin/backups.ts', module: 'admin.routes', handlers: [{ method: 'GET', export: 'adminBackupsHandler' }] },
+  { path: 'auth/register', module: 'auth.routes', method: 'POST', export: 'registerHandler' },
+  { path: 'auth/login', module: 'auth.routes', method: 'POST', export: 'loginHandler' },
+  { path: 'auth/logout', module: 'auth.routes', method: 'POST', export: 'logoutHandler' },
+  { path: 'auth/me', module: 'auth.routes', method: 'GET', export: 'meHandler' },
+  { path: 'auth/change-password', module: 'auth.routes', method: 'POST', export: 'changePasswordHandler' },
+  { path: 'auth/update-profile', module: 'auth.routes', method: 'POST', export: 'updateProfileHandler' },
+  { path: 'exchanges', module: 'auth.routes', method: 'GET', export: 'exchangesHandler' },
+  { path: 'settings/public', module: 'auth.routes', method: 'GET', export: 'settingsPublicHandler' },
+  { path: 'trades', module: 'trades.routes', method: 'GET', export: 'tradesIndexHandler' },
+  { path: 'trades', module: 'trades.routes', method: 'POST', export: 'tradesCreateHandler' },
+  { path: 'trades/export-csv', module: 'trades.routes', method: 'GET', export: 'tradesExportCsvHandler' },
+  { path: 'trades/:id', module: 'trades.routes', method: 'PUT', export: 'tradeUpdateHandler' },
+  { path: 'trades/:id', module: 'trades.routes', method: 'DELETE', export: 'tradeDeleteHandler' },
+  { path: 'banks', module: 'banks.routes', method: 'GET', export: 'banksIndexGetHandler' },
+  { path: 'banks', module: 'banks.routes', method: 'POST', export: 'banksIndexPostHandler' },
+  { path: 'banks/:id', module: 'banks.routes', method: 'PUT', export: 'bankUpdateHandler' },
+  { path: 'banks/:id', module: 'banks.routes', method: 'DELETE', export: 'bankDeleteHandler' },
+  { path: 'dashboard/stats', module: 'dashboard.routes', method: 'GET', export: 'dashboardStatsHandler' },
+  { path: 'admin/overview', module: 'admin.routes', method: 'GET', export: 'adminOverviewHandler' },
+  { path: 'admin/users', module: 'admin.routes', method: 'GET', export: 'adminUsersHandler' },
+  { path: 'admin/users/:id/status', module: 'admin.routes', method: 'PUT', export: 'adminUserStatusHandler' },
+  { path: 'admin/users/:id/profile', module: 'admin.routes', method: 'PUT', export: 'adminUserProfileHandler' },
+  { path: 'admin/users/:id/reset-password', module: 'admin.routes', method: 'POST', export: 'adminUserResetPasswordHandler' },
+  { path: 'admin/users/:id', module: 'admin.routes', method: 'DELETE', export: 'adminUserDeleteHandler' },
+  { path: 'admin/students-stats', module: 'admin.routes', method: 'GET', export: 'adminStudentsStatsHandler' },
+  { path: 'admin/global-banks', module: 'admin.routes', method: 'GET', export: 'adminGlobalBanksGetHandler' },
+  { path: 'admin/global-banks', module: 'admin.routes', method: 'POST', export: 'adminGlobalBanksPostHandler' },
+  { path: 'admin/global-banks/:id', module: 'admin.routes', method: 'PUT', export: 'adminGlobalBankUpdateHandler' },
+  { path: 'admin/global-banks/:id', module: 'admin.routes', method: 'DELETE', export: 'adminGlobalBankDeleteHandler' },
+  { path: 'admin/exchanges', module: 'admin.routes', method: 'GET', export: 'adminExchangesGetHandler' },
+  { path: 'admin/exchanges', module: 'admin.routes', method: 'POST', export: 'adminExchangesPostHandler' },
+  { path: 'admin/exchanges/:id', module: 'admin.routes', method: 'PUT', export: 'adminExchangeUpdateHandler' },
+  { path: 'admin/settings', module: 'admin.routes', method: 'GET', export: 'adminSettingsGetHandler' },
+  { path: 'admin/settings', module: 'admin.routes', method: 'PUT', export: 'adminSettingsPutHandler' },
+  { path: 'admin/audit-logs', module: 'admin.routes', method: 'GET', export: 'adminAuditLogsHandler' },
+  { path: 'admin/backup', module: 'admin.routes', method: 'POST', export: 'adminBackupHandler' },
+  { path: 'admin/backups', module: 'admin.routes', method: 'GET', export: 'adminBackupsHandler' },
 ];
 
-function serverPrefix(file) {
-  const depth = file.split('/').length - 1;
-  return '../'.repeat(depth) + 'server/';
+const modules = [...new Set(routes.map((r) => r.module))];
+
+function parsePathPattern(pathPattern) {
+  return pathPattern.split('/').map((segment) => (segment.startsWith(':') ? segment : segment));
 }
 
-function buildRoute({ file, module, handlers }) {
-  const prefix = serverPrefix(file);
-  const routeImport = `${prefix}routes/${module}.js`;
-  const helpersImport = `${prefix}middlewares/helpers.js`;
+function buildCatchAll() {
+  const imports = modules
+    .map((mod) => {
+      const names = [...new Set(routes.filter((r) => r.module === mod).map((r) => r.export))];
+      return `import { ${names.join(', ')} } from '../server/routes/${mod}.js';`;
+    })
+    .join('\n');
 
-  if (handlers.length === 1) {
-    return `export { ${handlers[0].export} as default } from '${routeImport}';\n`;
-  }
+  const routeEntries = routes
+    .map((r) => {
+      const segments = parsePathPattern(r.path);
+      return `  { segments: ${JSON.stringify(segments)}, method: '${r.method}', handler: ${r.export} },`;
+    })
+    .join('\n');
 
-  const imports = handlers.map((h) => h.export).join(', ');
-  const methods = handlers.map((h) => `'${h.method}'`);
-  let out = `import type { VercelRequest, VercelResponse } from '@vercel/node';\n`;
-  out += `import { ${imports} } from '${routeImport}';\n`;
-  out += `import { methodNotAllowed } from '${helpersImport}';\n\n`;
-  out += `export default async function handler(req: VercelRequest, res: VercelResponse) {\n`;
-  for (const h of handlers) {
-    out += `  if (req.method === '${h.method}') return ${h.export}(req, res);\n`;
-  }
-  out += `  methodNotAllowed(res, [${methods.join(', ')}]);\n`;
-  out += `}\n`;
-  return out;
-}
-
-for (const route of routes) {
-  fs.mkdirSync(path.dirname(route.file), { recursive: true });
-  fs.writeFileSync(route.file, buildRoute(route));
-}
-
-fs.writeFileSync(
-  'api/health.ts',
-  `import type { VercelRequest, VercelResponse } from '@vercel/node';
+  return `import type { VercelRequest, VercelResponse } from '@vercel/node';
+${imports}
 import { loadDatabase } from '../server/utils/db/index.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method not allowed' });
+type RouteEntry = {
+  segments: string[];
+  method: string;
+  handler: (req: VercelRequest, res: VercelResponse) => unknown;
+};
+
+const routes: RouteEntry[] = [
+${routeEntries}
+];
+
+function normalizePath(pathParam: string | string[] | undefined): string[] {
+  if (!pathParam) return [];
+  return Array.isArray(pathParam) ? pathParam : [pathParam];
+}
+
+function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {
+  if (pathSegments.length !== route.segments.length) return null;
+  const params: Record<string, string> = {};
+  for (let i = 0; i < route.segments.length; i++) {
+    const expected = route.segments[i];
+    const actual = pathSegments[i];
+    if (expected.startsWith(':')) {
+      params[expected.slice(1)] = actual;
+    } else if (expected !== actual) {
+      return null;
+    }
   }
+  return params;
+}
+
+async function healthHandler(_req: VercelRequest, res: VercelResponse) {
   try {
     await loadDatabase();
     return res.status(200).json({ ok: true });
@@ -111,7 +108,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ ok: false, error: message });
   }
 }
-`,
-);
 
-console.log('Generated', routes.length + 1, 'api routes');
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const pathSegments = normalizePath(req.query.path as string | string[] | undefined);
+
+  if (pathSegments.length === 1 && pathSegments[0] === 'health' && req.method === 'GET') {
+    return healthHandler(req, res);
+  }
+
+  for (const route of routes) {
+    if (route.method !== req.method) continue;
+    const params = matchRoute(pathSegments, route);
+    if (params) {
+      Object.assign(req.query, params);
+      return route.handler(req, res);
+    }
+  }
+
+  return res.status(404).json({ error: 'Not found' });
+}
+`;
+}
+
+function removeOldApiFiles(dir, keep) {
+  if (!fs.existsSync(dir)) return;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      removeOldApiFiles(fullPath, keep);
+      if (fs.readdirSync(fullPath).length === 0) fs.rmdirSync(fullPath);
+    } else if (entry.isFile() && fullPath !== keep) {
+      fs.unlinkSync(fullPath);
+    }
+  }
+}
+
+const outputFile = 'api/[[...path]].ts';
+removeOldApiFiles('api', path.resolve(outputFile));
+fs.writeFileSync(outputFile, buildCatchAll());
+
+console.log('Generated single catch-all API route:', outputFile);
