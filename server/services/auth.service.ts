@@ -3,6 +3,11 @@ import { getDb, saveDatabase } from '../utils/db/index.js';
 import type { User, ThemePreference, LanguagePreference } from '../schemas/auth.schema.js';
 import { hashPassword, verifyPassword, generateToken } from '../lib/crypto.js';
 import { parseJsonBody, getClientIp, getBearerToken } from '../middlewares/helpers.js';
+import {
+  DEMO_STUDENT_NICKNAME,
+  getDemoStudentPassword,
+  isDemoLoginEnabled,
+} from '../utils/db/demo-users.js';
 
 export async function handleAuthRegister(req: VercelRequest, res: VercelResponse) {
   const body = parseJsonBody(req);
@@ -312,6 +317,7 @@ const db = await getDb();
 
 export async function handleSettingsPublic(req: VercelRequest, res: VercelResponse) {
 const db = await getDb();
+  const demoAccounts = buildPublicDemoAccounts();
   return res.json({
     siteName: db.siteSettings.siteName,
     curatorTelegram: db.siteSettings.curatorTelegram,
@@ -319,6 +325,33 @@ const db = await getDb();
     defaultTheme: db.siteSettings.defaultTheme,
     announcement: db.siteSettings.announcement,
     allowRegistration: db.siteSettings.allowRegistration,
+    ...(demoAccounts ? { demoAccounts } : {}),
   });
+}
+
+function buildPublicDemoAccounts() {
+  if (!isDemoLoginEnabled()) return null;
+
+  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD?.trim();
+  const studentPassword = getDemoStudentPassword();
+  const accounts: Array<{ role: 'student' | 'admin'; nickname: string; password: string; label: string }> = [];
+
+  accounts.push({
+    role: 'student',
+    nickname: DEMO_STUDENT_NICKNAME,
+    password: studentPassword,
+    label: 'Danilo (Student)',
+  });
+
+  if (adminPassword) {
+    accounts.push({
+      role: 'admin',
+      nickname: 'admin',
+      password: adminPassword,
+      label: 'Admin',
+    });
+  }
+
+  return accounts;
 }
 

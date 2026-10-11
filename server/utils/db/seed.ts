@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma.js';
 import type { User, SiteSettings } from '../../schemas/auth.schema.js';
 import type { GlobalBank, Exchange } from '../../schemas/banks.schema.js';
 import type { AuditLog, DatabaseSchema } from '../../schemas/admin.schema.js';
+import { buildDemoStudentBanks, buildDemoStudentUser } from './demo-users.js';
 
 function getSeedGlobalBanks(now: string): GlobalBank[] {
   return [
@@ -79,11 +80,15 @@ export async function buildBootstrapDatabase(): Promise<DatabaseSchema> {
     details: 'Initial system bootstrap completed successfully.',
   };
 
+  const globalBanks = getSeedGlobalBanks(now);
+  const demoStudent = buildDemoStudentUser(now);
+  const demoStudentBanks = buildDemoStudentBanks(demoStudent.id, globalBanks, now);
+
   return {
-    users: [adminUser],
+    users: [adminUser, demoStudent],
     sessions: [],
-    globalBanks: getSeedGlobalBanks(now),
-    userBanks: [],
+    globalBanks,
+    userBanks: demoStudentBanks,
     exchanges: getSeedExchanges(now),
     trades: [],
     siteSettings,

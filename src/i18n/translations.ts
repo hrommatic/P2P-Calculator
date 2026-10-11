@@ -94,7 +94,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Banks
     myBanksTitle: 'Мої банки',
     myBanksSubtitle: 'Контроль банківських лімітів, обороту та прибутку',
-    addBankBtn: '+ Додати банк',
+    addBankBtn: 'Додати банк',
     bankName: 'Назва банку',
     turnoverLimit: 'Ліміт обороту (UAH)',
     initialTurnover: 'Початковий оборот (UAH)',
@@ -264,7 +264,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Banks
     myBanksTitle: 'Мои банки',
     myBanksSubtitle: 'Контроль лимитов оборота, раздельный учёт и доходность',
-    addBankBtn: '+ Добавить банк',
+    addBankBtn: 'Добавить банк',
     bankName: 'Название банка',
     turnoverLimit: 'Лимит оборота (UAH)',
     initialTurnover: 'Начальный оборот (UAH)',
@@ -434,7 +434,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Banks
     myBanksTitle: 'My Banks',
     myBanksSubtitle: 'Track bank limits, turnover flows, and net yield',
-    addBankBtn: '+ Add Bank',
+    addBankBtn: 'Add Bank',
     bankName: 'Bank Name',
     turnoverLimit: 'Turnover Limit (UAH)',
     initialTurnover: 'Initial Turnover (UAH)',

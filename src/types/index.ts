@@ -101,6 +101,13 @@ export interface DashboardStats {
   recentTrades: Trade[];
 }
 
+export interface DemoAccount {
+  role: Role;
+  nickname: string;
+  password: string;
+  label: string;
+}
+
 export interface SiteSettings {
   siteName: string;
   curatorTelegram: string;
@@ -109,6 +116,7 @@ export interface SiteSettings {
   bankLimitMode: 'separate' | 'total' | 'buy_only';
   announcement?: string;
   allowRegistration: boolean;
+  demoAccounts?: DemoAccount[];
 }
 
 export interface AdminOverview {
