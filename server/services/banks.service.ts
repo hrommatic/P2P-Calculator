@@ -21,6 +21,8 @@ export async function handleGetBanks(req: VercelRequest, res: VercelResponse, us
     targetUserId = String(req.query.targetUserId);
   }
 
+  await syncUserBankStats(targetUserId);
+
   const [banks, globalBanks] = await Promise.all([
     getUserBanks(targetUserId),
     getActiveGlobalBanks(),

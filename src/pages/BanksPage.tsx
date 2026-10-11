@@ -337,8 +337,8 @@ export const BanksPage: React.FC = () => {
 
                   <div className="flex items-center gap-1 font-mono tabular-nums">
                     <span className="text-slate-500">{t('bankProfit')}:</span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">
-                      +{formatUah(bank.netProfitUah)} ₴
+                    <strong className={`font-bold ${bank.netProfitUah >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      {bank.netProfitUah >= 0 ? '+' : ''}{formatUah(bank.netProfitUah)} ₴
                     </strong>
                   </div>
                 </div>

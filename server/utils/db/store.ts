@@ -310,11 +310,8 @@ export async function syncUserBankStats(userId: string) {
         }
         if (involved) {
           count += 1;
-          if (trade.sellBankId === bank.id && trade.buyBankId === bank.id) {
-            netProfit += trade.netProfitUah;
-          } else if (trade.sellBankId === bank.id) {
-            netProfit += trade.netProfitUah;
-          }
+          // Credit full link profit to every bank involved (buy and/or sell).
+          netProfit += trade.netProfitUah;
         }
       }
 
