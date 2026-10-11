@@ -4,11 +4,6 @@ import type { UserBank } from '../schemas/banks.schema.js';
 import { hashPassword, verifyPassword, generateToken } from '../lib/crypto.js';
 import { parseJsonBody, getClientIp, getBearerToken } from '../middlewares/helpers.js';
 import {
-  DEMO_STUDENT_NICKNAME,
-  getDemoStudentPassword,
-  isDemoLoginEnabled,
-} from '../utils/db/demo-users.js';
-import {
   createSession,
   deleteFailedAttempt,
   deleteSession,
@@ -258,7 +253,6 @@ export async function handleExchanges(req: VercelRequest, res: VercelResponse) {
 
 export async function handleSettingsPublic(req: VercelRequest, res: VercelResponse) {
   const settings = await getSiteSettings();
-  const demoAccounts = buildPublicDemoAccounts();
   return res.json({
     siteName: settings.siteName,
     curatorTelegram: settings.curatorTelegram,
@@ -266,32 +260,5 @@ export async function handleSettingsPublic(req: VercelRequest, res: VercelRespon
     defaultTheme: settings.defaultTheme,
     announcement: settings.announcement,
     allowRegistration: settings.allowRegistration,
-    ...(demoAccounts ? { demoAccounts } : {}),
   });
-}
-
-function buildPublicDemoAccounts() {
-  if (!isDemoLoginEnabled()) return null;
-
-  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD?.trim();
-  const studentPassword = getDemoStudentPassword();
-  const accounts: Array<{ role: 'student' | 'admin'; nickname: string; password: string; label: string }> = [];
-
-  accounts.push({
-    role: 'student',
-    nickname: DEMO_STUDENT_NICKNAME,
-    password: studentPassword,
-    label: 'Danilo (Student)',
-  });
-
-  if (adminPassword) {
-    accounts.push({
-      role: 'admin',
-      nickname: 'admin',
-      password: adminPassword,
-      label: 'Admin',
-    });
-  }
-
-  return accounts;
 }

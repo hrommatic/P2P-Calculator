@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, Lock, User, Send, AlertCircle, ArrowRight, Sun, Moon } from 'lucide-react';
 import { ButtonLoader } from '../components/ui/Loader';
-import { DemoAccount, Language } from '../types';
-import { api } from '../services/api';
+import { Language } from '../types';
 
 export const AuthPage: React.FC = () => {
   const { login, register, siteSettings, theme, setTheme, language, setLanguage, t } = useAuth();
@@ -17,25 +16,9 @@ export const AuthPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
-  const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([]);
 
   // Curator handle
   const curator = siteSettings?.curatorTelegram || '@Chromatik';
-
-  useEffect(() => {
-    if (siteSettings?.demoAccounts?.length) {
-      setDemoAccounts(siteSettings.demoAccounts);
-      return;
-    }
-
-    api.getPublicSettings()
-      .then((settings) => {
-        if (settings.demoAccounts?.length) {
-          setDemoAccounts(settings.demoAccounts);
-        }
-      })
-      .catch(() => {});
-  }, [siteSettings?.demoAccounts]);
 
   // Password strength check
   const getPasswordStrength = (pwd: string) => {
@@ -77,22 +60,6 @@ export const AuthPage: React.FC = () => {
         }
         await register(nickname.trim(), telegram.trim(), password, confirmPassword);
       }
-    } catch (err: any) {
-      setError(err.message || 'Authentication error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleQuickLogin = async (account: DemoAccount) => {
-    setMode('login');
-    setError(null);
-    setNickname(account.nickname);
-    setPassword(account.password);
-    setIsLoading(true);
-
-    try {
-      await login(account.nickname, account.password);
     } catch (err: any) {
       setError(err.message || 'Authentication error');
     } finally {
@@ -323,32 +290,6 @@ export const AuthPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {demoAccounts.length > 0 && (
-            <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800 text-center">
-              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
-                {language === 'en' ? 'Quick demo accounts (one-click login)' : language === 'ru' ? 'Быстрый вход для проверки' : 'Швидкий вхід для тестування'}
-              </p>
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                {demoAccounts.map((account) => (
-                  <button
-                    key={account.nickname}
-                    type="button"
-                    disabled={isLoading}
-                    onClick={() => handleQuickLogin(account)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 ${
-                      account.role === 'admin'
-                        ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-sky-300 dark:hover:bg-blue-900/60'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {account.role === 'admin' ? '🛡️ ' : '👤 '}
-                    {account.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
         </div>
       </div>

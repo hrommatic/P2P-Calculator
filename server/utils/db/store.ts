@@ -14,7 +14,6 @@ import {
   parseDate,
 } from './mappers.js';
 import { buildBootstrapDatabase, needsSeed } from './seed.js';
-import { ensureDemoUsersPrisma } from './demo-users.js';
 
 const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
 
@@ -28,7 +27,6 @@ export async function ensureBootstrapped(): Promise<void> {
         const { saveDatabase } = await import('./repository.js');
         await saveDatabase(db);
       }
-      await ensureDemoUsersPrisma();
     })();
   }
   await bootstrapPromise;
