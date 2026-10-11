@@ -44,21 +44,48 @@ const routes = [
   { path: 'admin/backups', module: 'admin.routes', method: 'GET', export: 'adminBackupsHandler' },
 ];
 
-const modules = [...new Set(routes.map((r) => r.module))];
+/** @type {Record<string, RouteDef[]>} */
+const groups = {
+  auth: [],
+  trades: [],
+  banks: [],
+  dashboard: [],
+  admin: [],
+  settings: [],
+};
 
-function parsePathPattern(pathPattern) {
-  return pathPattern.split('/').map((segment) => (segment.startsWith(':') ? segment : segment));
+for (const route of routes) {
+  if (route.path.startsWith('auth/')) {
+    groups.auth.push({ ...route, path: route.path.slice('auth/'.length) });
+  } else if (route.path.startsWith('trades')) {
+    groups.trades.push({ ...route, path: route.path.slice('trades/'.length) || '' });
+  } else if (route.path.startsWith('banks')) {
+    groups.banks.push({ ...route, path: route.path.slice('banks/'.length) || '' });
+  } else if (route.path.startsWith('dashboard/')) {
+    groups.dashboard.push({ ...route, path: route.path.slice('dashboard/'.length) });
+  } else if (route.path.startsWith('admin/')) {
+    groups.admin.push({ ...route, path: route.path.slice('admin/'.length) });
+  } else if (route.path.startsWith('settings/')) {
+    groups.settings.push({ ...route, path: route.path.slice('settings/'.length) });
+  }
 }
 
-function buildCatchAll() {
+function parsePathPattern(pathPattern) {
+  if (!pathPattern) return [];
+  return pathPattern.split('/');
+}
+
+function buildGroupRouter(groupRoutes, depth) {
+  const prefix = '../'.repeat(depth) + 'server/';
+  const modules = [...new Set(groupRoutes.map((r) => r.module))];
   const imports = modules
     .map((mod) => {
-      const names = [...new Set(routes.filter((r) => r.module === mod).map((r) => r.export))];
-      return `import { ${names.join(', ')} } from '../server/routes/${mod}.js';`;
+      const names = [...new Set(groupRoutes.filter((r) => r.module === mod).map((r) => r.export))];
+      return `import { ${names.join(', ')} } from '${prefix}routes/${mod}.js';`;
     })
     .join('\n');
 
-  const routeEntries = routes
+  const routeEntries = groupRoutes
     .map((r) => {
       const segments = parsePathPattern(r.path);
       return `  { segments: ${JSON.stringify(segments)}, method: '${r.method}', handler: ${r.export} },`;
@@ -67,7 +94,6 @@ function buildCatchAll() {
 
   return `import type { VercelRequest, VercelResponse } from '@vercel/node';
 ${imports}
-import { loadDatabase } from '../server/utils/db/index.js';
 
 type RouteEntry = {
   segments: string[];
@@ -85,11 +111,12 @@ function getPathSegments(req: VercelRequest): string[] {
     return Array.isArray(queryPath) ? queryPath : [queryPath];
   }
   const pathname = (req.url ?? '').split('?')[0];
-  if (pathname.startsWith('/api/')) {
-    return pathname.slice('/api/'.length).split('/').filter(Boolean);
+  const marker = '/api/';
+  const idx = pathname.indexOf(marker);
+  if (idx >= 0) {
+    return pathname.slice(idx + marker.length).split('/').filter(Boolean).slice(1);
   }
-  if (pathname === '/api') return [];
-  return pathname.split('/').filter((segment) => segment && segment !== 'api');
+  return [];
 }
 
 function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {
@@ -107,22 +134,8 @@ function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, s
   return params;
 }
 
-async function healthHandler(_req: VercelRequest, res: VercelResponse) {
-  try {
-    await loadDatabase();
-    return res.status(200).json({ ok: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Database unavailable';
-    return res.status(503).json({ ok: false, error: message });
-  }
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const pathSegments = getPathSegments(req);
-
-  if (pathSegments.length === 1 && pathSegments[0] === 'health' && req.method === 'GET') {
-    return healthHandler(req, res);
-  }
 
   for (const route of routes) {
     if (route.method !== req.method) continue;
@@ -138,21 +151,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 `;
 }
 
-function removeOldApiFiles(dir, keep) {
+function buildHealthRoute() {
+  return `import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { loadDatabase } from '../server/utils/db/index.js';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  try {
+    await loadDatabase();
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Database unavailable';
+    return res.status(503).json({ ok: false, error: message });
+  }
+}
+`;
+}
+
+function buildSingleRoute(route) {
+  return `export { ${route.export} as default } from '../server/routes/${route.module}.js';\n`;
+}
+
+function removeDir(dir) {
   if (!fs.existsSync(dir)) return;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      removeOldApiFiles(fullPath, keep);
-      if (fs.readdirSync(fullPath).length === 0) fs.rmdirSync(fullPath);
-    } else if (entry.isFile() && fullPath !== keep) {
-      fs.unlinkSync(fullPath);
-    }
+    if (entry.isDirectory()) removeDir(fullPath);
+    else fs.unlinkSync(fullPath);
   }
+  fs.rmdirSync(dir);
 }
 
-const outputFile = 'api/[...path].ts';
-removeOldApiFiles('api', path.resolve(outputFile));
-fs.writeFileSync(outputFile, buildCatchAll());
+removeDir('api');
+fs.mkdirSync('api', { recursive: true });
 
-console.log('Generated single catch-all API route:', outputFile);
+fs.writeFileSync('api/health.ts', buildHealthRoute());
+
+const exchangesRoute = routes.find((r) => r.path === 'exchanges');
+fs.writeFileSync('api/exchanges.ts', buildSingleRoute(exchangesRoute));
+
+const groupFiles = [
+  { name: 'auth', file: 'api/auth/[...path].ts', depth: 2 },
+  { name: 'trades', file: 'api/trades/[...path].ts', depth: 2 },
+  { name: 'banks', file: 'api/banks/[...path].ts', depth: 2 },
+  { name: 'dashboard', file: 'api/dashboard/[...path].ts', depth: 2 },
+  { name: 'admin', file: 'api/admin/[...path].ts', depth: 2 },
+  { name: 'settings', file: 'api/settings/[...path].ts', depth: 2 },
+];
+
+for (const { name, file, depth } of groupFiles) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, buildGroupRouter(groups[name], depth));
+}
+
+console.log('Generated', groupFiles.length + 2, 'api functions (Hobby plan compatible)');
