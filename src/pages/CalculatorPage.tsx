@@ -14,7 +14,17 @@ import {
   Building2,
   DollarSign,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
 } from 'lucide-react';
+
+const fieldSelectClass =
+  'select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
+const fieldNumberClass =
+  'number-input w-full px-3 py-2 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
+const fieldNumberSuffixClass = `${fieldNumberClass} number-input-suffix`;
+const fieldNumberSmClass =
+  'number-input w-full px-3 py-2 text-xs font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
 
 interface CalculatorPageProps {
   onTradeSaved?: () => void;
@@ -319,8 +329,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-sky-400 flex items-center justify-center font-bold text-xs">
-                  ↓
+                <div className="block-direction-icon bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-sky-400">
+                  <ArrowDown />
                 </div>
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                   {t('buyBlock')}
@@ -340,7 +350,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 <select
                   value={buyExchange}
                   onChange={e => setBuyExchange(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldSelectClass}
                 >
                   {exchanges.map(ex => (
                     <option key={ex.id} value={ex.name}>{ex.name}</option>
@@ -357,8 +367,12 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 <select
                   value={buyBankId}
                   onChange={e => setBuyBankId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldSelectClass}
+                  disabled={banks.length === 0}
                 >
+                  {banks.length === 0 && (
+                    <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
+                  )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
                       {b.name} (Залишок: {formatUah(Math.max(0, b.turnoverLimitUah - b.buyTurnoverUah))} ₴)
@@ -379,9 +393,9 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     min="0"
                     value={buyRate}
                     onChange={e => setBuyRate(e.target.value)}
-                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className={fieldNumberSuffixClass}
                   />
-                  <span className="absolute right-3 top-2 text-xs text-slate-400">₴/$</span>
+                  <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">₴/$</span>
                 </div>
               </div>
 
@@ -397,9 +411,9 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     min="0"
                     value={buyAmountUah}
                     onChange={e => setBuyAmountUah(e.target.value)}
-                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-bold"
+                    className={`${fieldNumberSuffixClass} font-bold`}
                   />
-                  <span className="absolute right-3 top-2 text-xs text-slate-400">UAH</span>
+                  <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">UAH</span>
                 </div>
               </div>
             </div>
@@ -416,7 +430,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   min="0"
                   value={buyCommission}
                   onChange={e => setBuyCommission(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldNumberSmClass}
                 />
               </div>
 
@@ -427,7 +441,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 <select
                   value={buyCommissionType}
                   onChange={e => setBuyCommissionType(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldSelectClass}
                 >
                   <option value="percent">{t('percent')}</option>
                   <option value="fixed_uah">{t('fixedUah')}</option>
@@ -451,8 +465,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
-                  ↑
+                <div className="block-direction-icon bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                  <ArrowUp />
                 </div>
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                   {t('sellBlock')}
@@ -472,7 +486,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 <select
                   value={sellExchange}
                   onChange={e => setSellExchange(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldSelectClass}
                 >
                   {exchanges.map(ex => (
                     <option key={ex.id} value={ex.name}>{ex.name}</option>
@@ -489,8 +503,12 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 <select
                   value={sellBankId}
                   onChange={e => setSellBankId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldSelectClass}
+                  disabled={banks.length === 0}
                 >
+                  {banks.length === 0 && (
+                    <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
+                  )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
                       {b.name} (Залишок: {formatUah(Math.max(0, b.turnoverLimitUah - b.sellTurnoverUah))} ₴)
@@ -511,9 +529,9 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     min="0"
                     value={sellRate}
                     onChange={e => setSellRate(e.target.value)}
-                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className={fieldNumberSuffixClass}
                   />
-                  <span className="absolute right-3 top-2 text-xs text-slate-400">₴/$</span>
+                  <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">₴/$</span>
                 </div>
               </div>
 
@@ -530,9 +548,9 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     placeholder={formatUsdt(calcBuyUsdt)}
                     value={sellUsdtAmount}
                     onChange={e => setSellUsdtAmount(e.target.value)}
-                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className={fieldNumberSuffixClass}
                   />
-                  <span className="absolute right-3 top-2 text-xs text-slate-400">USDT</span>
+                  <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">USDT</span>
                 </div>
               </div>
             </div>
@@ -549,7 +567,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   min="0"
                   value={sellCommission}
                   onChange={e => setSellCommission(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldNumberSmClass}
                 />
               </div>
 
@@ -560,7 +578,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 <select
                   value={sellCommissionType}
                   onChange={e => setSellCommissionType(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldSelectClass}
                 >
                   <option value="percent">{t('percent')}</option>
                   <option value="fixed_uah">{t('fixedUah')}</option>
@@ -578,7 +596,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   min="0"
                   value={extraExpensesUah}
                   onChange={e => setExtraExpensesUah(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className={fieldNumberSmClass}
                 />
               </div>
             </div>

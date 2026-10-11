@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { tradesIndexHandler, tradesCreateHandler, tradesExportCsvHandler, tradeUpdateHandler, tradeDeleteHandler } from '../../server/routes/trades.routes.js';
+import { tradesExportCsvHandler, tradeUpdateHandler, tradeDeleteHandler } from '../../server/routes/trades.routes.js';
 
 type RouteEntry = {
   segments: string[];
@@ -8,8 +8,6 @@ type RouteEntry = {
 };
 
 const routes: RouteEntry[] = [
-  { segments: [], method: 'GET', handler: tradesIndexHandler },
-  { segments: [], method: 'POST', handler: tradesCreateHandler },
   { segments: ["export-csv"], method: 'GET', handler: tradesExportCsvHandler },
   { segments: [":id"], method: 'PUT', handler: tradeUpdateHandler },
   { segments: [":id"], method: 'DELETE', handler: tradeDeleteHandler },

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { banksIndexGetHandler, banksIndexPostHandler, bankUpdateHandler, bankDeleteHandler } from '../../server/routes/banks.routes.js';
+import { bankUpdateHandler, bankDeleteHandler } from '../../server/routes/banks.routes.js';
 
 type RouteEntry = {
   segments: string[];
@@ -8,8 +8,6 @@ type RouteEntry = {
 };
 
 const routes: RouteEntry[] = [
-  { segments: [], method: 'GET', handler: banksIndexGetHandler },
-  { segments: [], method: 'POST', handler: banksIndexPostHandler },
   { segments: [":id"], method: 'PUT', handler: bankUpdateHandler },
   { segments: [":id"], method: 'DELETE', handler: bankDeleteHandler },
 ];

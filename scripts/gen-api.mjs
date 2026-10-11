@@ -76,16 +76,17 @@ function parsePathPattern(pathPattern) {
 }
 
 function buildGroupRouter(groupRoutes, depth) {
+  const nestedRoutes = groupRoutes.filter((r) => r.path);
   const prefix = '../'.repeat(depth) + 'server/';
-  const modules = [...new Set(groupRoutes.map((r) => r.module))];
+  const modules = [...new Set(nestedRoutes.map((r) => r.module))];
   const imports = modules
     .map((mod) => {
-      const names = [...new Set(groupRoutes.filter((r) => r.module === mod).map((r) => r.export))];
+      const names = [...new Set(nestedRoutes.filter((r) => r.module === mod).map((r) => r.export))];
       return `import { ${names.join(', ')} } from '${prefix}routes/${mod}.js';`;
     })
     .join('\n');
 
-  const routeEntries = groupRoutes
+  const routeEntries = nestedRoutes
     .map((r) => {
       const segments = parsePathPattern(r.path);
       return `  { segments: ${JSON.stringify(segments)}, method: '${r.method}', handler: ${r.export} },`;
@@ -175,6 +176,30 @@ function buildSingleRoute(route) {
   return `export { ${route.export} as default } from '../server/routes/${route.module}.js';\n`;
 }
 
+function buildIndexRoute(groupRoutes, depth) {
+  const prefix = '../'.repeat(depth) + 'server/';
+  const indexRoutes = groupRoutes.filter((r) => !r.path);
+  const handlers = indexRoutes.map((r) => r.export);
+  const methods = indexRoutes.map((r) => `'${r.method}'`);
+  const imports = [...new Set(indexRoutes.map((r) => r.module))]
+    .map((mod) => {
+      const names = [...new Set(indexRoutes.filter((r) => r.module === mod).map((r) => r.export))];
+      return `import { ${names.join(', ')} } from '${prefix}routes/${mod}.js';`;
+    })
+    .join('\n');
+
+  let out = `import type { VercelRequest, VercelResponse } from '@vercel/node';\n`;
+  out += `${imports}\n`;
+  out += `import { methodNotAllowed } from '${prefix}middlewares/helpers.js';\n\n`;
+  out += `export default async function handler(req: VercelRequest, res: VercelResponse) {\n`;
+  for (const route of indexRoutes) {
+    out += `  if (req.method === '${route.method}') return ${route.export}(req, res);\n`;
+  }
+  out += `  return methodNotAllowed(res, [${methods.join(', ')}]);\n`;
+  out += `}\n`;
+  return out;
+}
+
 function removeDir(dir) {
   if (!fs.existsSync(dir)) return;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -202,9 +227,24 @@ const groupFiles = [
   { name: 'settings', file: 'api/settings/[...path].ts', depth: 2 },
 ];
 
+let functionCount = 2;
+
 for (const { name, file, depth } of groupFiles) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, buildGroupRouter(groups[name], depth));
+  const groupRoutes = groups[name];
+  const hasIndexRoutes = groupRoutes.some((r) => !r.path);
+
+  if (hasIndexRoutes) {
+    const indexFile = `api/${name}/index.ts`;
+    fs.writeFileSync(indexFile, buildIndexRoute(groupRoutes, depth));
+    functionCount += 1;
+  }
+
+  const nestedRoutes = groupRoutes.filter((r) => r.path);
+  if (nestedRoutes.length > 0) {
+    fs.writeFileSync(file, buildGroupRouter(groupRoutes, depth));
+    functionCount += 1;
+  }
 }
 
-console.log('Generated', groupFiles.length + 2, 'api functions (Hobby plan compatible)');
+console.log('Generated', functionCount, 'api functions (Hobby plan compatible)');
