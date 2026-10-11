@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Nunito', system-ui, -apple-system, sans-serif;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
@@ -31,18 +36,30 @@
     --loss-red: #ef4444;
   }
 
-  body {
+  html {
     font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: inherit;
     background-color: var(--bg-page);
     color: var(--text-primary);
     min-height: 100vh;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
+
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
 }
 
 /* Tabular figures for financial calculations */
-.font-mono, .tabular-nums {
-  font-family: 'JetBrains Mono', monospace;
+.font-mono,
+.tabular-nums {
+  font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
 

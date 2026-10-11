@@ -1,7 +1,27 @@
 <!doctype html>
-<html lang="uk">
+<html lang="uk" class="dark theme-navy">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('p2p_calc_theme');
+          var root = document.documentElement;
+          if (theme === 'light') {
+            root.classList.remove('dark', 'theme-navy');
+            root.classList.add('theme-light');
+            root.style.colorScheme = 'light';
+          } else {
+            root.classList.add('dark', 'theme-navy');
+            root.classList.remove('theme-light');
+            root.style.colorScheme = 'dark';
+          }
+        } catch (e) {
+          document.documentElement.classList.add('dark', 'theme-navy');
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>P2P Calculator — Платформа для P2P-торгівлі</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -13,7 +33,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
   <body class="antialiased min-h-screen">
     <div id="root"></div>

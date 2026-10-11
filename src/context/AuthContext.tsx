@@ -60,10 +60,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async function init() {
       const existingToken = getStoredToken();
       if (!existingToken) {
-        // Fetch public settings
         try {
           const pub = await api.getPublicSettings();
           setSiteSettings(pub);
+          if (!localStorage.getItem('p2p_calc_theme')) {
+            setThemeState('navy');
+          }
         } catch {}
         setIsLoading(false);
         return;

@@ -80,7 +80,7 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
     createdAt: now,
     updatedAt: now,
     lastLoginAt: now,
-    themePreference: siteSettings.defaultTheme || 'navy',
+    themePreference: 'navy',
     languagePreference: siteSettings.defaultLanguage || 'uk',
   };
 
