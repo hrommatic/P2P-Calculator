@@ -11,19 +11,28 @@ let passed = 0;
 let failed = 0;
 const errors = [];
 
-async function req(method, path, body, auth = true) {
+async function req(method, path, body, auth = true, attempt = 0) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth && token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${BASE}/api${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const ct = res.headers.get('content-type') || '';
-  let data = null;
-  if (ct.includes('application/json')) data = await res.json();
-  else data = await res.text();
-  return { status: res.status, data, ok: res.ok };
+  try {
+    const res = await fetch(`${BASE}/api${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(45000),
+    });
+    const ct = res.headers.get('content-type') || '';
+    let data = null;
+    if (ct.includes('application/json')) data = await res.json();
+    else data = await res.text();
+    return { status: res.status, data, ok: res.ok };
+  } catch (err) {
+    if (attempt < 2) {
+      await new Promise((r) => setTimeout(r, 2000));
+      return req(method, path, body, auth, attempt + 1);
+    }
+    throw err;
+  }
 }
 
 function assert(name, cond, detail = '') {
@@ -143,7 +152,25 @@ await test('Trades: create', async () => {
 
 await test('Trades: update', async () => {
   if (!tradeId) return assert('skip update (no trade)', false, 'no trade id');
-  const r = await req('PUT', `/trades/${tradeId}`, { note: 'Updated via API test' });
+  const list = await req('GET', '/trades');
+  const trade = list.data?.trades?.find((t) => t.id === tradeId);
+  if (!trade) return assert('trade in list', false, 'not found');
+  const r = await req('PUT', `/trades/${tradeId}`, {
+    buyExchange: trade.buyExchange,
+    buyBankId: trade.buyBankId,
+    buyRate: trade.buyRate,
+    buyAmountUah: trade.buyAmountUah,
+    buyCommission: trade.buyCommission,
+    buyCommissionType: trade.buyCommissionType,
+    sellExchange: trade.sellExchange,
+    sellBankId: trade.sellBankId,
+    sellRate: trade.sellRate,
+    sellUsdtAmount: trade.sellUsdtAmount,
+    sellCommission: trade.sellCommission,
+    sellCommissionType: trade.sellCommissionType,
+    extraExpensesUah: trade.extraExpensesUah,
+    notes: 'Updated via API test',
+  });
   assert('update trade 200', r.status === 200 && r.data?.success, JSON.stringify(r.data));
 });
 
