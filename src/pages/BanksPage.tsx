@@ -13,6 +13,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
+import { BankLogo } from '../components/BankLogo';
 
 export const BanksPage: React.FC = () => {
   const { t } = useAuth();
@@ -234,12 +235,13 @@ export const BanksPage: React.FC = () => {
                   {/* Card Top: Bank Icon / Color Pill & Actions */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-xs shrink-0"
-                        style={{ backgroundColor: bank.color || '#2563EB' }}
-                      >
-                        {bank.name.substring(0, 2).toUpperCase()}
-                      </div>
+                      <BankLogo
+                        name={bank.name}
+                        color={bank.color}
+                        globalBankId={bank.globalBankId}
+                        logoSvg={bank.logoSvg}
+                        globalBanks={globalBanks}
+                      />
                       <div>
                         <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
                           {bank.name}
