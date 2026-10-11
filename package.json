@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "gen:api": "node scripts/gen-api.mjs"
+    "gen:api": "node scripts/gen-api.mjs",
+    "test:api": "node scripts/test-api.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",

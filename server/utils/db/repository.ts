@@ -28,10 +28,10 @@ async function deleteOrphans(
   await model.deleteMany({ where: { [field]: { notIn: ids } } });
 }
 
+const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
+
 export async function saveDatabase(db: DatabaseSchema): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(424242)`;
-
     const userIds = db.users.map((u) => u.id);
     const sessionTokens = db.sessions.map((s) => s.token);
     const globalBankIds = db.globalBanks.map((b) => b.id);
@@ -41,17 +41,18 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
     const auditIds = db.auditLogs.map((l) => l.id);
     const failedKeys = Object.keys(db.failedAttempts);
 
-    await deleteOrphans(tx, tx.user, userIds, 'id');
-    await deleteOrphans(tx, tx.session, sessionTokens, 'token');
-    await deleteOrphans(tx, tx.globalBank, globalBankIds, 'id');
-    await deleteOrphans(tx, tx.userBank, userBankIds, 'id');
-    await deleteOrphans(tx, tx.exchange, exchangeIds, 'id');
-    await deleteOrphans(tx, tx.trade, tradeIds, 'id');
-    await deleteOrphans(tx, tx.auditLog, auditIds, 'id');
-    await deleteOrphans(tx, tx.failedAttempt, failedKeys, 'rateKey');
+    await Promise.all([
+      deleteOrphans(tx, tx.user, userIds, 'id'),
+      deleteOrphans(tx, tx.session, sessionTokens, 'token'),
+      deleteOrphans(tx, tx.globalBank, globalBankIds, 'id'),
+      deleteOrphans(tx, tx.userBank, userBankIds, 'id'),
+      deleteOrphans(tx, tx.exchange, exchangeIds, 'id'),
+      deleteOrphans(tx, tx.trade, tradeIds, 'id'),
+      deleteOrphans(tx, tx.auditLog, auditIds, 'id'),
+      deleteOrphans(tx, tx.failedAttempt, failedKeys, 'rateKey'),
+    ]);
 
-    for (const u of db.users) {
-      await tx.user.upsert({
+    await Promise.all(db.users.map((u) => tx.user.upsert({
         where: { id: u.id },
         create: {
           id: u.id,
@@ -78,11 +79,9 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           themePreference: u.themePreference,
           languagePreference: u.languagePreference,
         },
-      });
-    }
+      })));
 
-    for (const s of db.sessions) {
-      await tx.session.upsert({
+    await Promise.all(db.sessions.map((s) => tx.session.upsert({
         where: { token: s.token },
         create: {
           token: s.token,
@@ -95,11 +94,9 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           createdAt: parseDate(s.createdAt),
           expiresAt: parseDate(s.expiresAt),
         },
-      });
-    }
+      })));
 
-    for (const b of db.globalBanks) {
-      await tx.globalBank.upsert({
+    await Promise.all(db.globalBanks.map((b) => tx.globalBank.upsert({
         where: { id: b.id },
         create: {
           id: b.id,
@@ -120,11 +117,9 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           isActive: b.isActive,
           createdAt: parseDate(b.createdAt),
         },
-      });
-    }
+      })));
 
-    for (const b of db.userBanks) {
-      await tx.userBank.upsert({
+    await Promise.all(db.userBanks.map((b) => tx.userBank.upsert({
         where: { id: b.id },
         create: {
           id: b.id,
@@ -161,11 +156,9 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           createdAt: parseDate(b.createdAt),
           updatedAt: parseDate(b.updatedAt),
         },
-      });
-    }
+      })));
 
-    for (const e of db.exchanges) {
-      await tx.exchange.upsert({
+    await Promise.all(db.exchanges.map((e) => tx.exchange.upsert({
         where: { id: e.id },
         create: {
           id: e.id,
@@ -180,11 +173,9 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           isActive: e.isActive,
           createdAt: parseDate(e.createdAt),
         },
-      });
-    }
+      })));
 
-    for (const t of db.trades) {
-      await tx.trade.upsert({
+    await Promise.all(db.trades.map((t) => tx.trade.upsert({
         where: { id: t.id },
         create: {
           id: t.id,
@@ -249,8 +240,7 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           spreadPercent: t.spreadPercent,
           notes: t.notes ?? null,
         },
-      });
-    }
+      })));
 
     const s = db.siteSettings;
     await tx.siteSettings.upsert({
@@ -276,8 +266,7 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
       },
     });
 
-    for (const log of db.auditLogs) {
-      await tx.auditLog.upsert({
+    await Promise.all(db.auditLogs.map((log) => tx.auditLog.upsert({
         where: { id: log.id },
         create: {
           id: log.id,
@@ -296,11 +285,9 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           targetUserId: log.targetUserId ?? null,
           details: log.details,
         },
-      });
-    }
+      })));
 
-    for (const [key, value] of Object.entries(db.failedAttempts)) {
-      await tx.failedAttempt.upsert({
+    await Promise.all(Object.entries(db.failedAttempts).map(([key, value]) => tx.failedAttempt.upsert({
         where: { rateKey: key },
         create: {
           rateKey: key,
@@ -311,9 +298,8 @@ export async function saveDatabase(db: DatabaseSchema): Promise<void> {
           count: value.count,
           lockedUntil: value.lockedUntil != null ? BigInt(value.lockedUntil) : null,
         },
-      });
-    }
-  });
+      })));
+  }, TX_OPTIONS);
 }
 
 export async function loadDatabase(): Promise<DatabaseSchema> {

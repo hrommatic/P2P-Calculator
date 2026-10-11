@@ -5,8 +5,8 @@ import type { UserBank, GlobalBank } from '../schemas/banks.schema.js';
 import type { Trade } from '../schemas/trades.schema.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
 
-export async function syncUserBankStats(userId: string) {
-  const db = await getDb();
+export async function syncUserBankStats(userId: string, existingDb?: Awaited<ReturnType<typeof getDb>>) {
+  const db = existingDb ?? await getDb();
   const userTrades = db.trades.filter(t => t.userId === userId);
   const userBanks = db.userBanks.filter(b => b.userId === userId);
   userBanks.forEach(bank => {
@@ -27,7 +27,9 @@ export async function syncUserBankStats(userId: string) {
     bank.tradesCount = count;
     bank.updatedAt = new Date().toISOString();
   });
-  await saveDatabase(db);
+  if (!existingDb) {
+    await saveDatabase(db);
+  }
 }
 
 export async function handleGetBanks(req: VercelRequest, res: VercelResponse, user: User) {

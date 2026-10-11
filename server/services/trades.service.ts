@@ -172,10 +172,8 @@ const db = await getDb();
   };
 
   db.trades.push(newTrade);
+  await syncUserBankStats(user.id, db);
   await saveDatabase(db);
-
-  // Sync bank turnover and profit
-  await syncUserBankStats(user.id);
 
   return res.json({ success: true, trade: newTrade });
 }
@@ -260,9 +258,8 @@ const db = await getDb();
   };
 
   db.trades[tradeIndex] = updatedTrade;
+  await syncUserBankStats(existingTrade.userId, db);
   await saveDatabase(db);
-
-  await syncUserBankStats(existingTrade.userId);
 
   return res.json({ success: true, trade: updatedTrade });
 }
@@ -277,9 +274,8 @@ const db = await getDb();
 
   const tradeUserId = db.trades[tradeIndex].userId;
   db.trades.splice(tradeIndex, 1);
+  await syncUserBankStats(tradeUserId, db);
   await saveDatabase(db);
-
-  await syncUserBankStats(tradeUserId);
 
   return res.json({ success: true, message: 'Сделка видалена' });
 }
