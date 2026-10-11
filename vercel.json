@@ -1,4 +1,10 @@
 {
+  "regions": ["fra1"],
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024
+    }
+  },
   "buildCommand": "prisma generate && prisma migrate deploy && vite build",
   "devCommand": "vite",
   "outputDirectory": "dist",

@@ -15,3 +15,4 @@ export type { AuditLog, DatabaseSchema } from '../../schemas/admin.schema.js';
 
 export { getDb, loadDatabase, saveDatabase } from './repository.js';
 export { createBackup, listBackups } from './backup.js';
+export * from './store.js';

@@ -1,14 +1,33 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb, saveDatabase, createBackup, listBackups } from '../utils/db/index.js';
 import type { User, UserStatus, UserRole, LanguagePreference, ThemePreference, BankLimitMode } from '../schemas/auth.schema.js';
 import type { GlobalBank, Exchange } from '../schemas/banks.schema.js';
-import type { AuditLog } from '../schemas/admin.schema.js';
 import { hashPassword, generateTemporaryPassword } from '../lib/crypto.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
+import { createBackup, listBackups } from '../utils/db/index.js';
+import {
+  createExchangeRecord,
+  createGlobalBank,
+  deleteUserAndData,
+  findUserById,
+  getAdminOverviewStats,
+  getAdminUsers,
+  getAllExchanges,
+  getAllGlobalBanks,
+  getAuditLogs,
+  getSiteSettings,
+  getStudentsStats,
+  insertAuditLog,
+  nicknameTaken,
+  resetUserPassword,
+  updateExchangeRecord,
+  updateGlobalBank,
+  updateSiteSettings,
+  updateUserAdminProfile,
+  updateUserStatus,
+} from '../utils/db/store.js';
 
 export async function logAdminAction(admin: User, actionType: string, details: string, targetUserId?: string) {
-  const db = await getDb();
-  const log: AuditLog = {
+  await insertAuditLog({
     id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     timestamp: new Date().toISOString(),
     actionType,
@@ -16,90 +35,25 @@ export async function logAdminAction(admin: User, actionType: string, details: s
     adminNickname: admin.nickname,
     targetUserId,
     details,
-  };
-  db.auditLogs.unshift(log);
-  if (db.auditLogs.length > 500) db.auditLogs = db.auditLogs.slice(0, 500);
-  await saveDatabase(db);
-}
-
-export async function handleAdminOverview(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const students = db.users.filter(u => u.role === 'student');
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-
-  const tradesToday = db.trades.filter(t => new Date(t.createdAt).getTime() >= todayStart);
-
-  let totalPlatformTurnover = 0;
-  let totalStudentProfit = 0;
-
-  db.trades.forEach(t => {
-    totalPlatformTurnover += (t.buyAmountUah + t.sellAmountUah);
-    totalStudentProfit += t.netProfitUah;
-  });
-
-  const activeStudents = students.filter(s => {
-    if (!s.lastLoginAt) return false;
-    return (Date.now() - new Date(s.lastLoginAt).getTime()) < 7 * 86400000;
-  });
-
-  return res.json({
-    totalStudents: students.length,
-    activeStudents: activeStudents.length,
-    tradesToday: tradesToday.length,
-    totalPlatformTurnover: Math.round((totalPlatformTurnover + Number.EPSILON) * 100) / 100,
-    totalStudentProfit: Math.round((totalStudentProfit + Number.EPSILON) * 100) / 100,
-    totalTradesCount: db.trades.length,
   });
 }
 
-export async function handleAdminUsers(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
+export async function handleAdminOverview(req: VercelRequest, res: VercelResponse, _user: User) {
+  const stats = await getAdminOverviewStats();
+  return res.json(stats);
+}
+
+export async function handleAdminUsers(req: VercelRequest, res: VercelResponse, _user: User) {
   const { search, status } = req.query;
-
-  let users = db.users.map(u => {
-    const userTrades = db.trades.filter(t => t.userId === u.id);
-    let allTimeProfit = 0;
-    let buyTurnover = 0;
-    let sellTurnover = 0;
-
-    userTrades.forEach(t => {
-      allTimeProfit += t.netProfitUah;
-      buyTurnover += t.buyAmountUah;
-      sellTurnover += t.sellAmountUah;
-    });
-
-    return {
-      id: u.id,
-      nickname: u.nickname,
-      telegram: u.telegram,
-      role: u.role,
-      status: u.status,
-      createdAt: u.createdAt,
-      lastLoginAt: u.lastLoginAt,
-      tradesCount: userTrades.length,
-      allTimeProfit: Math.round((allTimeProfit + Number.EPSILON) * 100) / 100,
-      buyTurnover: Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
-      sellTurnover: Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
-    };
-  });
-
-  if (search && typeof search === 'string' && search.trim()) {
-    const q = search.trim().toLowerCase();
-    users = users.filter(u => u.nickname.toLowerCase().includes(q) || u.telegram.toLowerCase().includes(q));
-  }
-
-  if (status && status !== 'all') {
-    users = users.filter(u => u.status === status);
-  }
-
+  const users = await getAdminUsers(
+    typeof search === 'string' ? search : undefined,
+    typeof status === 'string' ? status : undefined,
+  );
   return res.json({ users });
 }
 
 export async function handleAdminUserStatus(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const targetUser = db.users.find(u => u.id === String(req.query.id));
-
+  const targetUser = await findUserById(String(req.query.id));
   if (!targetUser) {
     return res.status(404).json({ error: 'Користувача не знайдено' });
   }
@@ -114,24 +68,14 @@ const db = await getDb();
     return res.status(400).json({ error: 'Недійсний статус' });
   }
 
-  targetUser.status = status as UserStatus;
-  targetUser.updatedAt = new Date().toISOString();
-
-  // If blocked, drop active sessions
-  if (status === 'blocked') {
-    db.sessions = db.sessions.filter(s => s.userId !== targetUser.id);
-  }
-
-  await saveDatabase(db);
+  await updateUserStatus(targetUser.id, status as UserStatus);
   await logAdminAction(user, 'USER_STATUS_CHANGE', `User ${targetUser.nickname} status changed to ${status}`, targetUser.id);
 
-  return res.json({ success: true, user: targetUser });
+  return res.json({ success: true, user: { ...targetUser, status: status as UserStatus } });
 }
 
 export async function handleAdminUserProfile(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const targetUser = db.users.find(u => u.id === String(req.query.id));
-
+  const targetUser = await findUserById(String(req.query.id));
   if (!targetUser) {
     return res.status(404).json({ error: 'Користувача не знайдено' });
   }
@@ -141,49 +85,40 @@ const db = await getDb();
   const telegram = body.telegram;
   const role = body.role;
 
+  const updates: Partial<Pick<User, 'nickname' | 'telegram' | 'role'>> = {};
+
   if (typeof nickname === 'string' && nickname.trim()) {
     const cleanNick = nickname.trim().toLowerCase();
-    const existing = db.users.find(u => u.nickname.toLowerCase() === cleanNick && u.id !== targetUser.id);
-    if (existing) {
+    if (await nicknameTaken(cleanNick, targetUser.id)) {
       return res.status(400).json({ error: 'Цей нікнейм уже зайнятий' });
     }
-    targetUser.nickname = cleanNick;
+    updates.nickname = cleanNick;
   }
 
   if (typeof telegram === 'string' && telegram.trim()) {
     let cleanTg = telegram.trim();
     if (!cleanTg.startsWith('@')) cleanTg = `@${cleanTg}`;
-    targetUser.telegram = cleanTg;
+    updates.telegram = cleanTg;
   }
 
   if (typeof role === 'string' && ['student', 'admin'].includes(role)) {
-    targetUser.role = role as UserRole;
+    updates.role = role as UserRole;
   }
 
-  targetUser.updatedAt = new Date().toISOString();
-  await saveDatabase(db);
-
+  await updateUserAdminProfile(targetUser.id, updates);
   await logAdminAction(user, 'USER_PROFILE_UPDATE', `Updated profile of ${targetUser.nickname}`, targetUser.id);
 
-  return res.json({ success: true, user: targetUser });
+  return res.json({ success: true, user: { ...targetUser, ...updates } });
 }
 
 export async function handleAdminUserResetPassword(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const targetUser = db.users.find(u => u.id === String(req.query.id));
-
+  const targetUser = await findUserById(String(req.query.id));
   if (!targetUser) {
     return res.status(404).json({ error: 'Користувача не знайдено' });
   }
 
   const tempPassword = generateTemporaryPassword();
-  targetUser.passwordHash = hashPassword(tempPassword);
-  targetUser.updatedAt = new Date().toISOString();
-
-  // Invalidate old sessions
-  db.sessions = db.sessions.filter(s => s.userId !== targetUser.id);
-  await saveDatabase(db);
-
+  await resetUserPassword(targetUser.id, hashPassword(tempPassword));
   await logAdminAction(user, 'PASSWORD_RESET', `Admin generated temporary password for ${targetUser.nickname}`, targetUser.id);
 
   return res.json({
@@ -194,86 +129,32 @@ const db = await getDb();
 }
 
 export async function handleAdminUserDelete(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const targetIndex = db.users.findIndex(u => u.id === String(req.query.id));
-
-  if (targetIndex === -1) {
+  const targetUser = await findUserById(String(req.query.id));
+  if (!targetUser) {
     return res.status(404).json({ error: 'Користувача не знайдено' });
   }
 
-  if (db.users[targetIndex].id === user.id) {
+  if (targetUser.id === user.id) {
     return res.status(400).json({ error: 'Неможливо видалити власний адміністраторський акаунт' });
   }
 
-  const deletedNick = db.users[targetIndex].nickname;
-  const deletedId = db.users[targetIndex].id;
-
-  db.users.splice(targetIndex, 1);
-  db.sessions = db.sessions.filter(s => s.userId !== deletedId);
-  db.trades = db.trades.filter(t => t.userId !== deletedId);
-  db.userBanks = db.userBanks.filter(b => b.userId !== deletedId);
-
-  await saveDatabase(db);
-  await logAdminAction(user, 'USER_DELETE', `Deleted user ${deletedNick} and associated data`, deletedId);
+  await deleteUserAndData(targetUser.id);
+  await logAdminAction(user, 'USER_DELETE', `Deleted user ${targetUser.nickname} and associated data`, targetUser.id);
 
   return res.json({ success: true, message: 'Користувача видалено' });
 }
 
-export async function handleAdminStudentsStats(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const students = db.users.filter(u => u.role === 'student');
-
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const yesterdayStart = todayStart - 86400000;
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-  const results = students.map(student => {
-    const trades = db.trades.filter(t => t.userId === student.id);
-    let profitToday = 0;
-    let profitYesterday = 0;
-    let profitMonth = 0;
-    let profitAllTime = 0;
-    let buyTurnover = 0;
-    let sellTurnover = 0;
-
-    trades.forEach(t => {
-      const time = new Date(t.createdAt).getTime();
-      profitAllTime += t.netProfitUah;
-      buyTurnover += t.buyAmountUah;
-      sellTurnover += t.sellAmountUah;
-
-      if (time >= todayStart) profitToday += t.netProfitUah;
-      if (time >= yesterdayStart && time < todayStart) profitYesterday += t.netProfitUah;
-      if (time >= monthStart) profitMonth += t.netProfitUah;
-    });
-
-    return {
-      userId: student.id,
-      nickname: student.nickname,
-      telegram: student.telegram,
-      status: student.status,
-      profitToday: Math.round((profitToday + Number.EPSILON) * 100) / 100,
-      profitYesterday: Math.round((profitYesterday + Number.EPSILON) * 100) / 100,
-      profitMonth: Math.round((profitMonth + Number.EPSILON) * 100) / 100,
-      profitAllTime: Math.round((profitAllTime + Number.EPSILON) * 100) / 100,
-      buyTurnover: Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
-      sellTurnover: Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
-      tradesCount: trades.length,
-      lastLoginAt: student.lastLoginAt,
-    };
-  });
-
+export async function handleAdminStudentsStats(req: VercelRequest, res: VercelResponse, _user: User) {
+  const results = await getStudentsStats();
   return res.json({ results });
 }
 
-export async function handleGetAdminGlobalBanks(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  return res.json({ banks: db.globalBanks });
+export async function handleGetAdminGlobalBanks(req: VercelRequest, res: VercelResponse, _user: User) {
+  const banks = await getAllGlobalBanks();
+  return res.json({ banks });
 }
 
 export async function handlePostAdminGlobalBank(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
   const body = parseJsonBody(req);
   const name = body.name;
   const code = body.code;
@@ -296,56 +177,48 @@ const db = await getDb();
     createdAt: new Date().toISOString(),
   };
 
-  db.globalBanks.push(newBank);
-  await saveDatabase(db);
+  await createGlobalBank(newBank);
   await logAdminAction(user, 'BANK_CREATE', `Created global bank ${newBank.name}`);
 
   return res.json({ success: true, bank: newBank });
 }
 
 export async function handlePutAdminGlobalBank(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const bank = db.globalBanks.find(b => b.id === String(req.query.id));
-
+  const banks = await getAllGlobalBanks();
+  const bank = banks.find((b) => b.id === String(req.query.id));
   if (!bank) return res.status(404).json({ error: 'Банк не знайдено' });
 
   const body = parseJsonBody(req);
-  const name = body.name;
-  const defaultLimitUah = body.defaultLimitUah;
-  const color = body.color;
-  const logoSvg = body.logoSvg;
-  const isActive = body.isActive;
-  if (typeof name === 'string' && name) bank.name = name.trim();
-  if (defaultLimitUah !== undefined) bank.defaultLimitUah = Number(defaultLimitUah);
-  if (typeof color === 'string' && color) bank.color = color;
-  if (logoSvg !== undefined) bank.logoSvg = typeof logoSvg === 'string' ? logoSvg : undefined;
-  if (isActive !== undefined) bank.isActive = Boolean(isActive);
+  if (typeof body.name === 'string' && body.name) bank.name = body.name.trim();
+  if (body.defaultLimitUah !== undefined) bank.defaultLimitUah = Number(body.defaultLimitUah);
+  if (typeof body.color === 'string' && body.color) bank.color = body.color;
+  if (body.logoSvg !== undefined) bank.logoSvg = typeof body.logoSvg === 'string' ? body.logoSvg : undefined;
+  if (body.isActive !== undefined) bank.isActive = Boolean(body.isActive);
 
-  await saveDatabase(db);
+  await updateGlobalBank(bank);
   await logAdminAction(user, 'BANK_UPDATE', `Updated global bank ${bank.name}`);
 
   return res.json({ success: true, bank });
 }
 
 export async function handleDeleteAdminGlobalBank(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const bank = db.globalBanks.find(b => b.id === String(req.query.id));
+  const banks = await getAllGlobalBanks();
+  const bank = banks.find((b) => b.id === String(req.query.id));
   if (!bank) return res.status(404).json({ error: 'Банк не знайдено' });
 
   bank.isActive = false;
-  await saveDatabase(db);
+  await updateGlobalBank(bank);
   await logAdminAction(user, 'BANK_ARCHIVE', `Archived global bank ${bank.name}`);
 
   return res.json({ success: true, message: 'Банк деактивовано' });
 }
 
-export async function handleGetAdminExchanges(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  return res.json({ exchanges: db.exchanges });
+export async function handleGetAdminExchanges(req: VercelRequest, res: VercelResponse, _user: User) {
+  const exchanges = await getAllExchanges();
+  return res.json({ exchanges });
 }
 
 export async function handlePostAdminExchange(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
   const body = parseJsonBody(req);
   const name = body.name;
   const code = body.code;
@@ -362,86 +235,75 @@ const db = await getDb();
     createdAt: new Date().toISOString(),
   };
 
-  db.exchanges.push(newExchange);
-  await saveDatabase(db);
+  await createExchangeRecord(newExchange);
   await logAdminAction(user, 'EXCHANGE_CREATE', `Created exchange ${newExchange.name}`);
 
   return res.json({ success: true, exchange: newExchange });
 }
 
 export async function handlePutAdminExchange(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const ex = db.exchanges.find(e => e.id === String(req.query.id));
+  const exchanges = await getAllExchanges();
+  const ex = exchanges.find((e) => e.id === String(req.query.id));
   if (!ex) return res.status(404).json({ error: 'Біржу не знайдено' });
 
   const body = parseJsonBody(req);
-  const name = body.name;
-  const isActive = body.isActive;
-  if (typeof name === 'string' && name) ex.name = name.trim();
-  if (isActive !== undefined) ex.isActive = Boolean(isActive);
+  if (typeof body.name === 'string' && body.name) ex.name = body.name.trim();
+  if (body.isActive !== undefined) ex.isActive = Boolean(body.isActive);
 
-  await saveDatabase(db);
+  await updateExchangeRecord(ex);
   await logAdminAction(user, 'EXCHANGE_UPDATE', `Updated exchange ${ex.name}`);
 
   return res.json({ success: true, exchange: ex });
 }
 
-export async function handleGetAdminSettings(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  return res.json({ settings: db.siteSettings });
+export async function handleGetAdminSettings(req: VercelRequest, res: VercelResponse, _user: User) {
+  const settings = await getSiteSettings();
+  return res.json({ settings });
 }
 
 export async function handlePutAdminSettings(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
+  const settings = await getSiteSettings();
   const body = parseJsonBody(req);
-  const siteName = body.siteName;
-  const curatorTelegram = body.curatorTelegram;
-  const defaultLanguage = body.defaultLanguage;
-  const defaultTheme = body.defaultTheme;
-  const bankLimitMode = body.bankLimitMode;
-  const announcement = body.announcement;
-  const allowRegistration = body.allowRegistration;
 
-  if (typeof siteName === 'string' && siteName) db.siteSettings.siteName = siteName.trim();
-  if (typeof curatorTelegram === 'string' && curatorTelegram) {
-    let clean = curatorTelegram.trim();
+  if (typeof body.siteName === 'string' && body.siteName) settings.siteName = body.siteName.trim();
+  if (typeof body.curatorTelegram === 'string' && body.curatorTelegram) {
+    let clean = body.curatorTelegram.trim();
     if (!clean.startsWith('@')) clean = `@${clean}`;
-    db.siteSettings.curatorTelegram = clean;
+    settings.curatorTelegram = clean;
   }
-  if (typeof defaultLanguage === 'string' && ['uk', 'ru', 'en'].includes(defaultLanguage)) {
-    db.siteSettings.defaultLanguage = defaultLanguage as LanguagePreference;
+  if (typeof body.defaultLanguage === 'string' && ['uk', 'ru', 'en'].includes(body.defaultLanguage)) {
+    settings.defaultLanguage = body.defaultLanguage as LanguagePreference;
   }
-  if (typeof defaultTheme === 'string' && ['light', 'navy'].includes(defaultTheme)) {
-    db.siteSettings.defaultTheme = defaultTheme as ThemePreference;
+  if (typeof body.defaultTheme === 'string' && ['light', 'navy'].includes(body.defaultTheme)) {
+    settings.defaultTheme = body.defaultTheme as ThemePreference;
   }
-  if (typeof bankLimitMode === 'string' && ['separate', 'total', 'buy_only'].includes(bankLimitMode)) {
-    db.siteSettings.bankLimitMode = bankLimitMode as BankLimitMode;
+  if (typeof body.bankLimitMode === 'string' && ['separate', 'total', 'buy_only'].includes(body.bankLimitMode)) {
+    settings.bankLimitMode = body.bankLimitMode as BankLimitMode;
   }
-  if (announcement !== undefined) {
-    db.siteSettings.announcement = String(announcement).trim();
+  if (body.announcement !== undefined) {
+    settings.announcement = String(body.announcement).trim();
   }
-  if (allowRegistration !== undefined) {
-    db.siteSettings.allowRegistration = Boolean(allowRegistration);
+  if (body.allowRegistration !== undefined) {
+    settings.allowRegistration = Boolean(body.allowRegistration);
   }
 
-  await saveDatabase(db);
+  await updateSiteSettings(settings);
   await logAdminAction(user, 'SETTINGS_UPDATE', 'Updated site configuration');
 
-  return res.json({ success: true, settings: db.siteSettings });
+  return res.json({ success: true, settings });
 }
 
-export async function handleAdminAuditLogs(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  return res.json({ logs: db.auditLogs.slice(0, 100) });
+export async function handleAdminAuditLogs(req: VercelRequest, res: VercelResponse, _user: User) {
+  const logs = await getAuditLogs(100);
+  return res.json({ logs });
 }
 
 export async function handleAdminBackup(req: VercelRequest, res: VercelResponse, user: User) {
-const filename = await createBackup();
+  const filename = await createBackup();
   await logAdminAction(user, 'SYSTEM_BACKUP', `Created system snapshot ${filename}`);
   return res.json({ success: true, filename, backups: await listBackups() });
 }
 
-export async function handleAdminBackups(req: VercelRequest, res: VercelResponse, user: User) {
-return res.json({ backups: await listBackups() });
+export async function handleAdminBackups(req: VercelRequest, res: VercelResponse, _user: User) {
+  return res.json({ backups: await listBackups() });
 }
-

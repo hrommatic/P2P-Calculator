@@ -1,12 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb, saveDatabase } from '../utils/db/index.js';
 import type { User } from '../schemas/auth.schema.js';
-import type { UserBank } from '../schemas/banks.schema.js';
 import type { Trade, CommissionType } from '../schemas/trades.schema.js';
 import { calculateTrade } from '../lib/calculation.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
-
-import { syncUserBankStats } from './banks.service.js';
+import {
+  createTradeRecord,
+  deleteTradeRecord,
+  findTradeById,
+  findUserBankById,
+  getTradesForUser,
+  syncUserBankStats,
+  updateTradeRecord,
+} from '../utils/db/store.js';
 
 function asCommissionType(value: unknown, fallback: CommissionType = 'percent'): CommissionType {
   if (value === 'percent' || value === 'fixed_uah' || value === 'fixed_usdt') {
@@ -16,76 +21,16 @@ function asCommissionType(value: unknown, fallback: CommissionType = 'percent'):
 }
 
 export async function handleGetTrades(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-
-  // If admin passes targetUserId query param, let admin inspect that student's trades
   let targetUserId = user.id;
   if (user.role === 'admin' && req.query.targetUserId) {
     targetUserId = String(req.query.targetUserId);
   }
 
-  let trades = db.trades.filter(t => t.userId === targetUserId);
-
-  // Filters
-  const { dateRange, bankId, exchange, search, sort } = req.query;
-
-  if (dateRange) {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const yesterdayStart = todayStart - 86400000;
-    const weekStart = todayStart - 7 * 86400000;
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-    if (dateRange === 'today') {
-      trades = trades.filter(t => new Date(t.createdAt).getTime() >= todayStart);
-    } else if (dateRange === 'yesterday') {
-      trades = trades.filter(t => {
-        const time = new Date(t.createdAt).getTime();
-        return time >= yesterdayStart && time < todayStart;
-      });
-    } else if (dateRange === 'week') {
-      trades = trades.filter(t => new Date(t.createdAt).getTime() >= weekStart);
-    } else if (dateRange === 'month') {
-      trades = trades.filter(t => new Date(t.createdAt).getTime() >= monthStart);
-    }
-  }
-
-  if (bankId && bankId !== 'all') {
-    trades = trades.filter(t => t.buyBankId === bankId || t.sellBankId === bankId);
-  }
-
-  if (exchange && exchange !== 'all') {
-    trades = trades.filter(t => t.buyExchange === exchange || t.sellExchange === exchange);
-  }
-
-  if (search && typeof search === 'string' && search.trim()) {
-    const q = search.trim().toLowerCase();
-    trades = trades.filter(t =>
-      (t.notes && t.notes.toLowerCase().includes(q)) ||
-      t.buyBankName.toLowerCase().includes(q) ||
-      t.sellBankName.toLowerCase().includes(q) ||
-      t.buyExchange.toLowerCase().includes(q) ||
-      t.sellExchange.toLowerCase().includes(q)
-    );
-  }
-
-  // Sorting
-  if (sort === 'profit_desc') {
-    trades.sort((a, b) => b.netProfitUah - a.netProfitUah);
-  } else if (sort === 'profit_asc') {
-    trades.sort((a, b) => a.netProfitUah - b.netProfitUah);
-  } else if (sort === 'spread_desc') {
-    trades.sort((a, b) => b.spreadPercent - a.spreadPercent);
-  } else {
-    // Default newest first
-    trades.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-
+  const trades = await getTradesForUser(targetUserId, req.query);
   return res.json({ trades });
 }
 
 export async function handlePostTrade(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
   const body = parseJsonBody(req);
   const buyExchange = body.buyExchange;
   const buyBankId = body.buyBankId;
@@ -113,10 +58,10 @@ const db = await getDb();
     return res.status(400).json({ error: 'Вкажіть біржу продажу, банк та курс продажу' });
   }
 
-  const buyBank = db.userBanks.find(b => b.id === String(buyBankId) && b.userId === user.id);
-  const sellBank = db.userBanks.find(b => b.id === String(sellBankId) && b.userId === user.id);
+  const buyBank = await findUserBankById(String(buyBankId));
+  const sellBank = await findUserBankById(String(sellBankId));
 
-  if (!buyBank || !sellBank) {
+  if (!buyBank || buyBank.userId !== user.id || !sellBank || sellBank.userId !== user.id) {
     return res.status(400).json({ error: 'Один із обраних банків не знайдено у вашому списку' });
   }
 
@@ -171,80 +116,58 @@ const db = await getDb();
     notes: notes ? String(notes).trim() : undefined,
   };
 
-  db.trades.push(newTrade);
-  await syncUserBankStats(user.id, db);
-  await saveDatabase(db);
-
+  await createTradeRecord(newTrade);
+  await syncUserBankStats(user.id);
   return res.json({ success: true, trade: newTrade });
 }
 
 export async function handlePutTrade(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const tradeIndex = db.trades.findIndex(t => t.id === String(req.query.id) && (t.userId === user.id || user.role === 'admin'));
-
-  if (tradeIndex === -1) {
+  const existingTrade = await findTradeById(String(req.query.id));
+  if (!existingTrade || (existingTrade.userId !== user.id && user.role !== 'admin')) {
     return res.status(404).json({ error: 'Сделка не знайдена' });
   }
 
-  const existingTrade = db.trades[tradeIndex];
   const body = parseJsonBody(req);
-  const buyExchange = body.buyExchange;
-  const buyBankId = body.buyBankId;
-  const buyRate = body.buyRate;
-  const buyAmountUah = body.buyAmountUah;
-  const buyUsdtAmount = body.buyUsdtAmount;
-  const buyCommission = body.buyCommission;
-  const buyCommissionType = body.buyCommissionType;
-  const sellExchange = body.sellExchange;
-  const sellBankId = body.sellBankId;
-  const sellRate = body.sellRate;
-  const sellUsdtAmount = body.sellUsdtAmount;
-  const sellAmountUah = body.sellAmountUah;
-  const sellCommission = body.sellCommission;
-  const sellCommissionType = body.sellCommissionType;
-  const extraExpensesUah = body.extraExpensesUah;
-  const notes = body.notes;
+  const buyBank = await findUserBankById(String(body.buyBankId));
+  const sellBank = await findUserBankById(String(body.sellBankId));
 
-  const buyBank = db.userBanks.find(b => b.id === String(buyBankId) && b.userId === existingTrade.userId);
-  const sellBank = db.userBanks.find(b => b.id === String(sellBankId) && b.userId === existingTrade.userId);
-
-  if (!buyBank || !sellBank) {
+  if (!buyBank || buyBank.userId !== existingTrade.userId || !sellBank || sellBank.userId !== existingTrade.userId) {
     return res.status(400).json({ error: 'Банк не знайдено' });
   }
 
   const calc = calculateTrade({
-    buyRate: Number(buyRate),
-    buyAmountUah: Number(buyAmountUah) || undefined,
-    buyUsdtAmount: Number(buyUsdtAmount) || undefined,
-    buyCommission: Number(buyCommission) || 0,
-    buyCommissionType: asCommissionType(buyCommissionType),
-    sellRate: Number(sellRate),
-    sellUsdtAmount: Number(sellUsdtAmount) || undefined,
-    sellAmountUah: Number(sellAmountUah) || undefined,
-    sellCommission: Number(sellCommission) || 0,
-    sellCommissionType: asCommissionType(sellCommissionType),
-    extraExpensesUah: Number(extraExpensesUah) || 0,
+    buyRate: Number(body.buyRate),
+    buyAmountUah: Number(body.buyAmountUah) || undefined,
+    buyUsdtAmount: Number(body.buyUsdtAmount) || undefined,
+    buyCommission: Number(body.buyCommission) || 0,
+    buyCommissionType: asCommissionType(body.buyCommissionType),
+    sellRate: Number(body.sellRate),
+    sellUsdtAmount: Number(body.sellUsdtAmount) || undefined,
+    sellAmountUah: Number(body.sellAmountUah) || undefined,
+    sellCommission: Number(body.sellCommission) || 0,
+    sellCommissionType: asCommissionType(body.sellCommissionType),
+    extraExpensesUah: Number(body.extraExpensesUah) || 0,
   });
 
   const updatedTrade: Trade = {
     ...existingTrade,
     updatedAt: new Date().toISOString(),
-    buyExchange: String(buyExchange),
+    buyExchange: String(body.buyExchange),
     buyBankId: buyBank.id,
     buyBankName: buyBank.name,
     buyRate: calc.buyRate,
     buyAmountUah: calc.buyAmountUah,
-    buyCommission: Number(buyCommission) || 0,
-    buyCommissionType: asCommissionType(buyCommissionType),
+    buyCommission: Number(body.buyCommission) || 0,
+    buyCommissionType: asCommissionType(body.buyCommissionType),
     buyUsdtAmount: calc.buyUsdtAmount,
-    sellExchange: String(sellExchange),
+    sellExchange: String(body.sellExchange),
     sellBankId: sellBank.id,
     sellBankName: sellBank.name,
     sellRate: calc.sellRate,
     sellUsdtAmount: calc.sellUsdtAmount,
     sellAmountUah: calc.sellAmountUah,
-    sellCommission: Number(sellCommission) || 0,
-    sellCommissionType: asCommissionType(sellCommissionType),
+    sellCommission: Number(body.sellCommission) || 0,
+    sellCommissionType: asCommissionType(body.sellCommissionType),
     extraExpensesUah: calc.extraExpensesUah,
     totalCostUah: calc.totalCostUah,
     grossRevenueUah: calc.grossRevenueUah,
@@ -254,37 +177,27 @@ const db = await getDb();
     roiPercent: calc.roiPercent,
     spreadPerUnit: calc.spreadPerUnit,
     spreadPercent: calc.spreadPercent,
-    notes: notes ? String(notes).trim() : undefined,
+    notes: body.notes ? String(body.notes).trim() : undefined,
   };
 
-  db.trades[tradeIndex] = updatedTrade;
-  await syncUserBankStats(existingTrade.userId, db);
-  await saveDatabase(db);
-
+  await updateTradeRecord(updatedTrade);
+  await syncUserBankStats(existingTrade.userId);
   return res.json({ success: true, trade: updatedTrade });
 }
 
 export async function handleDeleteTrade(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const tradeIndex = db.trades.findIndex(t => t.id === String(req.query.id) && (t.userId === user.id || user.role === 'admin'));
-
-  if (tradeIndex === -1) {
+  const existingTrade = await findTradeById(String(req.query.id));
+  if (!existingTrade || (existingTrade.userId !== user.id && user.role !== 'admin')) {
     return res.status(404).json({ error: 'Сделку не знайдено' });
   }
 
-  const tradeUserId = db.trades[tradeIndex].userId;
-  db.trades.splice(tradeIndex, 1);
-  await syncUserBankStats(tradeUserId, db);
-  await saveDatabase(db);
-
+  await deleteTradeRecord(existingTrade.id);
+  await syncUserBankStats(existingTrade.userId);
   return res.json({ success: true, message: 'Сделка видалена' });
 }
 
 export async function handleTradesExportCsv(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
-  const trades = db.trades.filter(t => t.userId === user.id);
-
-  trades.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const trades = await getTradesForUser(user.id);
 
   const headers = [
     'ID',
@@ -306,7 +219,7 @@ const db = await getDb();
     'Коментар',
   ];
 
-  const rows = trades.map(t => [
+  const rows = trades.map((t) => [
     t.id,
     new Date(t.createdAt).toLocaleString('uk-UA'),
     t.buyExchange,
@@ -321,17 +234,15 @@ const db = await getDb();
     t.sellUsdtAmount.toFixed(4),
     t.totalCommissionsUah.toFixed(2),
     t.netProfitUah.toFixed(2),
-    t.roiPercent.toFixed(2) + '%',
-    t.spreadPercent.toFixed(2) + '%',
+    `${t.roiPercent.toFixed(2)}%`,
+    `${t.spreadPercent.toFixed(2)}%`,
     `"${(t.notes || '').replace(/"/g, '""')}"`,
   ]);
 
-  // Include UTF-8 BOM so Excel opens Cyrillic without garbled text
   const bom = '\uFEFF';
-  const csvContent = bom + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\r\n');
+  const csvContent = bom + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n');
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="p2p_trades_${user.nickname}_${Date.now()}.csv"`);
   return res.send(csvContent);
 }
-

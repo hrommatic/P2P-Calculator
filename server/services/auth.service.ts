@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb, saveDatabase } from '../utils/db/index.js';
 import type { User, ThemePreference, LanguagePreference } from '../schemas/auth.schema.js';
+import type { UserBank } from '../schemas/banks.schema.js';
 import { hashPassword, verifyPassword, generateToken } from '../lib/crypto.js';
 import { parseJsonBody, getClientIp, getBearerToken } from '../middlewares/helpers.js';
 import {
@@ -8,6 +8,22 @@ import {
   getDemoStudentPassword,
   isDemoLoginEnabled,
 } from '../utils/db/demo-users.js';
+import {
+  createSession,
+  deleteFailedAttempt,
+  deleteSession,
+  findUserByNickname,
+  getActiveGlobalBanks,
+  getActiveExchanges,
+  getFailedAttempt,
+  getSiteSettings,
+  registerUserWithBanks,
+  toPublicUser,
+  updateUserLastLogin,
+  updateUserPassword,
+  updateUserProfile,
+  upsertFailedAttempt,
+} from '../utils/db/store.js';
 
 export async function handleAuthRegister(req: VercelRequest, res: VercelResponse) {
   const body = parseJsonBody(req);
@@ -15,9 +31,9 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
   const telegram = body.telegram;
   const password = body.password;
   const confirmPassword = body.confirmPassword;
-  const db = await getDb();
+  const siteSettings = await getSiteSettings();
 
-  if (!db.siteSettings.allowRegistration) {
+  if (!siteSettings.allowRegistration) {
     return res.status(403).json({ error: 'Реєстрація тимчасово призупинена адміністратором' });
   }
 
@@ -50,14 +66,14 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
     return res.status(400).json({ error: 'Паролі не співпадають' });
   }
 
-  // Check unique nickname
-  const existing = db.users.find(u => u.nickname.toLowerCase() === cleanNickname);
+  const existing = await findUserByNickname(cleanNickname);
   if (existing) {
     return res.status(400).json({ error: 'Користувач із таким нікнеймом уже зареєстрований' });
   }
 
   const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const now = new Date().toISOString();
+  const globalBanks = await getActiveGlobalBanks();
 
   const newUser: User = {
     id: userId,
@@ -69,57 +85,39 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
     createdAt: now,
     updatedAt: now,
     lastLoginAt: now,
-    themePreference: db.siteSettings.defaultTheme || 'navy',
-    languagePreference: db.siteSettings.defaultLanguage || 'uk',
+    themePreference: siteSettings.defaultTheme || 'navy',
+    languagePreference: siteSettings.defaultLanguage || 'uk',
   };
 
-  db.users.push(newUser);
+  const initialBanks: UserBank[] = globalBanks.slice(0, 4).map((gb) => ({
+    id: `ub_${userId}_${gb.code}`,
+    userId,
+    globalBankId: gb.id,
+    name: gb.name,
+    turnoverLimitUah: gb.defaultLimitUah,
+    initialTurnoverUah: 0,
+    buyTurnoverUah: 0,
+    sellTurnoverUah: 0,
+    netProfitUah: 0,
+    tradesCount: 0,
+    color: gb.color,
+    isArchived: false,
+    createdAt: now,
+    updatedAt: now,
+  }));
 
-  // Initialize standard user banks for the new student from active global banks
-  const initialBanks = db.globalBanks.filter(gb => gb.isActive).slice(0, 4);
-  initialBanks.forEach(gb => {
-    db.userBanks.push({
-      id: `ub_${userId}_${gb.code}`,
-      userId: userId,
-      globalBankId: gb.id,
-      name: gb.name,
-      turnoverLimitUah: gb.defaultLimitUah,
-      initialTurnoverUah: 0,
-      buyTurnoverUah: 0,
-      sellTurnoverUah: 0,
-      netProfitUah: 0,
-      tradesCount: 0,
-      color: gb.color,
-      isArchived: false,
-      createdAt: now,
-      updatedAt: now,
-    });
-  });
-
-  // Issue session token
   const token = generateToken();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  db.sessions.push({
+
+  await registerUserWithBanks(newUser, initialBanks, {
     token,
-    userId,
     createdAt: now,
     expiresAt,
   });
 
-  await saveDatabase(db);
-
   return res.json({
     token,
-    user: {
-      id: newUser.id,
-      nickname: newUser.nickname,
-      telegram: newUser.telegram,
-      role: newUser.role,
-      status: newUser.status,
-      themePreference: newUser.themePreference,
-      languagePreference: newUser.languagePreference,
-      createdAt: newUser.createdAt,
-    },
+    user: toPublicUser(newUser),
   });
 }
 
@@ -130,11 +128,8 @@ export async function handleAuthLogin(req: VercelRequest, res: VercelResponse) {
   const ip = getClientIp(req);
   const rateLimitKey = `${ip}_${String(nickname || '').toLowerCase()}`;
 
-  const db = await getDb();
-
-  // Rate limiting check: 5 attempts max in 5 minutes
-  const attemptInfo = db.failedAttempts[rateLimitKey];
-  if (attemptInfo && attemptInfo.lockedUntil && attemptInfo.lockedUntil > Date.now()) {
+  const attemptInfo = await getFailedAttempt(rateLimitKey);
+  if (attemptInfo?.lockedUntil && attemptInfo.lockedUntil > Date.now()) {
     const remainingSeconds = Math.ceil((attemptInfo.lockedUntil - Date.now()) / 1000);
     return res.status(429).json({
       error: `Забагато невдалих спроб входу. Спробуйте знову через ${remainingSeconds} сек.`,
@@ -146,90 +141,55 @@ export async function handleAuthLogin(req: VercelRequest, res: VercelResponse) {
   }
 
   const cleanNickname = String(nickname).trim().toLowerCase();
-  const user = db.users.find(u => u.nickname.toLowerCase() === cleanNickname);
+  const user = await findUserByNickname(cleanNickname);
+  const siteSettings = await getSiteSettings();
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
-    // Record failed attempt
     const count = (attemptInfo?.count || 0) + 1;
-    let lockedUntil: number | undefined;
-    if (count >= 5) {
-      lockedUntil = Date.now() + 5 * 60 * 1000; // Lock for 5 minutes
-    }
-    db.failedAttempts[rateLimitKey] = { count, lockedUntil };
-    await saveDatabase(db);
-
+    const lockedUntil = count >= 5 ? Date.now() + 5 * 60 * 1000 : undefined;
+    await upsertFailedAttempt(rateLimitKey, count, lockedUntil);
     return res.status(401).json({ error: 'Невірний нікнейм або пароль' });
   }
 
   if (user.status === 'blocked') {
     return res.status(403).json({
-      error: `Ваш акаунт заблоковано. Напишіть у Telegram куратору ${db.siteSettings.curatorTelegram} для відновлення доступу.`,
+      error: `Ваш акаунт заблоковано. Напишіть у Telegram куратору ${siteSettings.curatorTelegram} для відновлення доступу.`,
     });
   }
 
-  // Clear failed attempts on success
-  delete db.failedAttempts[rateLimitKey];
+  await deleteFailedAttempt(rateLimitKey);
 
   const now = new Date().toISOString();
-  user.lastLoginAt = now;
+  await updateUserLastLogin(user.id, now);
 
   const token = generateToken();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  db.sessions.push({
-    token,
-    userId: user.id,
-    createdAt: now,
-    expiresAt,
-  });
-
-  await saveDatabase(db);
+  await createSession(token, user.id, now, expiresAt);
 
   return res.json({
     token,
-    user: {
-      id: user.id,
-      nickname: user.nickname,
-      telegram: user.telegram,
-      role: user.role,
-      status: user.status,
-      themePreference: user.themePreference,
-      languagePreference: user.languagePreference,
-      createdAt: user.createdAt,
-      lastLoginAt: user.lastLoginAt,
-    },
+    user: toPublicUser({ ...user, lastLoginAt: now }),
     siteSettings: {
-      siteName: db.siteSettings.siteName,
-      curatorTelegram: db.siteSettings.curatorTelegram,
-      announcement: db.siteSettings.announcement,
+      siteName: siteSettings.siteName,
+      curatorTelegram: siteSettings.curatorTelegram,
+      announcement: siteSettings.announcement,
     },
   });
 }
 
-export async function handleAuthLogout(req: VercelRequest, res: VercelResponse, user: User) {
-const token = getBearerToken(req);
+export async function handleAuthLogout(req: VercelRequest, res: VercelResponse, _user: User) {
+  const token = getBearerToken(req);
   if (token) {
-    const db = await getDb();
-    db.sessions = db.sessions.filter(s => s.token !== token);
-    await saveDatabase(db);
+    await deleteSession(token);
   }
   return res.json({ success: true });
 }
 
 export async function handleAuthMe(req: VercelRequest, res: VercelResponse, user: User) {
-const db = await getDb();
+  const siteSettings = await getSiteSettings();
   return res.json({
-    user: {
-      id: user.id,
-      nickname: user.nickname,
-      telegram: user.telegram,
-      role: user.role,
-      status: user.status,
-      themePreference: user.themePreference,
-      languagePreference: user.languagePreference,
-      createdAt: user.createdAt,
-      lastLoginAt: user.lastLoginAt,
-    },
-    siteSettings: db.siteSettings,
+    user: toPublicUser(user),
+    siteSettings,
   });
 }
 
@@ -254,14 +214,7 @@ export async function handleAuthChangePassword(req: VercelRequest, res: VercelRe
     return res.status(400).json({ error: 'Нові паролі не співпадають' });
   }
 
-  const db = await getDb();
-  const dbUser = db.users.find(u => u.id === user.id);
-  if (dbUser) {
-    dbUser.passwordHash = hashPassword(newPassword);
-    dbUser.updatedAt = new Date().toISOString();
-    await saveDatabase(db);
-  }
-
+  await updateUserPassword(user.id, hashPassword(newPassword));
   return res.json({ success: true, message: 'Пароль успішно змінено' });
 }
 
@@ -270,10 +223,8 @@ export async function handleAuthUpdateProfile(req: VercelRequest, res: VercelRes
   const telegram = body.telegram;
   const themePreference = body.themePreference;
   const languagePreference = body.languagePreference;
-  const db = await getDb();
-  const dbUser = db.users.find(u => u.id === user.id);
 
-  if (!dbUser) return res.status(404).json({ error: 'User not found' });
+  const updates: Partial<Pick<User, 'telegram' | 'themePreference' | 'languagePreference'>> = {};
 
   if (typeof telegram === 'string' && telegram) {
     let cleanTelegram = telegram.trim();
@@ -281,50 +232,40 @@ export async function handleAuthUpdateProfile(req: VercelRequest, res: VercelRes
     if (!/^@[a-zA-Z0-9_]{3,32}$/.test(cleanTelegram)) {
       return res.status(400).json({ error: 'Некоректний формат Telegram' });
     }
-    dbUser.telegram = cleanTelegram;
+    updates.telegram = cleanTelegram;
   }
 
   if (typeof themePreference === 'string' && ['light', 'navy'].includes(themePreference)) {
-    dbUser.themePreference = themePreference as ThemePreference;
+    updates.themePreference = themePreference as ThemePreference;
   }
 
   if (typeof languagePreference === 'string' && ['uk', 'ru', 'en'].includes(languagePreference)) {
-    dbUser.languagePreference = languagePreference as LanguagePreference;
+    updates.languagePreference = languagePreference as LanguagePreference;
   }
 
-  dbUser.updatedAt = new Date().toISOString();
-  await saveDatabase(db);
+  await updateUserProfile(user.id, updates);
 
   return res.json({
     success: true,
-    user: {
-      id: dbUser.id,
-      nickname: dbUser.nickname,
-      telegram: dbUser.telegram,
-      role: dbUser.role,
-      status: dbUser.status,
-      themePreference: dbUser.themePreference,
-      languagePreference: dbUser.languagePreference,
-      createdAt: dbUser.createdAt,
-    },
+    user: toPublicUser({ ...user, ...updates }),
   });
 }
 
 export async function handleExchanges(req: VercelRequest, res: VercelResponse) {
-const db = await getDb();
-  return res.json({ exchanges: db.exchanges.filter(e => e.isActive) });
+  const exchanges = await getActiveExchanges();
+  return res.json({ exchanges });
 }
 
 export async function handleSettingsPublic(req: VercelRequest, res: VercelResponse) {
-const db = await getDb();
+  const settings = await getSiteSettings();
   const demoAccounts = buildPublicDemoAccounts();
   return res.json({
-    siteName: db.siteSettings.siteName,
-    curatorTelegram: db.siteSettings.curatorTelegram,
-    defaultLanguage: db.siteSettings.defaultLanguage,
-    defaultTheme: db.siteSettings.defaultTheme,
-    announcement: db.siteSettings.announcement,
-    allowRegistration: db.siteSettings.allowRegistration,
+    siteName: settings.siteName,
+    curatorTelegram: settings.curatorTelegram,
+    defaultLanguage: settings.defaultLanguage,
+    defaultTheme: settings.defaultTheme,
+    announcement: settings.announcement,
+    allowRegistration: settings.allowRegistration,
     ...(demoAccounts ? { demoAccounts } : {}),
   });
 }
@@ -354,4 +295,3 @@ function buildPublicDemoAccounts() {
 
   return accounts;
 }
-

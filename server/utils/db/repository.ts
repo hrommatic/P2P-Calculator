@@ -12,7 +12,6 @@ import {
   parseDate,
 } from './mappers.js';
 import { buildBootstrapDatabase, needsSeed } from './seed.js';
-import { ensureDemoUsers } from './demo-users.js';
 
 async function deleteOrphans(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
@@ -343,7 +342,7 @@ export async function loadDatabase(): Promise<DatabaseSchema> {
     failedAttempts[row.rateKey] = entry;
   }
 
-  const db: DatabaseSchema = {
+  return {
     users: users.map(mapUser),
     sessions: sessions.map(mapSession),
     globalBanks: globalBanks.map(mapGlobalBank),
@@ -354,12 +353,6 @@ export async function loadDatabase(): Promise<DatabaseSchema> {
     auditLogs: auditLogs.map(mapAuditLog),
     failedAttempts,
   };
-
-  if (ensureDemoUsers(db)) {
-    await saveDatabase(db);
-  }
-
-  return db;
 }
 
 export async function getDb(): Promise<DatabaseSchema> {

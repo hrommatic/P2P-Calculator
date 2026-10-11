@@ -112,7 +112,10 @@ await test('Banks: create', async () => {
 });
 
 await test('Banks: update', async () => {
-  const r = await req('PUT', `/banks/${bankId}`, { name: 'Test Bank Updated', turnoverLimitUah: 60000 });
+  const r = await req('PUT', `/banks/${bankId}`, {
+    name: `Test Bank Updated ${Date.now()}`,
+    turnoverLimitUah: 60000,
+  });
   assert('update bank 200', r.status === 200 && r.data?.success, JSON.stringify(r.data));
 });
 
