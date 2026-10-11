@@ -52,9 +52,17 @@ const routes: RouteEntry[] = [
   { segments: ["admin","backups"], method: 'GET', handler: adminBackupsHandler },
 ];
 
-function normalizePath(pathParam: string | string[] | undefined): string[] {
-  if (!pathParam) return [];
-  return Array.isArray(pathParam) ? pathParam : [pathParam];
+function getPathSegments(req: VercelRequest): string[] {
+  const queryPath = req.query.path;
+  if (queryPath) {
+    return Array.isArray(queryPath) ? queryPath : [queryPath];
+  }
+  const pathname = (req.url ?? '').split('?')[0];
+  if (pathname.startsWith('/api/')) {
+    return pathname.slice('/api/'.length).split('/').filter(Boolean);
+  }
+  if (pathname === '/api') return [];
+  return pathname.split('/').filter((segment) => segment && segment !== 'api');
 }
 
 function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {
@@ -83,7 +91,7 @@ async function healthHandler(_req: VercelRequest, res: VercelResponse) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const pathSegments = normalizePath(req.query.path as string | string[] | undefined);
+  const pathSegments = getPathSegments(req);
 
   if (pathSegments.length === 1 && pathSegments[0] === 'health' && req.method === 'GET') {
     return healthHandler(req, res);
