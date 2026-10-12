@@ -26,8 +26,9 @@ export const PeriodFilterBar: React.FC<Props> = ({
   const activePreset = value.kind === 'preset' ? value.preset : null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2" ref={wrapRef}>
-      <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+    <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full" ref={wrapRef}>
+      <div className="max-w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+        <div className="inline-flex items-center gap-0.5 sm:gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
         {PRESETS.map(p => (
           <button
             key={p}
@@ -36,7 +37,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
               onChange({ kind: 'preset', preset: p });
               setOpen(false);
             }}
-            className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+            className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 ${
               activePreset === p
                 ? 'bg-white dark:bg-[#1c2541] text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -45,9 +46,10 @@ export const PeriodFilterBar: React.FC<Props> = ({
             {presetLabels[p]}
           </button>
         ))}
+        </div>
       </div>
 
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
           type="button"
           onClick={() => setOpen(v => !v)}

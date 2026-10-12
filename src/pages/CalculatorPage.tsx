@@ -16,11 +16,11 @@ import {
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
 
 const fieldSelectClass =
-  'select-field w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
+  'select-field w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-0';
 const fieldNumberSuffixClass =
-  'number-input number-input-suffix w-full px-3 py-2.5 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
+  'number-input number-input-suffix w-full px-3 py-2.5 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-0';
 const fieldNumberSmClass =
-  'number-input w-full px-3 py-2.5 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500';
+  'number-input w-full px-3 py-2.5 text-sm font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-0';
 
 interface CalculatorPageProps {
   onTradeSaved?: () => void;
@@ -267,15 +267,15 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
 
-      <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-          <CalcIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
+      <div className="pb-1.5 border-b border-slate-200 dark:border-slate-800">
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <CalcIcon className="w-5 h-5 text-blue-600 dark:text-sky-400" />
           <span>{t('calcTitle')}</span>
         </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           {t('calcSubtitle')}
         </p>
       </div>
@@ -591,7 +591,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder={t('tradeNotesPlaceholder')}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-0"
               />
             </div>
           </div>
@@ -602,12 +602,12 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
         <div className="lg:col-span-5 space-y-4">
 
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm space-y-5 sticky top-20">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-start justify-between gap-2">
+              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2 min-w-0">
+                <TrendingUp className="w-4 h-4 shrink-0 text-emerald-500" />
                 <span>{t('calculationResult')}</span>
               </h2>
-              <span className="text-sm font-mono tabular-nums text-slate-500">
+              <span className="text-[10px] leading-tight sm:text-sm font-mono tabular-nums text-slate-500 text-right shrink-0">
                 1 USDT = {numBuyRate} → {numSellRate} ₴
               </span>
             </div>

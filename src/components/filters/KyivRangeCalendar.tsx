@@ -177,7 +177,7 @@ export const KyivRangeCalendar: React.FC<Props> = ({
         <button
           type="button"
           onClick={handleReset}
-          className="flex-1 py-3 rounded-xl bg-slate-800/90 text-sm font-semibold text-slate-200 hover:bg-slate-700"
+          className="flex-1 py-3 rounded-xl border border-transparent bg-slate-800/90 text-sm font-semibold text-slate-200 transition-colors duration-200 hover:border-slate-600 hover:bg-slate-700 hover:text-white active:bg-slate-600"
         >
           {resetLabel}
         </button>

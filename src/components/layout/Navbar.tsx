@@ -58,20 +58,22 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
   const brandName = siteSettings?.siteName || 'P2P Calculator';
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b backdrop-blur-md transition-colors border-slate-200/80 bg-white/90 dark:border-slate-800/90 dark:bg-[#0a0f1d]/90">
+    <header className="sticky top-0 z-40 w-full min-w-0 border-b backdrop-blur-md transition-colors border-slate-200/80 bg-white/90 dark:border-slate-800/90 dark:bg-[#0a0f1d]/90">
       <div className={layoutShellClass}>
-        <div className="flex items-center justify-between h-16 gap-4">
+        <div className="flex items-center justify-between h-16 gap-2 min-w-0">
 
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 shrink">
             <button
               onClick={() => handleNavClick('dashboard')}
-              className="flex items-center gap-2.5 text-left text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap shrink-0 hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 text-left text-lg font-bold tracking-tight text-slate-900 dark:text-white min-w-0 hover:opacity-90 transition-opacity"
             >
-              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-sm shadow-blue-500/20">
+              <div className="w-8 h-8 shrink-0 rounded-lg bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-sm shadow-blue-500/20">
                 P2P
               </div>
-              <span className="font-extrabold">{brandName}</span>
+              <span className="font-extrabold truncate hidden min-[380px]:inline max-w-[7.5rem] sm:max-w-none sm:whitespace-nowrap">
+                {brandName}
+              </span>
             </button>
           </div>
 

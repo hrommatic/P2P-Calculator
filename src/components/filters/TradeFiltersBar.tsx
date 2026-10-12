@@ -55,7 +55,7 @@ export const TradeFiltersBar: React.FC<Props> = ({
           value={values.search}
           onChange={e => onChange({ search: e.target.value })}
           placeholder={searchPlaceholder}
-          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-0"
         />
       );
     }

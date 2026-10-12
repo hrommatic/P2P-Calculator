@@ -38,6 +38,7 @@
 
   html {
     font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
   }
 
   body {
@@ -45,6 +46,7 @@
     background-color: var(--bg-page);
     color: var(--text-primary);
     min-height: 100vh;
+    overflow-x: hidden;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
@@ -53,6 +55,56 @@
   select,
   button {
     font-family: inherit;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']),
+  textarea,
+  select {
+    outline: none;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']):focus,
+  input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']):focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+@layer components {
+  input[class~='border']:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']),
+  textarea[class~='border'],
+  select[class~='border'] {
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  input[class~='border']:not(:disabled):not([readonly]):hover:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']),
+  textarea[class~='border']:not(:disabled):not([readonly]):hover,
+  select[class~='border']:not(:disabled):hover {
+    border-color: #94a3b8;
+  }
+
+  .dark input[class~='border']:not(:disabled):not([readonly]):hover:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']),
+  .dark textarea[class~='border']:not(:disabled):not([readonly]):hover,
+  .dark select[class~='border']:not(:disabled):hover {
+    border-color: #64748b;
+  }
+
+  input[class~='border']:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']):focus,
+  textarea[class~='border']:focus,
+  select[class~='border']:focus {
+    border-color: #64748b;
+    box-shadow: none;
+    --tw-ring-shadow: 0 0 #0000;
+  }
+
+  .dark input[class~='border']:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='hidden']):not([type='range']):focus,
+  .dark textarea[class~='border']:focus,
+  .dark select[class~='border']:focus {
+    border-color: #94a3b8;
   }
 }
 

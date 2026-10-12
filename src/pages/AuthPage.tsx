@@ -196,7 +196,7 @@ export const AuthPage: React.FC = () => {
                   value={nickname}
                   onChange={e => setNickname(e.target.value)}
                   placeholder={t('nicknamePlaceholder')}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-colors"
                 />
               </div>
             </div>
@@ -215,7 +215,7 @@ export const AuthPage: React.FC = () => {
                     value={telegram}
                     onChange={e => setTelegram(e.target.value)}
                     placeholder={t('telegramPlaceholder')}
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-0 transition-colors"
                   />
                 </div>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -239,7 +239,7 @@ export const AuthPage: React.FC = () => {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder={t('passwordPlaceholder')}
-                  className={`auth-password-field w-full pl-9 pr-10 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors${showPassword ? '' : ' auth-password-mask'}`}
+                  className={`auth-password-field w-full pl-9 pr-10 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-colors${showPassword ? '' : ' auth-password-mask'}`}
                 />
                 <button
                   type="button"
@@ -290,7 +290,7 @@ export const AuthPage: React.FC = () => {
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     placeholder={t('confirmPasswordPlaceholder')}
-                    className={`auth-password-field w-full pl-9 pr-10 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors${showConfirmPassword ? '' : ' auth-password-mask'}`}
+                    className={`auth-password-field w-full pl-9 pr-10 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-colors${showConfirmPassword ? '' : ' auth-password-mask'}`}
                   />
                   <button
                     type="button"

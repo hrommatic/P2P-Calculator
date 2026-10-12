@@ -137,10 +137,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     `p-3.5 sm:p-4 rounded-2xl border backdrop-blur-[2px] flex flex-col h-full min-h-[5.25rem] ${statThemeClass[theme].card}`;
 
   const statLabelClass = (theme: StatTheme) =>
-    `text-xs sm:text-sm font-bold uppercase tracking-[0.14em] mb-2 ${statThemeClass[theme].label}`;
+    `text-[10px] sm:text-sm font-bold uppercase tracking-wide sm:tracking-[0.14em] mb-1.5 sm:mb-2 leading-tight break-words ${statThemeClass[theme].label}`;
 
   const statValueClass = (theme: StatTheme) =>
-    `text-xl sm:text-2xl font-extrabold font-mono tabular-nums leading-none ${statThemeClass[theme].value}`;
+    `text-base sm:text-2xl font-extrabold font-mono tabular-nums leading-none break-all sm:break-normal ${statThemeClass[theme].value}`;
 
   const turnoverCardClass =
     statCardShell("turnover") +
@@ -167,10 +167,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+    <div className="space-y-6 min-w-0 max-w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white break-words">
             {t("greeting", { name: displayName })}
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -180,7 +180,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         <button
           onClick={onNavigateToCalculator}
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors shrink-0"
+          className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
           <span>{t("calculateFirstTrade")}</span>
@@ -194,7 +194,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         presetLabels={presetLabels}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 items-stretch auto-rows-fr">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
         <div className={statCardShell("profit")}>
           <p className={statLabelClass("profit")}>{t("periodProfit")}</p>
           <p className={statValueClass("profit")}>
@@ -220,12 +220,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               className={`text-xs sm:text-sm font-bold uppercase tracking-[0.14em] leading-tight flex-1 min-w-0 ${statThemeClass.turnover.label}`}
             >
               {t("totalTurnoverPeriod")}
-              {nbuRate != null && nbuRate > 0 && (
-                <span className="font-semibold normal-case tracking-normal whitespace-nowrap">
-                  {" "}
-                  ({nbuRate.toFixed(2)} ₴/$)
-                </span>
-              )}
             </p>
             <ArrowLeftRight
               className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${nbuRate ? "opacity-80" : "opacity-35"} ${statThemeClass.turnover.label}`}
@@ -277,7 +271,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </button>
       </div>
 
-      <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
+      <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden min-w-0 max-w-full">
         <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">
             {t("recentTrades")}
