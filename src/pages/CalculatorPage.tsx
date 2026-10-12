@@ -134,12 +134,12 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     : 0;
   const isBuyOverLimit = selectedBuyBank && numBuyAmountUah > buyBankAvailable;
 
-  const handleClear = () => {
+  const resetFormFields = (bankList: UserBank[] = banks) => {
     const defaultExchange = exchanges[0]?.name ?? 'Binance';
     setBuyExchange(defaultExchange);
     setSellExchange(defaultExchange);
-    setBuyBankId(banks[0]?.id ?? '');
-    setSellBankId(banks[1]?.id ?? banks[0]?.id ?? '');
+    setBuyBankId(bankList[0]?.id ?? '');
+    setSellBankId(bankList[1]?.id ?? bankList[0]?.id ?? '');
     setBuyRate('');
     setBuyAmountUah('');
     setBuyCommission('');
@@ -150,6 +150,10 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     setSellCommissionType('percent');
     setExtraExpensesUah('');
     setNotes('');
+  };
+
+  const handleClear = () => {
+    resetFormFields();
     setSaveSuccess(false);
     setErrorMessage(null);
   };
@@ -196,9 +200,9 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
 
-      // Refresh student banks to display updated turnover
       const banksRes = await api.getBanks();
       setBanks(banksRes.banks);
+      resetFormFields(banksRes.banks);
 
       if (onTradeSaved) {
         onTradeSaved();
