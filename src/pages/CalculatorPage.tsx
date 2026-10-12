@@ -138,8 +138,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     const defaultExchange = exchanges[0]?.name ?? 'Binance';
     setBuyExchange(defaultExchange);
     setSellExchange(defaultExchange);
-    setBuyBankId('');
-    setSellBankId('');
+    setBuyBankId(banks[0]?.id ?? '');
+    setSellBankId(banks[1]?.id ?? banks[0]?.id ?? '');
     setBuyRate('');
     setBuyAmountUah('');
     setBuyCommission('');
@@ -308,10 +308,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   className={fieldSelectClass}
                   disabled={banks.length === 0}
                 >
-                  {banks.length === 0 ? (
+                  {banks.length === 0 && (
                     <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
-                  ) : (
-                    <option value="">— Оберіть банк —</option>
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
@@ -449,10 +447,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   className={fieldSelectClass}
                   disabled={banks.length === 0}
                 >
-                  {banks.length === 0 ? (
+                  {banks.length === 0 && (
                     <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
-                  ) : (
-                    <option value="">— Оберіть банк —</option>
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>

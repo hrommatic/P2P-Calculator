@@ -48,13 +48,13 @@ export const translations: Record<Language, Record<string, string>> = {
     tradesCount: 'Кількість угод',
     banksUsed: 'Використано банків',
     recentTrades: 'Останні операції',
-    filterAll: 'Все',
+    filterAll: 'Увесь час',
     filterToday: 'Сьогодні',
     filterYesterday: 'Вчора',
     filterWeek: 'Тиждень',
     filterMonth: 'Місяць',
     noTradesYet: 'Поки що немає збережених угод. Перейдіть до калькулятора, щоб розрахувати та зберегти першу!',
-    calculateFirstTrade: 'Розрахувати першу угоду',
+    calculateFirstTrade: 'Розрахувати угоду',
     // Calculator
     calcTitle: 'P2P Калькулятор',
     calcSubtitle: 'Швидкий та точний розрахунок фінансового результату угоди',
@@ -224,7 +224,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterWeek: 'Неделя',
     filterMonth: 'Месяц',
     noTradesYet: 'Пока нет сохранённых сделок. Перейдите в калькулятор, чтобы рассчитать и сохранить первую операцию!',
-    calculateFirstTrade: 'Рассчитать первую сделку',
+    calculateFirstTrade: 'Рассчитать сделку',
     // Calculator
     calcTitle: 'P2P Calculator',
     calcSubtitle: 'Быстрый и точный расчёт финансового результата сделки',
@@ -394,7 +394,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterWeek: 'Week',
     filterMonth: 'Month',
     noTradesYet: 'No saved trades yet. Head over to the Calculator to compute and log your first operation!',
-    calculateFirstTrade: 'Calculate First Trade',
+    calculateFirstTrade: 'Calculate Trade',
     // Calculator
     calcTitle: 'P2P Calculator',
     calcSubtitle: 'Instant and high-precision financial result calculator',

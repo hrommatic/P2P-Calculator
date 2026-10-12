@@ -1,8 +1,17 @@
-import { prisma } from '../../lib/prisma.js';
-import type { User, SiteSettings, ThemePreference, LanguagePreference } from '../../schemas/auth.schema.js';
-import type { GlobalBank, UserBank, Exchange } from '../../schemas/banks.schema.js';
-import type { Trade } from '../../schemas/trades.schema.js';
-import type { AuditLog } from '../../schemas/admin.schema.js';
+import { prisma } from "../../lib/prisma.js";
+import type {
+  User,
+  SiteSettings,
+  ThemePreference,
+  LanguagePreference,
+} from "../../schemas/auth.schema.js";
+import type {
+  GlobalBank,
+  UserBank,
+  Exchange,
+} from "../../schemas/banks.schema.js";
+import type { Trade } from "../../schemas/trades.schema.js";
+import type { AuditLog } from "../../schemas/admin.schema.js";
 import {
   mapAuditLog,
   mapExchange,
@@ -12,8 +21,8 @@ import {
   mapUser,
   mapUserBank,
   parseDate,
-} from './mappers.js';
-import { buildBootstrapDatabase, needsSeed } from './seed.js';
+} from "./mappers.js";
+import { buildBootstrapDatabase, needsSeed } from "./seed.js";
 
 const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
 
@@ -24,7 +33,7 @@ export async function ensureBootstrapped(): Promise<void> {
     bootstrapPromise = (async () => {
       if (await needsSeed()) {
         const db = await buildBootstrapDatabase();
-        const { saveDatabase } = await import('./repository.js');
+        const { saveDatabase } = await import("./repository.js");
         await saveDatabase(db);
       }
     })();
@@ -40,7 +49,7 @@ export async function pingDatabase(): Promise<void> {
 export async function getSiteSettings(): Promise<SiteSettings> {
   await ensureBootstrapped();
   const row = await prisma.siteSettings.findUnique({ where: { id: 1 } });
-  if (!row) throw new Error('site_settings row missing');
+  if (!row) throw new Error("site_settings row missing");
   return mapSiteSettings(row);
 }
 
@@ -50,9 +59,13 @@ export async function getActiveExchanges(): Promise<Exchange[]> {
   return rows.map(mapExchange);
 }
 
-export async function findUserByNickname(nickname: string): Promise<User | null> {
+export async function findUserByNickname(
+  nickname: string,
+): Promise<User | null> {
   await ensureBootstrapped();
-  const row = await prisma.user.findUnique({ where: { nickname: nickname.toLowerCase() } });
+  const row = await prisma.user.findUnique({
+    where: { nickname: nickname.toLowerCase() },
+  });
   return row ? mapUser(row) : null;
 }
 
@@ -95,7 +108,12 @@ export async function deleteFailedAttempt(rateKey: string) {
   await prisma.failedAttempt.deleteMany({ where: { rateKey } });
 }
 
-export async function createSession(token: string, userId: string, createdAt: string, expiresAt: string) {
+export async function createSession(
+  token: string,
+  userId: string,
+  createdAt: string,
+  expiresAt: string,
+) {
   await prisma.session.create({
     data: {
       token,
@@ -130,14 +148,20 @@ export async function updateUserPassword(userId: string, passwordHash: string) {
 
 export async function updateUserProfile(
   userId: string,
-  data: Partial<Pick<User, 'telegram' | 'themePreference' | 'languagePreference'>>,
+  data: Partial<
+    Pick<User, "telegram" | "themePreference" | "languagePreference">
+  >,
 ) {
   await prisma.user.update({
     where: { id: userId },
     data: {
       ...(data.telegram !== undefined ? { telegram: data.telegram } : {}),
-      ...(data.themePreference !== undefined ? { themePreference: data.themePreference } : {}),
-      ...(data.languagePreference !== undefined ? { languagePreference: data.languagePreference } : {}),
+      ...(data.themePreference !== undefined
+        ? { themePreference: data.themePreference }
+        : {}),
+      ...(data.languagePreference !== undefined
+        ? { languagePreference: data.languagePreference }
+        : {}),
       updatedAt: new Date(),
     },
   });
@@ -197,7 +221,10 @@ export async function registerUserWithBanks(
   }, TX_OPTIONS);
 }
 
-export async function getUserBanks(userId: string, includeArchived = false): Promise<UserBank[]> {
+export async function getUserBanks(
+  userId: string,
+  includeArchived = false,
+): Promise<UserBank[]> {
   await ensureBootstrapped();
   const rows = await prisma.userBank.findMany({
     where: { userId, ...(includeArchived ? {} : { isArchived: false }) },
@@ -223,7 +250,11 @@ export async function findDuplicateUserBankName(
 ): Promise<UserBank | null> {
   const normalized = name.trim().toLowerCase();
   const rows = await prisma.userBank.findMany({
-    where: { userId, isArchived: false, ...(excludeBankId ? { NOT: { id: excludeBankId } } : {}) },
+    where: {
+      userId,
+      isArchived: false,
+      ...(excludeBankId ? { NOT: { id: excludeBankId } } : {}),
+    },
   });
   const match = rows.find((b) => b.name.trim().toLowerCase() === normalized);
   return match ? mapUserBank(match) : null;
@@ -266,11 +297,8 @@ export async function updateUserBankRecord(bank: UserBank) {
   });
 }
 
-export async function archiveUserBankRecord(id: string, updatedAt: string) {
-  await prisma.userBank.update({
-    where: { id },
-    data: { isArchived: true, updatedAt: parseDate(updatedAt) },
-  });
+export async function deleteUserBankRecord(id: string) {
+  await prisma.userBank.delete({ where: { id } });
 }
 
 export async function syncUserBankStats(userId: string) {
@@ -316,8 +344,10 @@ export async function syncUserBankStats(userId: string) {
       return prisma.userBank.update({
         where: { id: bank.id },
         data: {
-          buyTurnoverUah: Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
-          sellTurnoverUah: Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
+          buyTurnoverUah:
+            Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
+          sellTurnoverUah:
+            Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
           netProfitUah: Math.round((netProfit + Number.EPSILON) * 100) / 100,
           tradesCount: count,
           updatedAt: now,
@@ -335,11 +365,14 @@ type TradeFilters = {
   sort?: string | string[];
 };
 
-export async function getTradesForUser(userId: string, filters: TradeFilters = {}): Promise<Trade[]> {
+export async function getTradesForUser(
+  userId: string,
+  filters: TradeFilters = {},
+): Promise<Trade[]> {
   await ensureBootstrapped();
   const rows = await prisma.trade.findMany({
     where: { userId },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
   let trades = rows.map(mapTrade);
 
@@ -351,27 +384,36 @@ export async function getTradesForUser(userId: string, filters: TradeFilters = {
 
   if (dateRange) {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).getTime();
     const yesterdayStart = todayStart - 86400000;
     const weekStart = todayStart - 7 * 86400000;
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
     trades = trades.filter((t) => {
       const time = new Date(t.createdAt).getTime();
-      if (dateRange === 'today') return time >= todayStart;
-      if (dateRange === 'yesterday') return time >= yesterdayStart && time < todayStart;
-      if (dateRange === 'week') return time >= weekStart;
-      if (dateRange === 'month') return time >= monthStart;
+      if (dateRange === "today") return time >= todayStart;
+      if (dateRange === "yesterday")
+        return time >= yesterdayStart && time < todayStart;
+      if (dateRange === "week") return time >= weekStart;
+      if (dateRange === "month") return time >= monthStart;
       return true;
     });
   }
 
-  if (bankId && bankId !== 'all') {
-    trades = trades.filter((t) => t.buyBankId === bankId || t.sellBankId === bankId);
+  if (bankId && bankId !== "all") {
+    trades = trades.filter(
+      (t) => t.buyBankId === bankId || t.sellBankId === bankId,
+    );
   }
 
-  if (exchange && exchange !== 'all') {
-    trades = trades.filter((t) => t.buyExchange === exchange || t.sellExchange === exchange);
+  if (exchange && exchange !== "all") {
+    trades = trades.filter(
+      (t) => t.buyExchange === exchange || t.sellExchange === exchange,
+    );
   }
 
   if (search?.trim()) {
@@ -386,10 +428,17 @@ export async function getTradesForUser(userId: string, filters: TradeFilters = {
     );
   }
 
-  if (sort === 'profit_desc') trades.sort((a, b) => b.netProfitUah - a.netProfitUah);
-  else if (sort === 'profit_asc') trades.sort((a, b) => a.netProfitUah - b.netProfitUah);
-  else if (sort === 'spread_desc') trades.sort((a, b) => b.spreadPercent - a.spreadPercent);
-  else trades.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  if (sort === "profit_desc")
+    trades.sort((a, b) => b.netProfitUah - a.netProfitUah);
+  else if (sort === "profit_asc")
+    trades.sort((a, b) => a.netProfitUah - b.netProfitUah);
+  else if (sort === "spread_desc")
+    trades.sort((a, b) => b.spreadPercent - a.spreadPercent);
+  else
+    trades.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
 
   return trades;
 }
@@ -456,7 +505,11 @@ export async function getDashboardStats(userId: string) {
   ]);
 
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
   const yesterdayStart = todayStart - 86400000;
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
@@ -473,7 +526,8 @@ export async function getDashboardStats(userId: string) {
     buyTurnover += t.buyAmountUah;
     sellTurnover += t.sellAmountUah;
     if (time >= todayStart) profitToday += t.netProfitUah;
-    if (time >= yesterdayStart && time < todayStart) profitYesterday += t.netProfitUah;
+    if (time >= yesterdayStart && time < todayStart)
+      profitYesterday += t.netProfitUah;
     if (time >= monthStart) profitMonth += t.netProfitUah;
   }
 
@@ -489,7 +543,8 @@ export async function getDashboardStats(userId: string) {
     profitAllTime: Math.round((profitAllTime + Number.EPSILON) * 100) / 100,
     buyTurnover: Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
     sellTurnover: Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
-    totalTurnover: Math.round((buyTurnover + sellTurnover + Number.EPSILON) * 100) / 100,
+    totalTurnover:
+      Math.round((buyTurnover + sellTurnover + Number.EPSILON) * 100) / 100,
     tradesCount: trades.length,
     banksCount,
     recentTrades,
@@ -511,19 +566,21 @@ export async function insertAuditLog(log: AuditLog) {
   const count = await prisma.auditLog.count();
   if (count > 500) {
     const oldest = await prisma.auditLog.findMany({
-      orderBy: { timestamp: 'asc' },
+      orderBy: { timestamp: "asc" },
       take: count - 500,
       select: { id: true },
     });
     if (oldest.length > 0) {
-      await prisma.auditLog.deleteMany({ where: { id: { in: oldest.map((o) => o.id) } } });
+      await prisma.auditLog.deleteMany({
+        where: { id: { in: oldest.map((o) => o.id) } },
+      });
     }
   }
 }
 
 export async function getAuditLogs(limit = 100) {
   const rows = await prisma.auditLog.findMany({
-    orderBy: { timestamp: 'desc' },
+    orderBy: { timestamp: "desc" },
     take: limit,
   });
   return rows.map(mapAuditLog);
@@ -603,11 +660,15 @@ export async function updateSiteSettings(settings: SiteSettings) {
 
 export async function getAdminOverviewStats() {
   const [students, tradesTodayCount, tradeAgg] = await Promise.all([
-    prisma.user.findMany({ where: { role: 'student' } }),
+    prisma.user.findMany({ where: { role: "student" } }),
     prisma.trade.count({
       where: {
         createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+          gte: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+          ),
         },
       },
     }),
@@ -629,21 +690,37 @@ export async function getAdminOverviewStats() {
     totalStudents: students.length,
     activeStudents: activeStudents.length,
     tradesToday: tradesTodayCount,
-    totalPlatformTurnover: Math.round((totalPlatformTurnover + Number.EPSILON) * 100) / 100,
-    totalStudentProfit: Math.round(((tradeAgg._sum.netProfitUah ?? 0) + Number.EPSILON) * 100) / 100,
+    totalPlatformTurnover:
+      Math.round((totalPlatformTurnover + Number.EPSILON) * 100) / 100,
+    totalStudentProfit:
+      Math.round(((tradeAgg._sum.netProfitUah ?? 0) + Number.EPSILON) * 100) /
+      100,
     totalTradesCount: tradeAgg._count,
   };
 }
 
 export async function getAdminUsers(search?: string, status?: string) {
-  const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
+  const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
   const tradeRows = await prisma.trade.findMany({
-    select: { userId: true, netProfitUah: true, buyAmountUah: true, sellAmountUah: true },
+    select: {
+      userId: true,
+      netProfitUah: true,
+      buyAmountUah: true,
+      sellAmountUah: true,
+    },
   });
 
-  const statsByUser = new Map<string, { profit: number; buy: number; sell: number; count: number }>();
+  const statsByUser = new Map<
+    string,
+    { profit: number; buy: number; sell: number; count: number }
+  >();
   for (const t of tradeRows) {
-    const s = statsByUser.get(t.userId) ?? { profit: 0, buy: 0, sell: 0, count: 0 };
+    const s = statsByUser.get(t.userId) ?? {
+      profit: 0,
+      buy: 0,
+      sell: 0,
+      count: 0,
+    };
     s.profit += t.netProfitUah;
     s.buy += t.buyAmountUah;
     s.sell += t.sellAmountUah;
@@ -670,20 +747,28 @@ export async function getAdminUsers(search?: string, status?: string) {
 
   if (search?.trim()) {
     const q = search.trim().toLowerCase();
-    result = result.filter((u) => u.nickname.toLowerCase().includes(q) || u.telegram.toLowerCase().includes(q));
+    result = result.filter(
+      (u) =>
+        u.nickname.toLowerCase().includes(q) ||
+        u.telegram.toLowerCase().includes(q),
+    );
   }
-  if (status && status !== 'all') {
+  if (status && status !== "all") {
     result = result.filter((u) => u.status === status);
   }
   return result;
 }
 
 export async function getStudentsStats() {
-  const students = await prisma.user.findMany({ where: { role: 'student' } });
+  const students = await prisma.user.findMany({ where: { role: "student" } });
   const trades = await prisma.trade.findMany();
 
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
   const yesterdayStart = todayStart - 86400000;
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
@@ -702,7 +787,8 @@ export async function getStudentsStats() {
       buyTurnover += t.buyAmountUah;
       sellTurnover += t.sellAmountUah;
       if (time >= todayStart) profitToday += t.netProfitUah;
-      if (time >= yesterdayStart && time < todayStart) profitYesterday += t.netProfitUah;
+      if (time >= yesterdayStart && time < todayStart)
+        profitYesterday += t.netProfitUah;
       if (time >= monthStart) profitMonth += t.netProfitUah;
     }
 
@@ -712,7 +798,8 @@ export async function getStudentsStats() {
       telegram: student.telegram,
       status: student.status,
       profitToday: Math.round((profitToday + Number.EPSILON) * 100) / 100,
-      profitYesterday: Math.round((profitYesterday + Number.EPSILON) * 100) / 100,
+      profitYesterday:
+        Math.round((profitYesterday + Number.EPSILON) * 100) / 100,
       profitMonth: Math.round((profitMonth + Number.EPSILON) * 100) / 100,
       profitAllTime: Math.round((profitAllTime + Number.EPSILON) * 100) / 100,
       buyTurnover: Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
@@ -723,19 +810,19 @@ export async function getStudentsStats() {
   });
 }
 
-export async function updateUserStatus(userId: string, status: User['status']) {
+export async function updateUserStatus(userId: string, status: User["status"]) {
   await prisma.user.update({
     where: { id: userId },
     data: { status, updatedAt: new Date() },
   });
-  if (status === 'blocked') {
+  if (status === "blocked") {
     await deleteSessionsForUser(userId);
   }
 }
 
 export async function updateUserAdminProfile(
   userId: string,
-  data: Partial<Pick<User, 'nickname' | 'telegram' | 'role'>>,
+  data: Partial<Pick<User, "nickname" | "telegram" | "role">>,
 ) {
   await prisma.user.update({
     where: { id: userId },
@@ -750,7 +837,10 @@ export async function updateUserAdminProfile(
 
 export async function resetUserPassword(userId: string, passwordHash: string) {
   await prisma.$transaction([
-    prisma.user.update({ where: { id: userId }, data: { passwordHash, updatedAt: new Date() } }),
+    prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, updatedAt: new Date() },
+    }),
     prisma.session.deleteMany({ where: { userId } }),
   ]);
 }
@@ -764,8 +854,13 @@ export async function deleteUserAndData(userId: string) {
   ]);
 }
 
-export async function nicknameTaken(nickname: string, excludeUserId?: string): Promise<boolean> {
-  const row = await prisma.user.findUnique({ where: { nickname: nickname.toLowerCase() } });
+export async function nicknameTaken(
+  nickname: string,
+  excludeUserId?: string,
+): Promise<boolean> {
+  const row = await prisma.user.findUnique({
+    where: { nickname: nickname.toLowerCase() },
+  });
   if (!row) return false;
   return row.id !== excludeUserId;
 }

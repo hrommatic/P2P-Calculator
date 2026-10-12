@@ -198,7 +198,7 @@ export const HistoryPage: React.FC = () => {
           <select
             value={dateRange}
             onChange={e => setDateRange(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+            className="select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           >
             <option value="all">{t('filterAll')}</option>
             <option value="today">{t('filterToday')}</option>
@@ -213,7 +213,7 @@ export const HistoryPage: React.FC = () => {
           <select
             value={bankId}
             onChange={e => setBankId(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+            className="select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           >
             <option value="all">Всі банки</option>
             {banks.map(b => (
@@ -227,7 +227,7 @@ export const HistoryPage: React.FC = () => {
           <select
             value={sort}
             onChange={e => setSort(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+            className="select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           >
             <option value="newest">{t('sortNewest')}</option>
             <option value="profit_desc">{t('sortProfitDesc')}</option>
