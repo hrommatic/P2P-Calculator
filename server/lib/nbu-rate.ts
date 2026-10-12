@@ -9,8 +9,9 @@ export async function getNbuUsdUahRate(): Promise<number> {
     return cache.rate;
   }
 
+  const timeoutMs = process.env.NODE_ENV === 'development' ? 3000 : 8000;
   const res = await fetch(NBU_USD_URL, {
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     throw new Error(`NBU HTTP ${res.status}`);

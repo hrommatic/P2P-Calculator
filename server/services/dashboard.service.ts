@@ -9,13 +9,10 @@ export async function handleDashboardStats(req: VercelRequest, res: VercelRespon
     targetUserId = String(req.query.targetUserId);
   }
 
-  const stats = await getDashboardStats(targetUserId);
-  let usdUahRate: number | null = null;
-  try {
-    usdUahRate = await getNbuUsdUahRate();
-  } catch {
-    usdUahRate = null;
-  }
+  const [stats, usdUahRate] = await Promise.all([
+    getDashboardStats(targetUserId),
+    getNbuUsdUahRate().catch(() => null),
+  ]);
 
   return res.json({ ...stats, usdUahRate });
 }

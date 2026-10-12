@@ -540,63 +540,21 @@ export async function deleteTradeRecord(id: string) {
 }
 
 export async function getDashboardStats(userId: string) {
-  const [trades, banksCount] = await Promise.all([
-    prisma.trade.findMany({ where: { userId } }),
-    prisma.userBank.count({ where: { userId, isArchived: false } }),
-  ]);
-
-  const profitBuckets = {
-    profitToday: 0,
-    profitYesterday: 0,
-    profitMonth: 0,
-  };
-
-  let buyTurnoverToday = 0;
-  let sellTurnoverToday = 0;
-  let tradesCountToday = 0;
-  let spreadWeightSum = 0;
-  let spreadWeighted = 0;
-  let roiWeightSum = 0;
-  let roiWeighted = 0;
-
-  for (const t of trades) {
-    accumulateKyivProfitBuckets(t.createdAt, t.netProfitUah, profitBuckets);
-
-    if (isKyivToday(t.createdAt)) {
-      tradesCountToday += 1;
-      buyTurnoverToday += t.buyAmountUah;
-      sellTurnoverToday += t.sellAmountUah;
-      spreadWeightSum += t.buyAmountUah;
-      spreadWeighted += t.spreadPercent * t.buyAmountUah;
-      roiWeightSum += t.totalCostUah;
-      roiWeighted += t.roiPercent * t.totalCostUah;
-    }
-  }
-
-  const { profitToday, profitMonth } = profitBuckets;
-  const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
-
-  const spreadTodayPercent =
-    spreadWeightSum > 0 ? spreadWeighted / spreadWeightSum : 0;
-  const roiTodayPercent = roiWeightSum > 0 ? roiWeighted / roiWeightSum : 0;
-  const totalTurnoverToday = buyTurnoverToday + sellTurnoverToday;
-
-  const recentTrades = [...trades]
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 10)
-    .map(mapTrade);
+  const banksCount = await prisma.userBank.count({
+    where: { userId, isArchived: false },
+  });
 
   return {
-    profitToday: round2(profitToday),
-    profitMonth: round2(profitMonth),
-    spreadTodayPercent: round2(spreadTodayPercent),
-    roiTodayPercent: round2(roiTodayPercent),
-    buyTurnoverToday: round2(buyTurnoverToday),
-    sellTurnoverToday: round2(sellTurnoverToday),
-    totalTurnoverToday: round2(totalTurnoverToday),
-    tradesCountToday,
+    profitToday: 0,
+    profitMonth: 0,
+    spreadTodayPercent: 0,
+    roiTodayPercent: 0,
+    buyTurnoverToday: 0,
+    sellTurnoverToday: 0,
+    totalTurnoverToday: 0,
+    tradesCountToday: 0,
     banksCount,
-    recentTrades,
+    recentTrades: [],
   };
 }
 

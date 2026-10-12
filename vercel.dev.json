@@ -1,3 +1,4 @@
 {
-  "devCommand": "node scripts/dev-vercel-placeholder.mjs"
+  "devCommand": "node scripts/dev-vercel-placeholder.mjs",
+  "rewrites": []
 }
