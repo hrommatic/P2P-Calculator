@@ -36,7 +36,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
               onChange({ kind: 'preset', preset: p });
               setOpen(false);
             }}
-            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
               activePreset === p
                 ? 'bg-white dark:bg-[#1c2541] text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -51,7 +51,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
         <button
           type="button"
           onClick={() => setOpen(v => !v)}
-          className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+          className={`inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg border transition-colors ${
             value.kind !== 'preset'
               ? 'border-sky-500/60 bg-sky-950/30 text-sky-300'
               : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-sky-500/40'
@@ -60,7 +60,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
           <CalendarDays className="w-4 h-4 text-sky-500" />
           {!compact && <span>{t('calendarPick')}</span>}
           {value.kind !== 'preset' && (
-            <span className="font-mono tabular-nums text-[11px] opacity-90">
+            <span className="font-mono tabular-nums text-xs opacity-90">
               {periodLabelUk(value)}
             </span>
           )}

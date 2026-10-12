@@ -137,7 +137,7 @@ export const KyivRangeCalendar: React.FC<Props> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-[11px] text-slate-500 font-semibold mb-2 text-center">
+      <div className="grid grid-cols-7 gap-1 text-xs text-slate-500 font-semibold mb-2 text-center">
         {WEEKDAYS.map(w => (
           <div key={w}>{w}</div>
         ))}

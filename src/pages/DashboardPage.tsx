@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { DashboardTradeRow } from "../components/dashboard/DashboardTradeRow";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { DashboardStats, Trade } from "../types";
@@ -29,24 +30,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     "trades",
   );
 
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
-    try {
-      const [sData, tData] = await Promise.all([
-        api.getDashboardStats(),
-        api.getTrades(periodToQuery(period)),
-      ]);
-      setStats(sData);
-      setTrades(tData.trades);
-    } catch (err) {
-      console.error("Error loading dashboard data:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchDashboardData();
+    const ac = new AbortController();
+    let cancelled = false;
+
+    (async () => {
+      setIsLoading(true);
+      try {
+        const data = await api.getDashboardStats(periodToQuery(period), ac.signal);
+        if (cancelled) return;
+        setStats(data);
+        setTrades(data.trades ?? []);
+      } catch (err) {
+        if (cancelled) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Error loading dashboard data:", err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
   }, [period]);
 
   const periodStats = useMemo(
@@ -58,12 +65,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     ? user.nickname.charAt(0).toUpperCase() + user.nickname.slice(1)
     : "Учень";
 
-  const formatUah = (val: number) => {
+  const formatUah = useCallback((val: number) => {
     return new Intl.NumberFormat("uk-UA", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(val || 0);
-  };
+  }, []);
 
   const formatUsdt = (val: number) => {
     return new Intl.NumberFormat("uk-UA", {
@@ -130,7 +137,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     `p-3.5 sm:p-4 rounded-2xl border backdrop-blur-[2px] flex flex-col h-full min-h-[5.25rem] ${statThemeClass[theme].card}`;
 
   const statLabelClass = (theme: StatTheme) =>
-    `text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] mb-2 ${statThemeClass[theme].label}`;
+    `text-xs sm:text-sm font-bold uppercase tracking-[0.14em] mb-2 ${statThemeClass[theme].label}`;
 
   const statValueClass = (theme: StatTheme) =>
     `text-xl sm:text-2xl font-extrabold font-mono tabular-nums leading-none ${statThemeClass[theme].value}`;
@@ -166,14 +173,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {t("greeting", { name: displayName })}
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {t("appTagline")}
           </p>
         </div>
 
         <button
           onClick={onNavigateToCalculator}
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
           <span>{t("calculateFirstTrade")}</span>
@@ -210,7 +217,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         >
           <div className="flex items-start justify-between gap-2 mb-2">
             <p
-              className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] leading-tight flex-1 min-w-0 ${statThemeClass.turnover.label}`}
+              className={`text-xs sm:text-sm font-bold uppercase tracking-[0.14em] leading-tight flex-1 min-w-0 ${statThemeClass.turnover.label}`}
             >
               {t("totalTurnoverPeriod")}
               {nbuRate != null && nbuRate > 0 && (
@@ -251,7 +258,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         >
           <div className="flex items-start justify-between gap-2 mb-2">
             <p
-              className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] ${statThemeClass[activityTheme].label}`}
+              className={`text-xs sm:text-sm font-bold uppercase tracking-[0.14em] ${statThemeClass[activityTheme].label}`}
             >
               {activityView === "trades"
                 ? t("periodTradesCount")
@@ -272,10 +279,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
             {t("recentTrades")}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {trades.length}{" "}
             {language === "en" ? "trades recorded" : "угод знайдено"}
           </p>
@@ -290,7 +297,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </p>
             <button
               onClick={onNavigateToCalculator}
-              className="px-4 py-2 text-xs font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5"
+              className="px-4 py-2.5 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5"
             >
               <span>{t("calculateFirstTrade")}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -298,7 +305,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs whitespace-nowrap">
+            <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
                 <tr>
                   <th className="py-3 px-4">Дата / Час</th>
@@ -316,73 +323,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                {trades.map((trade) => {
-                  const isProfit = trade.netProfitUah >= 0;
-                  return (
-                    <tr
-                      key={trade.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                    >
-                      <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400">
-                        {new Date(trade.createdAt).toLocaleDateString("uk-UA", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "2-digit",
-                        })}{" "}
-                        {new Date(trade.createdAt).toLocaleTimeString("uk-UA", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </td>
-                      <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
-                        {trade.buyExchange}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-medium text-slate-900 dark:text-slate-200">
-                          {trade.buyBankName}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums">
-                        {trade.buyRate.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold">
-                        {formatUah(trade.buyAmountUah)}{" "}
-                        <span className="text-[10px] text-slate-400">₴</span>
-                      </td>
-                      <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
-                        {trade.sellExchange}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-medium text-slate-900 dark:text-slate-200">
-                          {trade.sellBankName}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums">
-                        {trade.sellRate.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold">
-                        {formatUah(trade.sellAmountUah)}{" "}
-                        <span className="text-[10px] text-slate-400">₴</span>
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-500">
-                        {trade.totalCommissionsUah.toFixed(2)} ₴
-                      </td>
-                      <td
-                        className={`py-3 px-4 text-right font-mono tabular-nums font-bold ${
-                          isProfit
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-rose-600 dark:text-rose-400"
-                        }`}
-                      >
-                        {isProfit ? "+" : ""}
-                        {formatUah(trade.netProfitUah)} ₴
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-blue-600 dark:text-sky-400">
-                        +{trade.spreadPercent.toFixed(2)}%
-                      </td>
-                    </tr>
-                  );
-                })}
+                {trades.map((trade) => (
+                  <DashboardTradeRow
+                    key={trade.id}
+                    trade={trade}
+                    formatUah={formatUah}
+                  />
+                ))}
               </tbody>
             </table>
           </div>

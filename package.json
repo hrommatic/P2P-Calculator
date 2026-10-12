@@ -12,7 +12,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "gen:api": "node scripts/gen-api.mjs",
-    "test:api": "node scripts/test-api.mjs"
+    "test:api": "node scripts/test-api.mjs",
+    "test:trade-filters": "tsx server/utils/db/trade-filters.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",

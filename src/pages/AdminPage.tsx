@@ -328,7 +328,7 @@ export const AdminPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-sky-400">
+            <span className="text-sm font-bold uppercase tracking-wider text-blue-600 dark:text-sky-400">
               Адміністратор
             </span>
           </div>
@@ -336,7 +336,7 @@ export const AdminPage: React.FC = () => {
             <ShieldCheck className="w-6 h-6 text-blue-600 dark:text-sky-400" />
             <span>{t('adminTitle')}</span>
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Керування платформою, учнями, довідниками банків та безпекою
           </p>
         </div>
@@ -344,7 +344,7 @@ export const AdminPage: React.FC = () => {
 
 
       {adminMessage && (
-        <div className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+        <div className={`p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2.5 ${
           adminMessage.type === 'success'
             ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60'
             : 'bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60'
@@ -355,7 +355,7 @@ export const AdminPage: React.FC = () => {
       )}
 
 
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 text-xs">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 text-sm">
         {navTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeSection === tab.id;
@@ -386,29 +386,29 @@ export const AdminPage: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
 
             <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">{t('totalStudents')}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('totalStudents')}</span>
               <span className="text-2xl font-bold font-mono text-slate-900 dark:text-white">{overview.totalStudents}</span>
             </div>
 
             <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">{t('activeStudents')}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('activeStudents')}</span>
               <span className="text-2xl font-bold font-mono text-blue-600 dark:text-sky-400">{overview.activeStudents}</span>
             </div>
 
             <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">{t('tradesToday')}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('tradesToday')}</span>
               <span className="text-2xl font-bold font-mono text-slate-900 dark:text-white">{overview.tradesToday}</span>
             </div>
 
             <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">{t('totalPlatformTurnover')}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('totalPlatformTurnover')}</span>
               <span className="text-lg sm:text-xl font-bold font-mono text-slate-900 dark:text-white">
                 {formatUah(overview.totalPlatformTurnover)} ₴
               </span>
             </div>
 
             <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">{t('totalStudentProfit')}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('totalStudentProfit')}</span>
               <span className="text-lg sm:text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
                 +{formatUah(overview.totalStudentProfit)} ₴
               </span>
@@ -416,7 +416,7 @@ export const AdminPage: React.FC = () => {
 
           </div>
 
-          <div className="p-5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 text-xs text-slate-700 dark:text-slate-300">
+          <div className="p-5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 text-sm text-slate-700 dark:text-slate-300">
             <h3 className="font-bold text-sm text-blue-900 dark:text-sky-300 mb-1">
               Режим куратора активовано
             </h3>
@@ -438,13 +438,13 @@ export const AdminPage: React.FC = () => {
                 value={accountSearch}
                 onChange={e => setAccountSearch(e.target.value)}
                 placeholder="Пошук за нікнеймом або Telegram..."
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
             </div>
           </div>
 
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
-            <table className="w-full text-left text-xs whitespace-nowrap">
+            <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
                 <tr>
                   <th className="py-3 px-4">Нікнейм</th>
@@ -472,7 +472,7 @@ export const AdminPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
                         u.status === 'active'
                           ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                           : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
@@ -533,7 +533,7 @@ export const AdminPage: React.FC = () => {
       {!isLoading && activeSection === 'students' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
-            <table className="w-full text-left text-xs whitespace-nowrap">
+            <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
                 <tr>
                   <th className="py-3 px-4">Учень</th>
@@ -581,7 +581,7 @@ export const AdminPage: React.FC = () => {
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => handleInspectStudent(st)}
-                        className="px-2.5 py-1 text-xs font-semibold rounded bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-sky-400 hover:bg-blue-100 transition-colors inline-flex items-center gap-1"
+                        className="px-2.5 py-1 text-sm font-semibold rounded bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-sky-400 hover:bg-blue-100 transition-colors inline-flex items-center gap-1"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Деталі</span>
@@ -604,7 +604,7 @@ export const AdminPage: React.FC = () => {
             </h2>
             <button
               onClick={handleOpenAddGlobalBank}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1.5"
+              className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Додати банк</span>
@@ -620,25 +620,25 @@ export const AdminPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-xs"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-xs"
                       style={{ backgroundColor: gb.color }}
                     >
                       {gb.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-slate-900 dark:text-white">{gb.name}</h4>
-                      <span className="text-[10px] text-slate-400 font-mono">{gb.code}</span>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">{gb.name}</h4>
+                      <span className="text-xs text-slate-400 font-mono">{gb.code}</span>
                     </div>
                   </div>
 
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
                     gb.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
                   }`}>
                     {gb.isActive ? 'Активний' : 'Вимкнено'}
                   </span>
                 </div>
 
-                <div className="text-xs text-slate-500 pt-1">
+                <div className="text-sm text-slate-500 pt-1">
                   Стандартний ліміт: <strong className="text-slate-900 dark:text-white font-mono">{formatUah(gb.defaultLimitUah)} ₴</strong>
                 </div>
 
@@ -675,7 +675,7 @@ export const AdminPage: React.FC = () => {
               placeholder="Назва біржі (наприклад: Bybit)"
               value={newExName}
               onChange={e => setNewExName(e.target.value)}
-              className="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
             />
             <input
               type="text"
@@ -683,11 +683,11 @@ export const AdminPage: React.FC = () => {
               placeholder="Код (bybit)"
               value={newExCode}
               onChange={e => setNewExCode(e.target.value)}
-              className="w-28 px-3 py-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+              className="w-28 px-3 py-2 text-sm font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
             />
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shrink-0"
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shrink-0"
             >
               Додати біржу
             </button>
@@ -696,14 +696,14 @@ export const AdminPage: React.FC = () => {
 
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
             {exchanges.map(ex => (
-              <div key={ex.id} className="p-3.5 flex items-center justify-between text-xs">
+              <div key={ex.id} className="p-3.5 flex items-center justify-between text-sm">
                 <div>
                   <span className="font-bold text-slate-900 dark:text-white mr-2">{ex.name}</span>
-                  <span className="font-mono text-slate-400 text-[11px]">{ex.code}</span>
+                  <span className="font-mono text-slate-400 text-xs">{ex.code}</span>
                 </div>
                 <button
                   onClick={() => handleToggleExchangeActive(ex)}
-                  className={`px-2 py-1 rounded font-semibold text-[11px] transition-colors ${
+                  className={`px-2 py-1 rounded font-semibold text-xs transition-colors ${
                     ex.isActive
                       ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                       : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
@@ -719,7 +719,7 @@ export const AdminPage: React.FC = () => {
 
 
       {!isLoading && activeSection === 'settings' && siteSettings && (
-        <form onSubmit={handleSaveSiteSettings} className="space-y-4 max-w-xl bg-white dark:bg-[#111827] p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+        <form onSubmit={handleSaveSiteSettings} className="space-y-4 max-w-xl bg-white dark:bg-[#111827] p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-sm">
           {settingsSuccess && (
             <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-700 flex items-center gap-2">
               <Check className="w-4 h-4" />
@@ -797,7 +797,7 @@ export const AdminPage: React.FC = () => {
 
       {!isLoading && activeSection === 'audit' && (
         <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
-          <table className="w-full text-left text-xs whitespace-nowrap">
+          <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 border-b border-slate-200 dark:border-slate-800 font-semibold">
               <tr>
                 <th className="py-3 px-4">Час</th>
@@ -834,25 +834,25 @@ export const AdminPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Резервні копії бази даних</h3>
-              <p className="text-xs text-slate-500">Миттєве створення зліпка бази даних без зупинки системи</p>
+              <p className="text-sm text-slate-500">Миттєве створення зліпка бази даних без зупинки системи</p>
             </div>
             <button
               onClick={handleCreateBackup}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1.5"
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1.5"
             >
               <Database className="w-3.5 h-3.5" />
               <span>{t('createBackupBtn')}</span>
             </button>
           </div>
 
-          <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+          <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 text-sm">
             {backups.length === 0 ? (
               <div className="p-6 text-center text-slate-500">Копії ще не створювалися</div>
             ) : (
               backups.map(b => (
                 <div key={b} className="p-3 flex items-center justify-between font-mono">
                   <span>{b}</span>
-                  <span className="text-emerald-600 font-semibold text-[11px]">Збережено</span>
+                  <span className="text-emerald-600 font-semibold text-xs">Збережено</span>
                 </div>
               ))
             )}
@@ -870,13 +870,13 @@ export const AdminPage: React.FC = () => {
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   Новий тимчасовий пароль
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   Для учня: <strong>{tempPasswordModal.username}</strong>
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               Попередній пароль учня ніколи не зберігається у відкритому вигляді. Згенеровано новий надійний тимчасовий пароль. Передайте його учневі особисто:
             </p>
 
@@ -887,7 +887,7 @@ export const AdminPage: React.FC = () => {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setTempPasswordModal(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white"
               >
                 Зрозуміло, скопійовано
               </button>
@@ -909,7 +909,7 @@ export const AdminPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveUserEdit} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveUserEdit} className="space-y-3 text-sm">
               <div>
                 <label className="block font-semibold mb-1">Нікнейм</label>
                 <input
@@ -972,19 +972,19 @@ export const AdminPage: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Видалити учня {deleteUserTarget.nickname}?
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {t('deleteAccountConfirm')}
             </p>
             <div className="flex justify-center gap-2 pt-2">
               <button
                 onClick={() => setDeleteUserTarget(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
               >
                 Скасувати
               </button>
               <button
                 onClick={handleDeleteUser}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 text-white"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white"
               >
                 Видалити назавжди
               </button>
@@ -1002,7 +1002,7 @@ export const AdminPage: React.FC = () => {
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   Особистий журнал учня: {inspectedStudent.nickname} ({inspectedStudent.telegram})
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   Суммарний прибуток: +{formatUah(inspectedStudent.profitAllTime)} ₴ | Угод: {inspectedStudentTrades.length}
                 </p>
               </div>
@@ -1015,10 +1015,10 @@ export const AdminPage: React.FC = () => {
               {loadingInspection ? (
                 <PageLoader label="Завантаження операцій учня..." />
               ) : inspectedStudentTrades.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-500">Учень ще не має збережених угод.</div>
+                <div className="p-8 text-center text-sm text-slate-500">Учень ще не має збережених угод.</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs whitespace-nowrap">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
                       <tr>
                         <th className="py-2.5 px-3">Дата</th>
@@ -1065,7 +1065,7 @@ export const AdminPage: React.FC = () => {
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setInspectedStudent(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
               >
                 Закрити
               </button>
@@ -1087,7 +1087,7 @@ export const AdminPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveGlobalBank} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveGlobalBank} className="space-y-3 text-sm">
               <div>
                 <label className="block font-semibold mb-1">Назва банку</label>
                 <input

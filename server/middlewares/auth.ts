@@ -21,7 +21,22 @@ export async function authenticate(
 
   const session = await prisma.session.findUnique({
     where: { token },
-    include: { user: true },
+    include: {
+      user: {
+        select: {
+          id: true,
+          nickname: true,
+          telegram: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          lastLoginAt: true,
+          themePreference: true,
+          languagePreference: true,
+        },
+      },
+    },
   });
 
   if (!session) {
@@ -35,7 +50,7 @@ export async function authenticate(
     return null;
   }
 
-  const user = mapUser(session.user);
+  const user = mapUser({ ...session.user, passwordHash: '' });
 
   if (user.status === 'blocked') {
     res.status(403).json({

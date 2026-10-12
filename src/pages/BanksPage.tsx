@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
+import { useCatalog } from "../context/CatalogContext";
 import { UserBank } from "../types";
 import {
   Building2,
@@ -16,9 +17,8 @@ import { ButtonLoader, PageLoader } from "../components/ui/Loader";
 
 export const BanksPage: React.FC = () => {
   const { t } = useAuth();
-
-  const [banks, setBanks] = useState<UserBank[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { banks, catalogReady, refreshCatalog } = useCatalog();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<UserBank | null>(null);
@@ -31,21 +31,16 @@ export const BanksPage: React.FC = () => {
 
   const [deleteTarget, setDeleteTarget] = useState<UserBank | null>(null);
 
-  const fetchBanks = async () => {
-    setIsLoading(true);
+  const fetchBanks = async (sync?: boolean) => {
+    setIsRefreshing(true);
     try {
-      const res = await api.getBanks();
-      setBanks(res.banks);
+      await refreshCatalog(sync);
     } catch (err) {
       console.error("Error fetching banks:", err);
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    fetchBanks();
-  }, []);
 
   const handleOpenAddModal = () => {
     setEditingBank(null);
@@ -151,14 +146,14 @@ export const BanksPage: React.FC = () => {
             <Building2 className="w-6 h-6 text-blue-600 dark:text-sky-400" />
             <span>{t("myBanksTitle")}</span>
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {t("myBanksSubtitle")}
           </p>
         </div>
 
         <button
           onClick={handleOpenAddModal}
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>{t("addBankBtn")}</span>
@@ -166,7 +161,7 @@ export const BanksPage: React.FC = () => {
       </div>
 
 
-      {isLoading ? (
+      {!catalogReady || isRefreshing ? (
         <PageLoader label="Завантаження банківських рахунків..." />
       ) : banks.length === 0 ? (
         <div className="p-12 text-center bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
@@ -177,7 +172,7 @@ export const BanksPage: React.FC = () => {
           </p>
           <button
             onClick={handleOpenAddModal}
-            className="px-4 py-2 text-xs font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700"
+            className="px-4 py-2.5 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700"
           >
             {t("addBankBtn")}
           </button>
@@ -225,7 +220,7 @@ export const BanksPage: React.FC = () => {
                           {bank.name}
                         </h3>
                         {bank.notes && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
                             {bank.notes}
                           </p>
                         )}
@@ -252,7 +247,7 @@ export const BanksPage: React.FC = () => {
 
 
                   <div className="space-y-1.5 mb-4">
-                    <div className="flex items-center justify-between text-xs font-semibold">
+                    <div className="flex items-center justify-between text-sm font-semibold">
                       <span className="text-slate-500 dark:text-slate-400">
                         {t("turnoverLimit")}
                       </span>
@@ -274,7 +269,7 @@ export const BanksPage: React.FC = () => {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center justify-between text-xs">
                       <span
                         className={`font-semibold ${
                           isExceeded
@@ -296,9 +291,9 @@ export const BanksPage: React.FC = () => {
                   </div>
 
 
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-slate-100 dark:border-slate-800">
                     <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500 mb-0.5">
+                      <div className="flex items-center gap-1 text-xs text-slate-500 mb-0.5">
                         <ArrowDownLeft className="w-3 h-3 text-sky-500" />
                         <span>{t("buyTurnover")}</span>
                       </div>
@@ -308,7 +303,7 @@ export const BanksPage: React.FC = () => {
                     </div>
 
                     <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500 mb-0.5">
+                      <div className="flex items-center gap-1 text-xs text-slate-500 mb-0.5">
                         <ArrowUpRight className="w-3 h-3 text-amber-500" />
                         <span>{t("sellTurnover")}</span>
                       </div>
@@ -320,7 +315,7 @@ export const BanksPage: React.FC = () => {
                 </div>
 
 
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-sm">
                   <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                     <span>{t("bankTrades")}:</span>
                     <strong className="font-mono text-slate-900 dark:text-white">
@@ -362,12 +357,12 @@ export const BanksPage: React.FC = () => {
             </div>
 
             {formError && (
-              <div className="p-3 rounded-lg text-xs bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200">
+              <div className="p-3 rounded-lg text-sm bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200">
                 {formError}
               </div>
             )}
 
-            <form onSubmit={handleSaveBank} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveBank} className="space-y-4 text-sm">
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t("bankName")} *
@@ -442,19 +437,19 @@ export const BanksPage: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               {t("deleteBank")} «{deleteTarget.name}»?
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {t("deleteBankConfirm")}
             </p>
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+                className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
               >
                 {t("cancel")}
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
+                className="px-4 py-2.5 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
               >
                 {t("deleteBank")}
               </button>

@@ -64,6 +64,67 @@ export function tradeMatchesKyivMonthDays(
   return day >= lo && day <= hi;
 }
 
+function kyivDayUtcRange(ymd: string): { gte: Date; lt: Date } {
+  return {
+    gte: new Date(getKyivDayStartMs(ymd)),
+    lt: new Date(getKyivDayStartMs(addKyivDays(ymd, 1))),
+  };
+}
+
+/** Narrow Prisma `createdAt` for common period filters (Kyiv calendar). */
+export function tradeFiltersToCreatedAtRange(filters: {
+  dateRange?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  monthKey?: string;
+}): { gte: Date; lt: Date } | null {
+  const dateFrom = filters.dateFrom?.trim();
+  const dateTo = filters.dateTo?.trim();
+  if (dateFrom || dateTo) {
+    const from = dateFrom || dateTo!;
+    const to = dateTo || dateFrom!;
+    const lo = from <= to ? from : to;
+    const hi = from <= to ? to : from;
+    return {
+      gte: new Date(getKyivDayStartMs(lo)),
+      lt: new Date(getKyivDayStartMs(addKyivDays(hi, 1))),
+    };
+  }
+
+  const dateRange = filters.dateRange?.trim();
+  if (dateRange && dateRange !== 'all') {
+    const today = getKyivTodayYmd();
+    if (dateRange === 'today') return kyivDayUtcRange(today);
+    if (dateRange === 'yesterday') return kyivDayUtcRange(addKyivDays(today, -1));
+    if (dateRange === 'week') {
+      return {
+        gte: new Date(getKyivDayStartMs(addKyivDays(today, -6))),
+        lt: new Date(getKyivDayStartMs(addKyivDays(today, 1))),
+      };
+    }
+    if (dateRange === 'month') {
+      return {
+        gte: new Date(getKyivDayStartMs(getKyivMonthStartYmd())),
+        lt: new Date(getKyivDayStartMs(addKyivDays(today, 1))),
+      };
+    }
+  }
+
+  const monthKey = filters.monthKey?.trim();
+  if (monthKey && /^\d{4}-\d{2}$/.test(monthKey)) {
+    const startYmd = `${monthKey}-01`;
+    const [y, m] = monthKey.split('-').map(Number);
+    const nextMonth =
+      m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+    return {
+      gte: new Date(getKyivDayStartMs(startYmd)),
+      lt: new Date(getKyivDayStartMs(nextMonth)),
+    };
+  }
+
+  return null;
+}
+
 export function tradeMatchesKyivDateRange(
   createdAt: Date | string,
   dateRange: TradeDateRange,

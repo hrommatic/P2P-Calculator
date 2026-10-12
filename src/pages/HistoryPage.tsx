@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Trade, UserBank, Exchange } from '../types';
+import { useCatalog } from '../context/CatalogContext';
+import { Trade } from '../types';
 import {
   History as HistoryIcon,
   Download,
@@ -21,9 +22,8 @@ import {
 export const HistoryPage: React.FC = () => {
   const { t, language } = useAuth();
 
+  const { banks, exchanges } = useCatalog();
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [banks, setBanks] = useState<UserBank[]>([]);
-  const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -51,14 +51,8 @@ export const HistoryPage: React.FC = () => {
   const fetchHistory = async () => {
     setIsLoading(true);
     try {
-      const [tRes, bRes, eRes] = await Promise.all([
-        api.getTrades(periodToQuery(period)),
-        api.getBanks(),
-        api.getExchanges(),
-      ]);
+      const tRes = await api.getTrades(periodToQuery(period));
       setTrades(tRes.trades);
-      setBanks(bRes.banks);
-      setExchanges(eRes.exchanges);
     } catch (err) {
       console.error('Error fetching trade history:', err);
     } finally {
@@ -155,7 +149,7 @@ export const HistoryPage: React.FC = () => {
             <HistoryIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
             <span>{t('historyTitle')}</span>
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {t('historySubtitle')}
           </p>
         </div>
@@ -163,7 +157,7 @@ export const HistoryPage: React.FC = () => {
         <a
           href={api.exportCsvUrl()}
           download
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 shadow-2xs transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 shadow-2xs transition-colors shrink-0"
         >
           <Download className="w-4 h-4 text-blue-600 dark:text-sky-400" />
           <span>{t('exportCsv')}</span>
@@ -177,12 +171,12 @@ export const HistoryPage: React.FC = () => {
         {isLoading ? (
           <PageLoader label="Завантаження журналу угод..." />
         ) : trades.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-500">
+          <div className="p-12 text-center text-sm text-slate-500">
             Угод за вказаними фільтрами не знайдено.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs whitespace-nowrap">
+            <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
                 <tr>
                   <th className="py-3 px-4">Дата / Час</th>
@@ -265,7 +259,7 @@ export const HistoryPage: React.FC = () => {
                         <span className="font-semibold text-blue-600 dark:text-sky-400">
                           +{trade.roiPercent.toFixed(2)}%
                         </span>
-                        <span className="text-[10px] text-slate-400 block">
+                        <span className="text-xs text-slate-400 block">
                           ({trade.spreadPercent.toFixed(2)}% спред)
                         </span>
                       </td>
@@ -322,9 +316,9 @@ export const HistoryPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 space-y-1.5">
-                <span className="font-bold text-blue-600 dark:text-sky-400 uppercase text-[10px]">Покупка</span>
+                <span className="font-bold text-blue-600 dark:text-sky-400 uppercase text-xs">Покупка</span>
                 <p><strong>Біржа:</strong> {selectedTrade.buyExchange}</p>
                 <p><strong>Банк:</strong> {selectedTrade.buyBankName}</p>
                 <p><strong>Курс:</strong> {selectedTrade.buyRate.toFixed(2)} ₴</p>
@@ -333,7 +327,7 @@ export const HistoryPage: React.FC = () => {
               </div>
 
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 space-y-1.5">
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase text-[10px]">Продаж</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase text-xs">Продаж</span>
                 <p><strong>Біржа:</strong> {selectedTrade.sellExchange}</p>
                 <p><strong>Банк:</strong> {selectedTrade.sellBankName}</p>
                 <p><strong>Курс:</strong> {selectedTrade.sellRate.toFixed(2)} ₴</p>
@@ -342,7 +336,7 @@ export const HistoryPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1.5">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-sm space-y-1.5">
               <p><strong>Всі комісії:</strong> {selectedTrade.totalCommissionsUah.toFixed(2)} ₴</p>
               <p><strong>Чистий прибуток:</strong> <span className="font-bold text-emerald-600">+{formatUah(selectedTrade.netProfitUah)} ₴</span></p>
               <p><strong>Рентабельність (ROI):</strong> +{selectedTrade.roiPercent.toFixed(2)}%</p>
@@ -355,7 +349,7 @@ export const HistoryPage: React.FC = () => {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setSelectedTrade(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
               >
                 {t('close')}
               </button>
@@ -381,12 +375,12 @@ export const HistoryPage: React.FC = () => {
             </div>
 
             {editError && (
-              <div className="p-2.5 rounded-lg text-xs bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200">
+              <div className="p-2.5 rounded-lg text-sm bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200">
                 {editError}
               </div>
             )}
 
-            <form onSubmit={handleSaveEdit} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveEdit} className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold mb-1">Банк покупки</label>
@@ -502,20 +496,20 @@ export const HistoryPage: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               {t('deleteTrade')}?
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {t('deleteTradeConfirm')}
             </p>
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-60"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-60"
               >
                 {isDeleting ? <ButtonLoader label="Видалення..." /> : t('deleteTrade')}
               </button>

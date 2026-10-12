@@ -58,8 +58,10 @@ export async function handlePostTrade(req: VercelRequest, res: VercelResponse, u
     return res.status(400).json({ error: 'Вкажіть біржу продажу, банк та курс продажу' });
   }
 
-  const buyBank = await findUserBankById(String(buyBankId));
-  const sellBank = await findUserBankById(String(sellBankId));
+  const [buyBank, sellBank] = await Promise.all([
+    findUserBankById(String(buyBankId)),
+    findUserBankById(String(sellBankId)),
+  ]);
 
   if (!buyBank || buyBank.userId !== user.id || !sellBank || sellBank.userId !== user.id) {
     return res.status(400).json({ error: 'Один із обраних банків не знайдено у вашому списку' });
@@ -128,8 +130,10 @@ export async function handlePutTrade(req: VercelRequest, res: VercelResponse, us
   }
 
   const body = parseJsonBody(req);
-  const buyBank = await findUserBankById(String(body.buyBankId));
-  const sellBank = await findUserBankById(String(body.sellBankId));
+  const [buyBank, sellBank] = await Promise.all([
+    findUserBankById(String(body.buyBankId)),
+    findUserBankById(String(body.sellBankId)),
+  ]);
 
   if (!buyBank || buyBank.userId !== existingTrade.userId || !sellBank || sellBank.userId !== existingTrade.userId) {
     return res.status(400).json({ error: 'Банк не знайдено' });

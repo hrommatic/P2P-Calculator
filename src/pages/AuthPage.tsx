@@ -109,7 +109,7 @@ export const AuthPage: React.FC = () => {
               <button
                 key={l.code}
                 onClick={() => setLanguage(l.code)}
-                className={`px-2 py-1 text-xs font-semibold rounded ${
+                className={`px-2 py-1 text-sm font-semibold rounded ${
                   language === l.code
                     ? 'bg-blue-600 text-white'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -140,7 +140,7 @@ export const AuthPage: React.FC = () => {
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               {mode === 'login' ? t('loginTitle') : t('registerTitle')}
             </h1>
-            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
               {mode === 'login' ? t('loginSubtitle') : t('registerSubtitle')}
             </p>
           </div>
@@ -150,7 +150,7 @@ export const AuthPage: React.FC = () => {
             <button
               type="button"
               onClick={() => { setMode('login'); setError(null); }}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
                 mode === 'login'
                   ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200 dark:bg-slate-600 dark:text-white dark:ring-slate-500/50'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -161,7 +161,7 @@ export const AuthPage: React.FC = () => {
             <button
               type="button"
               onClick={() => { setMode('register'); setError(null); }}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
                 mode === 'register'
                   ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200 dark:bg-slate-600 dark:text-white dark:ring-slate-500/50'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -173,7 +173,7 @@ export const AuthPage: React.FC = () => {
 
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg text-xs flex items-start gap-2.5 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
+            <div className="mb-4 p-3 rounded-lg text-sm flex items-start gap-2.5 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -183,7 +183,7 @@ export const AuthPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 {t('nickname')}
               </label>
               <div className="relative">
@@ -204,7 +204,7 @@ export const AuthPage: React.FC = () => {
 
             {mode === 'register' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   {t('telegram')}
                 </label>
                 <div className="relative">
@@ -218,7 +218,7 @@ export const AuthPage: React.FC = () => {
                     className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {language === 'en' ? 'Format: @username for curator support' : language === 'ru' ? 'Формат: @username для связи с куратором' : 'Формат: @username для зв’язку з куратором'}
                 </p>
               </div>
@@ -226,7 +226,7 @@ export const AuthPage: React.FC = () => {
 
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 {t('password')}
               </label>
               <div className="relative">
@@ -258,7 +258,7 @@ export const AuthPage: React.FC = () => {
 
               {mode === 'register' && password && (
                 <div className="mt-2 space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">
                       {language === 'en' ? 'Password strength:' : language === 'ru' ? 'Надёжность пароля:' : 'Надійність пароля:'}
                     </span>
@@ -277,7 +277,7 @@ export const AuthPage: React.FC = () => {
 
             {mode === 'register' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   {t('confirmPassword')}
                 </label>
                 <div className="relative">
@@ -314,7 +314,7 @@ export const AuthPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setForgotModalOpen(true)}
-                  className="text-xs text-blue-600 dark:text-sky-400 hover:underline font-medium"
+                  className="text-sm text-blue-600 dark:text-sky-400 hover:underline font-medium"
                 >
                   {t('forgotPassword')}
                 </button>
@@ -353,7 +353,7 @@ export const AuthPage: React.FC = () => {
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   {t('forgotPasswordModalTitle')}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {t('appName')}
                 </p>
               </div>
@@ -363,7 +363,7 @@ export const AuthPage: React.FC = () => {
               {t('forgotPasswordModalText', { curator })}
             </p>
 
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-sm">
               <span className="text-slate-500 dark:text-slate-400 block mb-0.5">Telegram куратора:</span>
               <span className="font-mono font-bold text-blue-600 dark:text-sky-400 text-sm select-all">
                 {curator}
@@ -374,7 +374,7 @@ export const AuthPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setForgotModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
               >
                 {t('close')}
               </button>
@@ -382,7 +382,7 @@ export const AuthPage: React.FC = () => {
                 href={`https://t.me/${curator.replace('@', '')}`}
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{t('contactCuratorBtn')}</span>
@@ -393,7 +393,7 @@ export const AuthPage: React.FC = () => {
       )}
 
 
-      <footer className="w-full text-center py-4 text-xs text-slate-400 dark:text-slate-600">
+      <footer className="w-full text-center py-4 text-sm text-slate-400 dark:text-slate-600">
         © 2026 P2P Calculator. All rights reserved.
       </footer>
 

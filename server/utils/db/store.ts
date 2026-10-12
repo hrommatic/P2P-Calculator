@@ -23,17 +23,27 @@ import {
   mapUserBank,
   parseDate,
 } from "./mappers.js";
+import { createTTLCache } from "../../lib/server-cache.js";
 import { buildBootstrapDatabase, needsSeed } from "./seed.js";
 import {
   accumulateKyivProfitBuckets,
   isKyivToday,
-  tradeMatchesKyivDateRange,
   tradeMatchesKyivMonthDays,
-  tradeMatchesKyivYmdRange,
-  type TradeDateRange,
 } from "../../lib/kyiv-dates.js";
+import {
+  buildTradeListQuery,
+  type TradeListFilters,
+} from "./trade-filters.js";
 
 const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
+
+const exchangesCache = createTTLCache<Exchange[]>(60_000);
+const globalBanksCache = createTTLCache<GlobalBank[]>(60_000);
+
+export function invalidateReferenceDataCache(): void {
+  exchangesCache.clear();
+  globalBanksCache.clear();
+}
 
 let bootstrapPromise: Promise<void> | null = null;
 
@@ -48,15 +58,11 @@ async function runBootstrapIfNeeded(): Promise<void> {
 }
 
 export async function ensureBootstrapped(): Promise<void> {
-  try {
-    if (!bootstrapPromise) {
-      bootstrapPromise = runBootstrapIfNeeded();
-    }
-    await bootstrapPromise;
-  } catch (err) {
+  bootstrapPromise ??= runBootstrapIfNeeded().catch(err => {
     bootstrapPromise = null;
     throw err;
-  }
+  });
+  await bootstrapPromise;
 }
 
 export async function pingDatabase(): Promise<void> {
@@ -72,9 +78,13 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 export async function getActiveExchanges(): Promise<Exchange[]> {
+  const cached = exchangesCache.get();
+  if (cached) return cached;
   await ensureBootstrapped();
   const rows = await prisma.exchange.findMany({ where: { isActive: true } });
-  return rows.map(mapExchange);
+  const mapped = rows.map(mapExchange);
+  exchangesCache.set(mapped);
+  return mapped;
 }
 
 export async function findUserByNickname(
@@ -251,9 +261,13 @@ export async function getUserBanks(
 }
 
 export async function getActiveGlobalBanks(): Promise<GlobalBank[]> {
+  const cached = globalBanksCache.get();
+  if (cached) return cached;
   await ensureBootstrapped();
   const rows = await prisma.globalBank.findMany({ where: { isActive: true } });
-  return rows.map(mapGlobalBank);
+  const mapped = rows.map(mapGlobalBank);
+  globalBanksCache.set(mapped);
+  return mapped;
 }
 
 export async function findUserBankById(id: string): Promise<UserBank | null> {
@@ -266,16 +280,17 @@ export async function findDuplicateUserBankName(
   name: string,
   excludeBankId?: string,
 ): Promise<UserBank | null> {
-  const normalized = name.trim().toLowerCase();
-  const rows = await prisma.userBank.findMany({
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  const row = await prisma.userBank.findFirst({
     where: {
       userId,
       isArchived: false,
+      name: { equals: trimmed, mode: "insensitive" },
       ...(excludeBankId ? { NOT: { id: excludeBankId } } : {}),
     },
   });
-  const match = rows.find((b) => b.name.trim().toLowerCase() === normalized);
-  return match ? mapUserBank(match) : null;
+  return row ? mapUserBank(row) : null;
 }
 
 export async function createUserBank(bank: UserBank) {
@@ -320,166 +335,91 @@ export async function deleteUserBankRecord(id: string) {
 }
 
 export async function syncUserBankStats(userId: string) {
-  const [banks, trades] = await Promise.all([
-    prisma.userBank.findMany({ where: { userId, isArchived: false } }),
-    prisma.trade.findMany({
-      where: { userId },
-      select: {
-        buyBankId: true,
-        sellBankId: true,
-        buyAmountUah: true,
-        sellAmountUah: true,
-        netProfitUah: true,
-      },
-    }),
-  ]);
-
-  const now = new Date();
-  await Promise.all(
-    banks.map((bank) => {
-      let buyTurnover = 0;
-      let sellTurnover = 0;
-      let netProfit = 0;
-      let count = 0;
-
-      for (const trade of trades) {
-        let involved = false;
-        if (trade.buyBankId === bank.id) {
-          buyTurnover += trade.buyAmountUah;
-          involved = true;
-        }
-        if (trade.sellBankId === bank.id) {
-          sellTurnover += trade.sellAmountUah;
-          involved = true;
-        }
-        if (involved) {
-          count += 1;
-
-          netProfit += trade.netProfitUah;
-        }
-      }
-
-      return prisma.userBank.update({
-        where: { id: bank.id },
-        data: {
-          buyTurnoverUah:
-            Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
-          sellTurnoverUah:
-            Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
-          netProfitUah: Math.round((netProfit + Number.EPSILON) * 100) / 100,
-          tradesCount: count,
-          updatedAt: now,
+  await withDbRetry(async () => {
+    const [banks, trades] = await Promise.all([
+      prisma.userBank.findMany({ where: { userId, isArchived: false } }),
+      prisma.trade.findMany({
+        where: { userId },
+        select: {
+          buyBankId: true,
+          sellBankId: true,
+          buyAmountUah: true,
+          sellAmountUah: true,
+          netProfitUah: true,
         },
-      });
-    }),
-  );
+      }),
+    ]);
+
+    const now = new Date();
+    if (banks.length > 0) {
+      await prisma.$transaction(async (tx) => {
+        for (const bank of banks) {
+          let buyTurnover = 0;
+          let sellTurnover = 0;
+          let netProfit = 0;
+          let count = 0;
+
+          for (const trade of trades) {
+            let involved = false;
+            if (trade.buyBankId === bank.id) {
+              buyTurnover += trade.buyAmountUah;
+              involved = true;
+            }
+            if (trade.sellBankId === bank.id) {
+              sellTurnover += trade.sellAmountUah;
+              involved = true;
+            }
+            if (involved) {
+              count += 1;
+              netProfit += trade.netProfitUah;
+            }
+          }
+
+          await tx.userBank.update({
+            where: { id: bank.id },
+            data: {
+              buyTurnoverUah:
+                Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
+              sellTurnoverUah:
+                Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
+              netProfitUah: Math.round((netProfit + Number.EPSILON) * 100) / 100,
+              tradesCount: count,
+              updatedAt: now,
+            },
+          });
+        }
+      }, TX_OPTIONS);
+    }
+  });
 }
 
-type TradeFilters = {
-  dateRange?: string | string[];
-  dateFrom?: string | string[];
-  dateTo?: string | string[];
-  monthKey?: string | string[];
-  monthDayFrom?: string | string[];
-  monthDayTo?: string | string[];
-  bankId?: string | string[];
-  exchange?: string | string[];
-  search?: string | string[];
-  sort?: string | string[];
-};
+export async function countActiveUserBanks(userId: string): Promise<number> {
+  await ensureBootstrapped();
+  return prisma.userBank.count({
+    where: { userId, isArchived: false },
+  });
+}
 
 export async function getTradesForUser(
   userId: string,
-  filters: TradeFilters = {},
+  filters: TradeListFilters = {},
 ): Promise<Trade[]> {
   await ensureBootstrapped();
-  const rows = await prisma.trade.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-  });
+
+  const { where, orderBy, monthDayFilter } = buildTradeListQuery(
+    userId,
+    filters,
+  );
+
+  const rows = await prisma.trade.findMany({ where, orderBy });
   let trades = rows.map(mapTrade);
 
-  const dateRange = filters.dateRange ? String(filters.dateRange) : undefined;
-  const dateFrom = filters.dateFrom ? String(filters.dateFrom) : undefined;
-  const dateTo = filters.dateTo ? String(filters.dateTo) : undefined;
-  const monthKey = filters.monthKey ? String(filters.monthKey) : undefined;
-  const monthDayFrom = filters.monthDayFrom
-    ? Number(filters.monthDayFrom)
-    : undefined;
-  const monthDayTo = filters.monthDayTo
-    ? Number(filters.monthDayTo)
-    : undefined;
-  const bankId = filters.bankId ? String(filters.bankId) : undefined;
-  const exchange = filters.exchange ? String(filters.exchange) : undefined;
-  const search = filters.search ? String(filters.search) : undefined;
-  const sort = filters.sort ? String(filters.sort) : undefined;
-
-  if (dateFrom || dateTo) {
+  if (monthDayFilter) {
+    const { monthKey, dayFrom, dayTo } = monthDayFilter;
     trades = trades.filter((t) =>
-      tradeMatchesKyivYmdRange(t.createdAt, dateFrom, dateTo),
-    );
-  } else if (
-    monthKey &&
-    Number.isFinite(monthDayFrom) &&
-    Number.isFinite(monthDayTo)
-  ) {
-    trades = trades.filter((t) =>
-      tradeMatchesKyivMonthDays(
-        t.createdAt,
-        monthKey,
-        monthDayFrom!,
-        monthDayTo!,
-      ),
-    );
-  } else if (dateRange) {
-    const range = dateRange as TradeDateRange;
-    if (
-      range === "today" ||
-      range === "yesterday" ||
-      range === "week" ||
-      range === "month"
-    ) {
-      trades = trades.filter((t) =>
-        tradeMatchesKyivDateRange(t.createdAt, range),
-      );
-    }
-  }
-
-  if (bankId && bankId !== "all") {
-    trades = trades.filter(
-      (t) => t.buyBankId === bankId || t.sellBankId === bankId,
+      tradeMatchesKyivMonthDays(t.createdAt, monthKey, dayFrom, dayTo),
     );
   }
-
-  if (exchange && exchange !== "all") {
-    trades = trades.filter(
-      (t) => t.buyExchange === exchange || t.sellExchange === exchange,
-    );
-  }
-
-  if (search?.trim()) {
-    const q = search.trim().toLowerCase();
-    trades = trades.filter(
-      (t) =>
-        (t.notes && t.notes.toLowerCase().includes(q)) ||
-        t.buyBankName.toLowerCase().includes(q) ||
-        t.sellBankName.toLowerCase().includes(q) ||
-        t.buyExchange.toLowerCase().includes(q) ||
-        t.sellExchange.toLowerCase().includes(q),
-    );
-  }
-
-  if (sort === "profit_desc")
-    trades.sort((a, b) => b.netProfitUah - a.netProfitUah);
-  else if (sort === "profit_asc")
-    trades.sort((a, b) => a.netProfitUah - b.netProfitUah);
-  else if (sort === "spread_desc")
-    trades.sort((a, b) => b.spreadPercent - a.spreadPercent);
-  else
-    trades.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
 
   return trades;
 }
@@ -539,11 +479,9 @@ export async function deleteTradeRecord(id: string) {
   await prisma.trade.delete({ where: { id } });
 }
 
+/** @deprecated Stats are derived from filtered trades on the client; use countActiveUserBanks. */
 export async function getDashboardStats(userId: string) {
-  const banksCount = await prisma.userBank.count({
-    where: { userId, isArchived: false },
-  });
-
+  const banksCount = await countActiveUserBanks(userId);
   return {
     profitToday: 0,
     profitMonth: 0,
@@ -616,6 +554,7 @@ export async function createGlobalBank(bank: GlobalBank) {
       createdAt: parseDate(bank.createdAt),
     },
   });
+  invalidateReferenceDataCache();
 }
 
 export async function updateGlobalBank(bank: GlobalBank) {
@@ -629,6 +568,7 @@ export async function updateGlobalBank(bank: GlobalBank) {
       isActive: bank.isActive,
     },
   });
+  invalidateReferenceDataCache();
 }
 
 export async function createExchangeRecord(exchange: Exchange) {
@@ -641,6 +581,7 @@ export async function createExchangeRecord(exchange: Exchange) {
       createdAt: parseDate(exchange.createdAt),
     },
   });
+  invalidateReferenceDataCache();
 }
 
 export async function updateExchangeRecord(exchange: Exchange) {
@@ -648,6 +589,7 @@ export async function updateExchangeRecord(exchange: Exchange) {
     where: { id: exchange.id },
     data: { name: exchange.name, isActive: exchange.isActive },
   });
+  invalidateReferenceDataCache();
 }
 
 export async function updateSiteSettings(settings: SiteSettings) {
@@ -666,36 +608,32 @@ export async function updateSiteSettings(settings: SiteSettings) {
 }
 
 export async function getAdminOverviewStats() {
-  const [students, tradesTodayCount, tradeAgg] = await Promise.all([
-    prisma.user.findMany({ where: { role: "student" } }),
-    prisma.trade.count({
-      where: {
-        createdAt: {
-          gte: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            new Date().getDate(),
-          ),
-        },
-      },
-    }),
-    prisma.trade.aggregate({
-      _sum: { buyAmountUah: true, sellAmountUah: true, netProfitUah: true },
-      _count: true,
-    }),
-  ]);
+  const weekAgo = new Date(Date.now() - 7 * 86400000);
+  const dayStart = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    new Date().getDate(),
+  );
 
-  const activeStudents = students.filter((s) => {
-    if (!s.lastLoginAt) return false;
-    return Date.now() - s.lastLoginAt.getTime() < 7 * 86400000;
-  });
+  const [totalStudents, activeStudents, tradesTodayCount, tradeAgg] =
+    await Promise.all([
+      prisma.user.count({ where: { role: "student" } }),
+      prisma.user.count({
+        where: { role: "student", lastLoginAt: { gte: weekAgo } },
+      }),
+      prisma.trade.count({ where: { createdAt: { gte: dayStart } } }),
+      prisma.trade.aggregate({
+        _sum: { buyAmountUah: true, sellAmountUah: true, netProfitUah: true },
+        _count: true,
+      }),
+    ]);
 
   const totalPlatformTurnover =
     (tradeAgg._sum.buyAmountUah ?? 0) + (tradeAgg._sum.sellAmountUah ?? 0);
 
   return {
-    totalStudents: students.length,
-    activeStudents: activeStudents.length,
+    totalStudents,
+    activeStudents,
     tradesToday: tradesTodayCount,
     totalPlatformTurnover:
       Math.round((totalPlatformTurnover + Number.EPSILON) * 100) / 100,
@@ -707,32 +645,26 @@ export async function getAdminOverviewStats() {
 }
 
 export async function getAdminUsers(search?: string, status?: string) {
-  const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
-  const tradeRows = await prisma.trade.findMany({
-    select: {
-      userId: true,
-      netProfitUah: true,
-      buyAmountUah: true,
-      sellAmountUah: true,
-    },
-  });
+  const [users, tradeGroups] = await Promise.all([
+    prisma.user.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.trade.groupBy({
+      by: ["userId"],
+      _sum: { netProfitUah: true, buyAmountUah: true, sellAmountUah: true },
+      _count: true,
+    }),
+  ]);
 
   const statsByUser = new Map<
     string,
     { profit: number; buy: number; sell: number; count: number }
   >();
-  for (const t of tradeRows) {
-    const s = statsByUser.get(t.userId) ?? {
-      profit: 0,
-      buy: 0,
-      sell: 0,
-      count: 0,
-    };
-    s.profit += t.netProfitUah;
-    s.buy += t.buyAmountUah;
-    s.sell += t.sellAmountUah;
-    s.count += 1;
-    statsByUser.set(t.userId, s);
+  for (const g of tradeGroups) {
+    statsByUser.set(g.userId, {
+      profit: g._sum.netProfitUah ?? 0,
+      buy: g._sum.buyAmountUah ?? 0,
+      sell: g._sum.sellAmountUah ?? 0,
+      count: g._count,
+    });
   }
 
   let result = users.map((u) => {
@@ -767,42 +699,83 @@ export async function getAdminUsers(search?: string, status?: string) {
 }
 
 export async function getStudentsStats() {
-  const students = await prisma.user.findMany({ where: { role: "student" } });
-  const trades = await prisma.trade.findMany();
+  const students = await prisma.user.findMany({
+    where: { role: "student" },
+    select: {
+      id: true,
+      nickname: true,
+      telegram: true,
+      status: true,
+      lastLoginAt: true,
+    },
+  });
+  if (students.length === 0) return [];
 
-  return students.map((student) => {
-    const userTrades = trades.filter((t) => t.userId === student.id);
-    const profitBuckets = {
+  const studentIds = students.map((s) => s.id);
+  const trades = await prisma.trade.findMany({
+    where: { userId: { in: studentIds } },
+    select: {
+      userId: true,
+      createdAt: true,
+      netProfitUah: true,
+      buyAmountUah: true,
+      sellAmountUah: true,
+    },
+  });
+
+  type Acc = {
+    profitToday: number;
+    profitYesterday: number;
+    profitMonth: number;
+    profitAllTime: number;
+    buyTurnover: number;
+    sellTurnover: number;
+    tradesCount: number;
+  };
+
+  const byUser = new Map<string, Acc>();
+  for (const t of trades) {
+    const acc = byUser.get(t.userId) ?? {
       profitToday: 0,
       profitYesterday: 0,
       profitMonth: 0,
+      profitAllTime: 0,
+      buyTurnover: 0,
+      sellTurnover: 0,
+      tradesCount: 0,
     };
-    let profitAllTime = 0;
-    let buyTurnover = 0;
-    let sellTurnover = 0;
+    acc.profitAllTime += t.netProfitUah;
+    acc.buyTurnover += t.buyAmountUah;
+    acc.sellTurnover += t.sellAmountUah;
+    acc.tradesCount += 1;
+    accumulateKyivProfitBuckets(t.createdAt, t.netProfitUah, acc);
+    byUser.set(t.userId, acc);
+  }
 
-    for (const t of userTrades) {
-      profitAllTime += t.netProfitUah;
-      buyTurnover += t.buyAmountUah;
-      sellTurnover += t.sellAmountUah;
-      accumulateKyivProfitBuckets(t.createdAt, t.netProfitUah, profitBuckets);
-    }
+  const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-    const { profitToday, profitYesterday, profitMonth } = profitBuckets;
-
+  return students.map((student) => {
+    const s = byUser.get(student.id) ?? {
+      profitToday: 0,
+      profitYesterday: 0,
+      profitMonth: 0,
+      profitAllTime: 0,
+      buyTurnover: 0,
+      sellTurnover: 0,
+      tradesCount: 0,
+    };
     return {
       userId: student.id,
       nickname: student.nickname,
       telegram: student.telegram,
       status: student.status,
-      profitToday: Math.round((profitToday + Number.EPSILON) * 100) / 100,
-      profitYesterday:
-        Math.round((profitYesterday + Number.EPSILON) * 100) / 100,
-      profitMonth: Math.round((profitMonth + Number.EPSILON) * 100) / 100,
-      profitAllTime: Math.round((profitAllTime + Number.EPSILON) * 100) / 100,
-      buyTurnover: Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
-      sellTurnover: Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
-      tradesCount: userTrades.length,
+      profitToday: round2(s.profitToday),
+      profitYesterday: round2(s.profitYesterday),
+      profitMonth: round2(s.profitMonth),
+      profitAllTime: round2(s.profitAllTime),
+      buyTurnover: round2(s.buyTurnover),
+      sellTurnover: round2(s.sellTurnover),
+      tradesCount: s.tradesCount,
       lastLoginAt: student.lastLoginAt?.toISOString() ?? null,
     };
   });

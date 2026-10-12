@@ -31,7 +31,7 @@ export function PageLoader({ label = 'Завантаження...', className = 
   return (
     <div className={`flex flex-col items-center justify-center gap-3 p-12 text-slate-500 dark:text-slate-400 ${className}`}>
       <Loader size="lg" />
-      <span className="text-xs font-semibold">{label}</span>
+      <span className="text-sm font-semibold">{label}</span>
     </div>
   );
 }

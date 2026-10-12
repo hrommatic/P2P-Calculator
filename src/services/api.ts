@@ -10,7 +10,6 @@ import {
   StudentStatsItem,
   AuditLog,
 } from '../types';
-
 const TOKEN_KEY = 'p2p_calc_token';
 
 export function getStoredToken(): string | null {
@@ -148,18 +147,43 @@ export const api = {
 
   exportCsvUrl: () => '/api/trades/export-csv',
 
-  getBanks: (targetUserId?: string) => {
-    const q = targetUserId ? `?targetUserId=${targetUserId}` : '';
-    return request<{ banks: UserBank[]; globalBanks: GlobalBank[] }>(`/banks${q}`);
+  /** Banks + exchanges in one request (fast read, no turnover recalc). */
+  getCatalog: (sync?: boolean, signal?: AbortSignal) => {
+    const path = `/catalog${sync ? '?sync=1' : ''}`;
+    return request<{ banks: UserBank[]; globalBanks: GlobalBank[]; exchanges: Exchange[] }>(
+      path,
+      { signal },
+    );
   },
 
-  createBank: (body: { name: string; turnoverLimitUah: number; initialTurnoverUah?: number; globalBankId?: string; color?: string; notes?: string }) =>
+  getBanks: (targetUserId?: string, sync?: boolean) => {
+    const q = new URLSearchParams();
+    if (targetUserId) q.set('targetUserId', targetUserId);
+    if (sync) q.set('sync', '1');
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request<{ banks: UserBank[]; globalBanks: GlobalBank[] }>(`/banks${queryString}`);
+  },
+
+  createBank: (body: {
+    name: string;
+    turnoverLimitUah: number;
+    initialTurnoverUah?: number;
+    globalBankId?: string;
+    color?: string;
+    notes?: string;
+  }) =>
     request<{ success: boolean; bank: UserBank }>('/banks', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
 
-  updateBank: (id: string, body: { name?: string; turnoverLimitUah?: number; initialTurnoverUah?: number; notes?: string; color?: string }) =>
+  updateBank: (id: string, body: {
+    name?: string;
+    turnoverLimitUah?: number;
+    initialTurnoverUah?: number;
+    notes?: string;
+    color?: string;
+  }) =>
     request<{ success: boolean; bank: UserBank }>(`/banks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(body),
@@ -170,9 +194,20 @@ export const api = {
       method: 'DELETE',
     }),
 
-  getDashboardStats: (targetUserId?: string) => {
-    const q = targetUserId ? `?targetUserId=${targetUserId}` : '';
-    return request<DashboardStats>(`/dashboard/stats${q}`);
+  getDashboardStats: (
+    params?: Record<string, string | undefined>,
+    signal?: AbortSignal,
+  ) => {
+    const q = new URLSearchParams();
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value) q.set(key, value);
+      }
+    }
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request<DashboardStats & { trades: Trade[] }>(`/dashboard/stats${queryString}`, {
+      signal,
+    });
   },
 
   getExchanges: () => request<{ exchanges: Exchange[] }>('/exchanges'),
