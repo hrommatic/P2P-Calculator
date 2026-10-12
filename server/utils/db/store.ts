@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+import { withDbRetry } from "../../lib/db-retry.js";
 import type {
   User,
   SiteSettings,
@@ -36,17 +37,26 @@ const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
 
 let bootstrapPromise: Promise<void> | null = null;
 
+async function runBootstrapIfNeeded(): Promise<void> {
+  await withDbRetry(async () => {
+    if (await needsSeed()) {
+      const db = await buildBootstrapDatabase();
+      const { saveDatabase } = await import("./repository.js");
+      await saveDatabase(db);
+    }
+  });
+}
+
 export async function ensureBootstrapped(): Promise<void> {
-  if (!bootstrapPromise) {
-    bootstrapPromise = (async () => {
-      if (await needsSeed()) {
-        const db = await buildBootstrapDatabase();
-        const { saveDatabase } = await import("./repository.js");
-        await saveDatabase(db);
-      }
-    })();
+  try {
+    if (!bootstrapPromise) {
+      bootstrapPromise = runBootstrapIfNeeded();
+    }
+    await bootstrapPromise;
+  } catch (err) {
+    bootstrapPromise = null;
+    throw err;
   }
-  await bootstrapPromise;
 }
 
 export async function pingDatabase(): Promise<void> {
