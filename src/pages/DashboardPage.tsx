@@ -4,8 +4,6 @@ import { api } from '../services/api';
 import { DashboardStats, Trade } from '../types';
 import {
   TrendingUp,
-  ArrowDownLeft,
-  ArrowUpRight,
   Activity,
   Layers,
   Calendar,
@@ -159,40 +157,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
             {stats?.tradesCountToday ?? 0}
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={toggleTurnoverUnit}
-          disabled={!nbuRate}
-          className={turnoverCardClass}
-          title={nbuRate ? t('turnoverToggleHint') : undefined}
-        >
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('buyTurnoverToday')}</span>
-            <ArrowDownLeft className="w-4 h-4 text-sky-500" />
-          </div>
-          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {formatTurnoverValue(stats?.buyTurnoverToday || 0)}{' '}
-            <span className="text-xs font-normal text-slate-500">{turnoverUnitLabel}</span>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={toggleTurnoverUnit}
-          disabled={!nbuRate}
-          className={turnoverCardClass}
-          title={nbuRate ? t('turnoverToggleHint') : undefined}
-        >
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('sellTurnoverToday')}</span>
-            <ArrowUpRight className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {formatTurnoverValue(stats?.sellTurnoverToday || 0)}{' '}
-            <span className="text-xs font-normal text-slate-500">{turnoverUnitLabel}</span>
-          </div>
-        </button>
 
         <button
           type="button"
