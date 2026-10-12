@@ -1,8 +1,5 @@
 #!/usr/bin/env node
-/**
- * Latency benchmark for key API endpoints.
- * Usage: node scripts/bench-api.mjs [baseUrl]
- */
+
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const ADMIN_PASS = process.env.ADMIN_INITIAL_PASSWORD || 'ChangeMeOnFirstDeploy!';
 

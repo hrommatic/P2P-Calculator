@@ -35,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
 
-  // Apply theme to document element
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'navy') {
@@ -50,12 +49,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('p2p_calc_theme', theme);
   }, [theme]);
 
-  // Save language to localStorage
   useEffect(() => {
     localStorage.setItem('p2p_calc_lang', language);
   }, [language]);
 
-  // Initial load
   useEffect(() => {
     async function init() {
       const existingToken = getStoredToken();

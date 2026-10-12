@@ -32,7 +32,6 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
 
-  // Form State
   const [buyExchange, setBuyExchange] = useState('Binance');
   const [buyBankId, setBuyBankId] = useState('');
   const [buyRate, setBuyRate] = useState<string>('');
@@ -43,7 +42,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   const [sellExchange, setSellExchange] = useState('Binance');
   const [sellBankId, setSellBankId] = useState('');
   const [sellRate, setSellRate] = useState<string>('');
-  const [sellUsdtAmount, setSellUsdtAmount] = useState<string>(''); // if blank, auto-uses bought USDT
+  const [sellUsdtAmount, setSellUsdtAmount] = useState<string>('');
   const [sellCommission, setSellCommission] = useState<string>('');
   const [sellCommissionType, setSellCommissionType] = useState<'percent' | 'fixed_uah' | 'fixed_usdt'>('percent');
   const [extraExpensesUah, setExtraExpensesUah] = useState<string>('');
@@ -53,7 +52,6 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch student banks and exchanges catalog
   useEffect(() => {
     async function loadCatalogs() {
       try {
@@ -77,15 +75,12 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     loadCatalogs();
   }, []);
 
-  // Compute live calculations
   const numBuyRate = parseFloat(buyRate) || 0;
   const numBuyAmountUah = parseFloat(buyAmountUah) || 0;
   const numBuyComm = parseFloat(buyCommission) || 0;
 
-  // Bought USDT
   const calcBuyUsdt = numBuyRate > 0 ? numBuyAmountUah / numBuyRate : 0;
 
-  // Buy Commission in UAH
   let calcBuyCommUah = 0;
   if (buyCommissionType === 'percent') {
     calcBuyCommUah = (numBuyAmountUah * numBuyComm) / 100;
@@ -95,13 +90,11 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     calcBuyCommUah = numBuyComm * numBuyRate;
   }
 
-  // Sell Side
   const numSellRate = parseFloat(sellRate) || 0;
   const numCustomSellUsdt = parseFloat(sellUsdtAmount) || 0;
   const effectiveSellUsdt = numCustomSellUsdt > 0 ? numCustomSellUsdt : calcBuyUsdt;
   const calcGrossRevenueUah = effectiveSellUsdt * numSellRate;
 
-  // Sell Commission in UAH
   const numSellComm = parseFloat(sellCommission) || 0;
   let calcSellCommUah = 0;
   if (sellCommissionType === 'percent') {
@@ -114,7 +107,6 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
 
   const numExtraExpenses = parseFloat(extraExpensesUah) || 0;
 
-  // Core results
   const totalCostUah = numBuyAmountUah + calcBuyCommUah;
   const totalRevenueUah = calcGrossRevenueUah;
   const totalFeesUah = calcBuyCommUah + calcSellCommUah + numExtraExpenses;
@@ -124,11 +116,9 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   const spreadPerUnit = numSellRate - numBuyRate;
   const spreadPercent = numBuyRate > 0 ? (spreadPerUnit / numBuyRate) * 100 : 0;
 
-  // Selected banks details for limit warnings
   const selectedBuyBank = banks.find(b => b.id === buyBankId);
   const selectedSellBank = banks.find(b => b.id === sellBankId);
 
-  // Check if buy amount exceeds available limit
   const buyBankAvailable = selectedBuyBank
     ? Math.max(0, selectedBuyBank.turnoverLimitUah - (selectedBuyBank.buyTurnoverUah + selectedBuyBank.initialTurnoverUah))
     : 0;
@@ -234,8 +224,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
 
   return (
     <div className="space-y-6">
-      
-      {/* Header */}
+
+
       <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
           <CalcIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
@@ -246,7 +236,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
         </p>
       </div>
 
-      {/* Notifications / Alerts */}
+
       {saveSuccess && (
         <div className="p-4 rounded-xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-3">
           <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -261,13 +251,13 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
         </div>
       )}
 
-      {/* Main Grid: Left Column (Inputs) & Right Column (Calculation Results) */}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left: Input Columns (Buy Block & Sell Block) - 7 cols */}
+
+
         <div className="lg:col-span-7 space-y-5">
-          
-          {/* BUY BLOCK */}
+
+
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
@@ -278,13 +268,10 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   {t('buyBlock')}
                 </h2>
               </div>
-              <span className="text-xs font-mono tabular-nums text-slate-500">
-                Куплено: <strong className="text-blue-600 dark:text-sky-400">{formatUsdt(calcBuyUsdt)} USDT</strong>
-              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Buy Exchange */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t('exchange')}
@@ -301,7 +288,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 </select>
               </div>
 
-              {/* Buy Bank */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t('bank')}
@@ -323,7 +310,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 </select>
               </div>
 
-              {/* Buy Rate */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t('buyRate')}
@@ -342,7 +329,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 </div>
               </div>
 
-              {/* Buy Amount in UAH */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t('buyAmountUah')}
@@ -362,7 +349,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               </div>
             </div>
 
-            {/* Buy Commission Row */}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -395,7 +382,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               </div>
             </div>
 
-            {/* Limit Warning if applicable */}
+
             {isBuyOverLimit && (
               <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
@@ -406,7 +393,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
             )}
           </div>
 
-          {/* SELL BLOCK */}
+
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
@@ -423,7 +410,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Sell Exchange */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t('exchange')}
@@ -440,7 +427,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 </select>
               </div>
 
-              {/* Sell Bank */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t('bank')}
@@ -462,7 +449,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 </select>
               </div>
 
-              {/* Sell Rate */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t('sellRate')}
@@ -481,17 +468,18 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                 </div>
               </div>
 
-              {/* Sell USDT Quantity (Optional: if blank, auto uses bought USDT) */}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {t('usdtAmount')} <span className="text-[11px] font-normal text-slate-400">(за замовч. {formatUsdt(calcBuyUsdt)})</span>
+                  {t('usdtAmount')}{' '}
+                  <span className="text-[11px] font-normal text-slate-400">({t('usdtAmountOptional')})</span>
                 </label>
                 <div className="relative">
                   <input
                     type="number"
                     step="0.0001"
                     min="0"
-                    placeholder={calcBuyUsdt > 0 ? formatUsdt(calcBuyUsdt) : '0.0000'}
+                    placeholder="0.0000"
                     value={sellUsdtAmount}
                     onChange={e => setSellUsdtAmount(e.target.value)}
                     className={`${fieldNumberSuffixClass} placeholder:text-slate-400 dark:placeholder:text-slate-500`}
@@ -501,7 +489,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               </div>
             </div>
 
-            {/* Sell Commission & Extra Expenses */}
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -549,7 +537,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               </div>
             </div>
 
-            {/* Note / Comment */}
+
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 {t('tradeNotes')}
@@ -566,9 +554,9 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
 
         </div>
 
-        {/* Right: Results Breakdown Card - 5 cols */}
+
         <div className="lg:col-span-5 space-y-4">
-          
+
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-sm space-y-5 sticky top-20">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -580,7 +568,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               </span>
             </div>
 
-            {/* Highlighted Net Profit Badge Card */}
+
             <div className={`p-4 rounded-xl border ${
               netProfitUah >= 0
                 ? 'bg-emerald-50/70 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900/60'
@@ -603,7 +591,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               </div>
             </div>
 
-            {/* Detailed Financial Breakdown Table */}
+
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-slate-500 dark:text-slate-400">{t('boughtUsdt')}</span>
@@ -662,7 +650,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               </div>
             </div>
 
-            {/* Action Buttons */}
+
             <div className="pt-2 space-y-2">
               <button
                 onClick={handleSaveTrade}

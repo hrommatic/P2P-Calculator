@@ -23,19 +23,16 @@ export const HistoryPage: React.FC = () => {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Filters & Search
   const [search, setSearch] = useState('');
   const [dateRange, setDateRange] = useState('all');
   const [bankId, setBankId] = useState('all');
   const [exchange, setExchange] = useState('all');
   const [sort, setSort] = useState('newest');
 
-  // Modals
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Trade | null>(null);
 
-  // Edit form state
   const [editBuyExchange, setEditBuyExchange] = useState('');
   const [editBuyBankId, setEditBuyBankId] = useState('');
   const [editBuyRate, setEditBuyRate] = useState('');
@@ -78,7 +75,6 @@ export const HistoryPage: React.FC = () => {
     fetchHistory();
   }, [dateRange, bankId, exchange, sort]);
 
-  // Delayed search handler
   useEffect(() => {
     const handler = setTimeout(() => {
       fetchHistory();
@@ -155,8 +151,8 @@ export const HistoryPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      
-      {/* Page Header */}
+
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
@@ -178,10 +174,10 @@ export const HistoryPage: React.FC = () => {
         </a>
       </div>
 
-      {/* Filter and Search Bar */}
+
       <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        
-        {/* Search */}
+
+
         <div className="relative lg:col-span-2">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
           <input
@@ -193,7 +189,7 @@ export const HistoryPage: React.FC = () => {
           />
         </div>
 
-        {/* Date Filter */}
+
         <div>
           <select
             value={dateRange}
@@ -208,7 +204,7 @@ export const HistoryPage: React.FC = () => {
           </select>
         </div>
 
-        {/* Bank Filter */}
+
         <div>
           <select
             value={bankId}
@@ -222,7 +218,7 @@ export const HistoryPage: React.FC = () => {
           </select>
         </div>
 
-        {/* Sort Filter */}
+
         <div>
           <select
             value={sort}
@@ -238,7 +234,7 @@ export const HistoryPage: React.FC = () => {
 
       </div>
 
-      {/* Trades Table */}
+
       <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
         {isLoading ? (
           <PageLoader label="Завантаження журналу угод..." />
@@ -336,7 +332,7 @@ export const HistoryPage: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Actions */}
+
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <button
@@ -372,7 +368,7 @@ export const HistoryPage: React.FC = () => {
         )}
       </div>
 
-      {/* Trade Details Modal */}
+
       {selectedTrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-lg bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
@@ -430,7 +426,7 @@ export const HistoryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Trade Modal */}
+
       {editingTrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-lg bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
@@ -560,7 +556,7 @@ export const HistoryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Trade Confirmation Modal */}
+
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">

@@ -6,13 +6,12 @@ import {
   TrendingUp,
   ArrowDownLeft,
   ArrowUpRight,
-  Wallet,
   Activity,
   Layers,
   Calendar,
   PlusCircle,
-  Clock,
   ArrowRight,
+  Percent,
 } from 'lucide-react';
 import { PageLoader } from '../components/ui/Loader';
 
@@ -26,6 +25,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
   const [trades, setTrades] = useState<Trade[]>([]);
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [turnoverInUsdt, setTurnoverInUsdt] = useState(false);
 
   const fetchDashboardData = async (filter: string) => {
     setIsLoading(true);
@@ -59,9 +59,29 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
   const formatUsdt = (val: number) => {
     return new Intl.NumberFormat('uk-UA', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 4,
+      maximumFractionDigits: 2,
     }).format(val || 0);
   };
+
+  const nbuRate = stats?.usdUahRate ?? null;
+
+  const formatTurnoverValue = (uah: number) => {
+    if (turnoverInUsdt && nbuRate && nbuRate > 0) {
+      return formatUsdt(uah / nbuRate);
+    }
+    return formatUah(uah);
+  };
+
+  const turnoverUnitLabel = turnoverInUsdt && nbuRate ? 'USDT' : 'UAH';
+
+  const toggleTurnoverUnit = () => {
+    if (!nbuRate) return;
+    setTurnoverInUsdt(v => !v);
+  };
+
+  const turnoverCardClass =
+    'bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs text-left w-full transition-colors' +
+    (nbuRate ? ' cursor-pointer hover:border-blue-400/60 dark:hover:border-sky-500/40' : '');
 
   const filterOptions = [
     { id: 'all', label: t('filterAll') },
@@ -73,8 +93,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
 
   return (
     <div className="space-y-6">
-      
-      {/* Personal Greeting Header */}
+
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -94,10 +114,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
         </button>
       </div>
 
-      {/* KPI Cards Grid (8 Core Metrics) */}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        
-        {/* 1. Today Profit */}
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span>{t('todayProfit')}</span>
@@ -108,18 +126,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
           </div>
         </div>
 
-        {/* 2. Yesterday Profit */}
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('yesterdayProfit')}</span>
-            <Clock className="w-4 h-4 text-blue-500" />
+            <span>{t('todayRoiSpread')}</span>
+            <Percent className="w-4 h-4 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-800 dark:text-slate-200">
-            +{formatUah(stats?.profitYesterday || 0)} <span className="text-xs font-normal">UAH</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-blue-600 dark:text-sky-400">
+            +{(stats?.roiTodayPercent ?? 0).toFixed(2)}%
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-1">ROI</span>
+          </div>
+          <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400 mt-1">
+            {t('spread')}: +{(stats?.spreadTodayPercent ?? 0).toFixed(2)}%
           </div>
         </div>
 
-        {/* 3. Month Profit */}
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span>{t('monthProfit')}</span>
@@ -130,51 +150,72 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
           </div>
         </div>
 
-        {/* 4. All Time Profit */}
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('allTimeProfit')}</span>
-            <Wallet className="w-4 h-4 text-purple-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
-            +{formatUah(stats?.profitAllTime || 0)} <span className="text-xs font-normal">UAH</span>
-          </div>
-        </div>
-
-        {/* 5. Buy Turnover */}
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('buyTurnover')}</span>
-            <ArrowDownLeft className="w-4 h-4 text-sky-500" />
-          </div>
-          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {formatUah(stats?.buyTurnover || 0)} <span className="text-xs font-normal text-slate-500">UAH</span>
-          </div>
-        </div>
-
-        {/* 6. Sell Turnover */}
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('sellTurnover')}</span>
-            <ArrowUpRight className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {formatUah(stats?.sellTurnover || 0)} <span className="text-xs font-normal text-slate-500">UAH</span>
-          </div>
-        </div>
-
-        {/* 7. Total Trades Count */}
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('tradesCount')}</span>
+            <span>{t('tradesCountToday')}</span>
             <Activity className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {stats?.tradesCount || 0}
+            {stats?.tradesCountToday ?? 0}
           </div>
         </div>
 
-        {/* 8. Banks Used Count */}
+        <button
+          type="button"
+          onClick={toggleTurnoverUnit}
+          disabled={!nbuRate}
+          className={turnoverCardClass}
+          title={nbuRate ? t('turnoverToggleHint') : undefined}
+        >
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>{t('buyTurnoverToday')}</span>
+            <ArrowDownLeft className="w-4 h-4 text-sky-500" />
+          </div>
+          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+            {formatTurnoverValue(stats?.buyTurnoverToday || 0)}{' '}
+            <span className="text-xs font-normal text-slate-500">{turnoverUnitLabel}</span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={toggleTurnoverUnit}
+          disabled={!nbuRate}
+          className={turnoverCardClass}
+          title={nbuRate ? t('turnoverToggleHint') : undefined}
+        >
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>{t('sellTurnoverToday')}</span>
+            <ArrowUpRight className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+            {formatTurnoverValue(stats?.sellTurnoverToday || 0)}{' '}
+            <span className="text-xs font-normal text-slate-500">{turnoverUnitLabel}</span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={toggleTurnoverUnit}
+          disabled={!nbuRate}
+          className={turnoverCardClass}
+          title={nbuRate ? t('turnoverToggleHint') : undefined}
+        >
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>{t('totalTurnoverToday')}</span>
+            <Layers className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+            {formatTurnoverValue(stats?.totalTurnoverToday || 0)}{' '}
+            <span className="text-xs font-normal text-slate-500">{turnoverUnitLabel}</span>
+          </div>
+          {nbuRate && turnoverInUsdt && (
+            <p className="text-[10px] text-slate-400 mt-1.5">
+              {t('nbuRateLabel')}: {nbuRate.toFixed(2)} ₴/$
+            </p>
+          )}
+        </button>
+
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span>{t('banksUsed')}</span>
@@ -184,13 +225,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
             {stats?.banksCount || 0}
           </div>
         </div>
-
       </div>
 
-      {/* Recent Trades Table Section */}
+      {nbuRate && (
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 -mt-2">
+          {t('turnoverToggleHint')}
+          {turnoverInUsdt ? ` · ${t('nbuRateLabel')}: ${nbuRate.toFixed(2)} ₴/$` : ''}
+        </p>
+      )}
+
+
       <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
-        
-        {/* Table Header & Segmented Filter Bar */}
+
+
         <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
@@ -201,7 +248,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
             </p>
           </div>
 
-          {/* Interactive Date Filter Bar */}
+
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
             {filterOptions.map(opt => (
               <button
@@ -219,7 +266,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
           </div>
         </div>
 
-        {/* Table View */}
+
         {isLoading ? (
           <PageLoader label="Завантаження даних..." className="p-8" />
         ) : trades.length === 0 ? (
@@ -262,7 +309,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
                       key={trade.id}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      {/* Date & Time */}
+
                       <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400">
                         {new Date(trade.createdAt).toLocaleDateString('uk-UA', {
                           day: '2-digit',
@@ -275,56 +322,56 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
                         })}
                       </td>
 
-                      {/* Buy Exchange */}
+
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
                         {trade.buyExchange}
                       </td>
 
-                      {/* Buy Bank */}
+
                       <td className="py-3 px-4">
                         <span className="font-medium text-slate-900 dark:text-slate-200">
                           {trade.buyBankName}
                         </span>
                       </td>
 
-                      {/* Buy Rate */}
+
                       <td className="py-3 px-4 text-right font-mono tabular-nums">
                         {trade.buyRate.toFixed(2)}
                       </td>
 
-                      {/* Buy Amount UAH */}
+
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold">
                         {formatUah(trade.buyAmountUah)} <span className="text-[10px] text-slate-400">₴</span>
                       </td>
 
-                      {/* Sell Exchange */}
+
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
                         {trade.sellExchange}
                       </td>
 
-                      {/* Sell Bank */}
+
                       <td className="py-3 px-4">
                         <span className="font-medium text-slate-900 dark:text-slate-200">
                           {trade.sellBankName}
                         </span>
                       </td>
 
-                      {/* Sell Rate */}
+
                       <td className="py-3 px-4 text-right font-mono tabular-nums">
                         {trade.sellRate.toFixed(2)}
                       </td>
 
-                      {/* Sell Amount UAH */}
+
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold">
                         {formatUah(trade.sellAmountUah)} <span className="text-[10px] text-slate-400">₴</span>
                       </td>
 
-                      {/* Commissions */}
+
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-500">
                         {trade.totalCommissionsUah.toFixed(2)} ₴
                       </td>
 
-                      {/* Net Profit */}
+
                       <td className={`py-3 px-4 text-right font-mono tabular-nums font-bold ${
                         isProfit
                           ? 'text-emerald-600 dark:text-emerald-400'
@@ -333,7 +380,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
                         {isProfit ? '+' : ''}{formatUah(trade.netProfitUah)} ₴
                       </td>
 
-                      {/* Spread % */}
+
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-blue-600 dark:text-sky-400">
                         +{trade.spreadPercent.toFixed(2)}%
                       </td>

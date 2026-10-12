@@ -40,10 +40,8 @@ export const AdminPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'accounts' | 'students' | 'banks' | 'exchanges' | 'settings' | 'audit' | 'backups'>('overview');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Overview Data
   const [overview, setOverview] = useState<AdminOverview | null>(null);
 
-  // Accounts Data
   const [usersList, setUsersList] = useState<any[]>([]);
   const [accountSearch, setAccountSearch] = useState('');
   const [selectedUserToEdit, setSelectedUserToEdit] = useState<any | null>(null);
@@ -53,13 +51,11 @@ export const AdminPage: React.FC = () => {
   const [tempPasswordModal, setTempPasswordModal] = useState<{ username: string; tempPass: string } | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<any | null>(null);
 
-  // Students & Results Data
   const [studentsStats, setStudentsStats] = useState<StudentStatsItem[]>([]);
   const [inspectedStudent, setInspectedStudent] = useState<StudentStatsItem | null>(null);
   const [inspectedStudentTrades, setInspectedStudentTrades] = useState<Trade[]>([]);
   const [loadingInspection, setLoadingInspection] = useState(false);
 
-  // Global Banks Directory Data
   const [globalBanks, setGlobalBanks] = useState<GlobalBank[]>([]);
   const [editingGlobalBank, setEditingGlobalBank] = useState<GlobalBank | null>(null);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
@@ -68,23 +64,18 @@ export const AdminPage: React.FC = () => {
   const [bankLimit, setBankLimit] = useState('100000');
   const [bankColor, setBankColor] = useState('#2563EB');
 
-  // Exchanges Directory Data
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [newExName, setNewExName] = useState('');
   const [newExCode, setNewExCode] = useState('');
 
-  // Site Settings Data
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
 
-  // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
-  // Backups
   const [backups, setBackups] = useState<string[]>([]);
   const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
 
-  // Error/Success Message
   const [adminMessage, setAdminMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const showMsg = (text: string, type: 'success' | 'error' = 'success') => {
@@ -92,7 +83,6 @@ export const AdminPage: React.FC = () => {
     setTimeout(() => setAdminMessage(null), 4000);
   };
 
-  // Load section-specific data
   useEffect(() => {
     loadSectionData(activeSection);
   }, [activeSection]);
@@ -132,7 +122,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Trigger search on accounts
   useEffect(() => {
     if (activeSection === 'accounts') {
       const h = setTimeout(() => {
@@ -142,7 +131,6 @@ export const AdminPage: React.FC = () => {
     }
   }, [accountSearch]);
 
-  // Account Management Actions
   const handleToggleUserStatus = async (userItem: any) => {
     const newStatus = userItem.status === 'active' ? 'blocked' : 'active';
     try {
@@ -203,7 +191,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Student Inspection (drill-down into individual trades)
   const handleInspectStudent = async (student: StudentStatsItem) => {
     setInspectedStudent(student);
     setLoadingInspection(true);
@@ -217,7 +204,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Global Banks Actions
   const handleOpenAddGlobalBank = () => {
     setEditingGlobalBank(null);
     setBankName('');
@@ -270,7 +256,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Exchanges Actions
   const handleAddExchange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExName || !newExCode) return;
@@ -294,7 +279,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Site Settings Actions
   const handleSaveSiteSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!siteSettings) return;
@@ -308,7 +292,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Backups Actions
   const handleCreateBackup = async () => {
     try {
       const res = await api.createBackup();
@@ -340,8 +323,8 @@ export const AdminPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      
-      {/* Admin Header */}
+
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
@@ -359,7 +342,7 @@ export const AdminPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Admin Message Notification */}
+
       {adminMessage && (
         <div className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
           adminMessage.type === 'success'
@@ -371,7 +354,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Admin Horizontal Tabs Bar */}
+
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 text-xs">
         {navTabs.map(tab => {
           const Icon = tab.icon;
@@ -397,11 +380,11 @@ export const AdminPage: React.FC = () => {
         <PageLoader label="Завантаження..." className="py-16" />
       )}
 
-      {/* SECTION 1: OVERVIEW */}
+
       {!isLoading && activeSection === 'overview' && overview && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            
+
             <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
               <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">{t('totalStudents')}</span>
               <span className="text-2xl font-bold font-mono text-slate-900 dark:text-white">{overview.totalStudents}</span>
@@ -444,7 +427,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 2: ACCOUNTS */}
+
       {!isLoading && activeSection === 'accounts' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -546,7 +529,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 3: STUDENTS & RESULTS */}
+
       {!isLoading && activeSection === 'students' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
@@ -612,7 +595,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 4: GLOBAL BANKS DIRECTORY */}
+
       {!isLoading && activeSection === 'banks' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -681,10 +664,10 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 5: EXCHANGES */}
+
       {!isLoading && activeSection === 'exchanges' && (
         <div className="space-y-6 max-w-2xl">
-          {/* Add Exchange Form */}
+
           <form onSubmit={handleAddExchange} className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3">
             <input
               type="text"
@@ -710,7 +693,7 @@ export const AdminPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Exchanges List */}
+
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
             {exchanges.map(ex => (
               <div key={ex.id} className="p-3.5 flex items-center justify-between text-xs">
@@ -734,7 +717,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 6: SITE SETTINGS */}
+
       {!isLoading && activeSection === 'settings' && siteSettings && (
         <form onSubmit={handleSaveSiteSettings} className="space-y-4 max-w-xl bg-white dark:bg-[#111827] p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
           {settingsSuccess && (
@@ -811,7 +794,7 @@ export const AdminPage: React.FC = () => {
         </form>
       )}
 
-      {/* SECTION 7: AUDIT LOGS */}
+
       {!isLoading && activeSection === 'audit' && (
         <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
@@ -845,7 +828,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 8: BACKUPS */}
+
       {!isLoading && activeSection === 'backups' && (
         <div className="space-y-4 max-w-xl">
           <div className="flex items-center justify-between">
@@ -877,7 +860,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Safe Temporary Password Modal */}
+
       {tempPasswordModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
@@ -913,7 +896,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit User Modal */}
+
       {selectedUserToEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
@@ -981,7 +964,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Delete User Confirmation Modal */}
+
       {deleteUserTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
@@ -1010,7 +993,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Drill-down Student Inspection Modal */}
+
       {inspectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-4xl max-h-[90vh] flex flex-col bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
@@ -1091,7 +1074,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* Global Bank Edit / Add Modal */}
+
       {isBankModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">

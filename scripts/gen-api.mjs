@@ -1,9 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-/** @typedef {{ path: string, module: string, method: string, export: string }} RouteDef */
-
-/** @type {RouteDef[]} */
 const routes = [
   { path: 'auth/register', module: 'auth.routes', method: 'POST', export: 'registerHandler' },
   { path: 'auth/login', module: 'auth.routes', method: 'POST', export: 'loginHandler' },
@@ -44,7 +41,6 @@ const routes = [
   { path: 'admin/backups', module: 'admin.routes', method: 'GET', export: 'adminBackupsHandler' },
 ];
 
-/** @type {Record<string, RouteDef[]>} */
 const groups = {
   auth: [],
   trades: [],

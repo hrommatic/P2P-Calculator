@@ -20,11 +20,9 @@ export const BanksPage: React.FC = () => {
   const [banks, setBanks] = useState<UserBank[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<UserBank | null>(null);
 
-  // Form Fields
   const [name, setName] = useState("");
   const [turnoverLimit, setTurnoverLimit] = useState("100000");
   const [notes, setNotes] = useState("");
@@ -146,7 +144,7 @@ export const BanksPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
@@ -167,7 +165,7 @@ export const BanksPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Banks Cards Grid */}
+
       {isLoading ? (
         <PageLoader label="Завантаження банківських рахунків..." />
       ) : banks.length === 0 ? (
@@ -187,7 +185,7 @@ export const BanksPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {banks.map((bank) => {
-            // Limits math: separate flows as explicitly requested in Section 5
+
             const effectiveUsedBuy =
               bank.buyTurnoverUah + bank.initialTurnoverUah;
             const availableLimit = Math.max(
@@ -213,7 +211,7 @@ export const BanksPage: React.FC = () => {
                 className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
               >
                 <div>
-                  {/* Card Top: Bank Icon / Color Pill & Actions */}
+
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
                       <div
@@ -252,7 +250,7 @@ export const BanksPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Turnover Limit Progress Bar */}
+
                   <div className="space-y-1.5 mb-4">
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <span className="text-slate-500 dark:text-slate-400">
@@ -297,7 +295,7 @@ export const BanksPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Detailed Flows Breakdown */}
+
                   <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
                     <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40">
                       <div className="flex items-center gap-1 text-[11px] text-slate-500 mb-0.5">
@@ -321,7 +319,7 @@ export const BanksPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card Footer: Net Profit & Trade Count */}
+
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                     <span>{t("bankTrades")}:</span>
@@ -346,7 +344,7 @@ export const BanksPage: React.FC = () => {
         </div>
       )}
 
-      {/* Add / Edit Bank Modal */}
+
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">

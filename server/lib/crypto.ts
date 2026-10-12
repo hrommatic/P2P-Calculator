@@ -1,9 +1,5 @@
 import crypto from 'crypto';
 
-/**
- * Secure password hashing using Node.js built-in scrypt (Argon2 / Scrypt security class)
- * Resistant to GPU/ASIC brute-force attacks.
- */
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString('hex');
   const derivedKey = crypto.scryptSync(password, salt, 64, {

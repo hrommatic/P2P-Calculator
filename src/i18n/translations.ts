@@ -2,10 +2,10 @@ import { Language } from '../types';
 
 export const translations: Record<Language, Record<string, string>> = {
   uk: {
-    // Brand & App
+
     appName: 'P2P Calculator',
     appTagline: 'Платформа для обліку та розрахунку P2P угод',
-    // Navigation
+
     navDashboard: 'Головна',
     navCalculator: 'P2P Calculator',
     navBanks: 'Мої банки',
@@ -13,7 +13,7 @@ export const translations: Record<Language, Record<string, string>> = {
     navSettings: 'Налаштування',
     navAdmin: 'Адмін-панель',
     logout: 'Вийти',
-    // Auth
+
     loginTitle: 'Вхід до платформи',
     loginSubtitle: 'Закрита платформа для учнів курсу P2P',
     registerTitle: 'Реєстрація учня',
@@ -36,15 +36,19 @@ export const translations: Record<Language, Record<string, string>> = {
     contactCuratorBtn: 'Написати куратору в Telegram',
     close: 'Закрити',
     loginRateLimitError: 'Забагато спроб входу. Зачекайте перед повторною спробою.',
-    // Dashboard
+
     greeting: 'Вітаю, {name}! Ласкаво просимо до P2P Calculator.',
     todayProfit: 'Прибуток за сьогодні',
-    yesterdayProfit: 'Прибуток за вчора',
     monthProfit: 'Прибуток за місяць',
-    allTimeProfit: 'Прибуток за весь час',
+    todayRoiSpread: 'ROI / спред сьогодні',
+    buyTurnoverToday: 'Оборот покупок сьогодні',
+    sellTurnoverToday: 'Оборот продажів сьогодні',
+    totalTurnoverToday: 'Оборот сумарно сьогодні',
+    tradesCountToday: 'Угод сьогодні',
+    turnoverToggleHint: 'Натисніть — перегляд у USDT (курс НБУ)',
+    nbuRateLabel: 'Курс НБУ',
     buyTurnover: 'Оборот покупок',
     sellTurnover: 'Оборот продажів',
-    totalTurnover: 'Загальний оборот',
     tradesCount: 'Кількість угод',
     banksUsed: 'Використано банків',
     recentTrades: 'Останні операції',
@@ -55,7 +59,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterMonth: 'Місяць',
     noTradesYet: 'Поки що немає збережених угод. Перейдіть до калькулятора, щоб розрахувати та зберегти першу!',
     calculateFirstTrade: 'Розрахувати угоду',
-    // Calculator
+
     calcTitle: 'P2P Калькулятор',
     calcSubtitle: 'Швидкий та точний розрахунок фінансового результату угоди',
     buyBlock: 'Блок покупки',
@@ -66,6 +70,7 @@ export const translations: Record<Language, Record<string, string>> = {
     sellRate: 'Курс продажу (UAH/USDT)',
     buyAmountUah: 'Сума в гривнях (UAH)',
     usdtAmount: 'Кількість USDT',
+    usdtAmountOptional: 'необов\'язково',
     sellAmountUah: 'Сума продажу (UAH)',
     commission: 'Комісія',
     commissionType: 'Тип комісії',
@@ -75,7 +80,7 @@ export const translations: Record<Language, Record<string, string>> = {
     extraExpenses: 'Додаткові витрати (UAH)',
     tradeNotes: 'Коментар до угоди (необов’язково)',
     tradeNotesPlaceholder: 'Наприклад: коло Mono -> Privat, стакан Bybit',
-    // Results
+
     calculationResult: 'Результат розрахунку',
     boughtUsdt: 'Куплено USDT',
     soldUsdt: 'Продано USDT',
@@ -91,7 +96,7 @@ export const translations: Record<Language, Record<string, string>> = {
     clearFormBtn: 'Очистити форму',
     savingTrade: 'Збереження...',
     tradeSavedSuccess: 'Угоду успішно збережено та враховано у статистиці!',
-    // Banks
+
     myBanksTitle: 'Мої банки',
     myBanksSubtitle: 'Контроль банківських лімітів, обороту та прибутку',
     addBankBtn: 'Додати банк',
@@ -109,7 +114,7 @@ export const translations: Record<Language, Record<string, string>> = {
     cancel: 'Скасувати',
     limitExceeded: 'Ліміт вичерпано!',
     limitWarning: 'Увага: використано понад 80% ліміту',
-    // History
+
     historyTitle: 'Історія угод',
     historySubtitle: 'Повний журнал усіх збережених операцій з можливістю фільтрації та експорту',
     searchTrades: 'Пошук за коментарем, банком або біржею...',
@@ -123,7 +128,7 @@ export const translations: Record<Language, Record<string, string>> = {
     deleteTrade: 'Видалити',
     deleteTradeConfirm: 'Ви впевнені, що хочете видалити цю угоду? Показники банків та статистика будуть автоматично перераховані.',
     tradeDetails: 'Деталі угоди',
-    // Settings
+
     settingsTitle: 'Налаштування',
     profileSection: 'Профіль учня',
     registrationDate: 'Дата реєстрації',
@@ -143,7 +148,7 @@ export const translations: Record<Language, Record<string, string>> = {
     copyTelegram: 'Скопіювати',
     copied: 'Скопійовано!',
     openInTelegram: 'Відкрити в Telegram',
-    // Admin
+
     adminTitle: 'Адміністративна панель',
     adminOverview: 'Огляд',
     adminAccounts: 'Акаунти',
@@ -172,10 +177,10 @@ export const translations: Record<Language, Record<string, string>> = {
     backupSuccess: 'Резервну копію створено успішно!',
   },
   ru: {
-    // Brand & App
+
     appName: 'P2P Calculator',
     appTagline: 'Платформа для учета и расчёта P2P сделок',
-    // Navigation
+
     navDashboard: 'Главная',
     navCalculator: 'P2P Calculator',
     navBanks: 'Мои банки',
@@ -183,7 +188,7 @@ export const translations: Record<Language, Record<string, string>> = {
     navSettings: 'Настройки',
     navAdmin: 'Админ-панель',
     logout: 'Выйти',
-    // Auth
+
     loginTitle: 'Вход на платформу',
     loginSubtitle: 'Закрытая веб-платформа для учеников P2P-торговли',
     registerTitle: 'Регистрация ученика',
@@ -206,15 +211,19 @@ export const translations: Record<Language, Record<string, string>> = {
     contactCuratorBtn: 'Написать куратору в Telegram',
     close: 'Закрыть',
     loginRateLimitError: 'Слишком много попыток входа. Пожалуйста, подождите перед следующей попыткой.',
-    // Dashboard
+
     greeting: 'Приветствуем, {name}! Добро пожаловать в P2P Calculator.',
     todayProfit: 'Прибыль за сегодня',
-    yesterdayProfit: 'Прибыль за вчера',
     monthProfit: 'Прибыль за месяц',
-    allTimeProfit: 'Прибыль за всё время',
+    todayRoiSpread: 'ROI / спред сегодня',
+    buyTurnoverToday: 'Оборот покупок сегодня',
+    sellTurnoverToday: 'Оборот продаж сегодня',
+    totalTurnoverToday: 'Оборот суммарно сегодня',
+    tradesCountToday: 'Сделок сегодня',
+    turnoverToggleHint: 'Нажмите — просмотр в USDT (курс НБУ)',
+    nbuRateLabel: 'Курс НБУ',
     buyTurnover: 'Оборот покупок',
     sellTurnover: 'Оборот продаж',
-    totalTurnover: 'Суммарный оборот',
     tradesCount: 'Количество сделок',
     banksUsed: 'Использовано банков',
     recentTrades: 'Последние операции',
@@ -225,7 +234,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterMonth: 'Месяц',
     noTradesYet: 'Пока нет сохранённых сделок. Перейдите в калькулятор, чтобы рассчитать и сохранить первую операцию!',
     calculateFirstTrade: 'Рассчитать сделку',
-    // Calculator
+
     calcTitle: 'P2P Calculator',
     calcSubtitle: 'Быстрый и точный расчёт финансового результата сделки',
     buyBlock: 'Блок покупки',
@@ -236,6 +245,7 @@ export const translations: Record<Language, Record<string, string>> = {
     sellRate: 'Курс продажи (UAH/USDT)',
     buyAmountUah: 'Сумма в гривнах (UAH)',
     usdtAmount: 'Количество USDT',
+    usdtAmountOptional: 'необязательно',
     sellAmountUah: 'Сумма продажи (UAH)',
     commission: 'Комиссия',
     commissionType: 'Тип комиссии',
@@ -245,7 +255,7 @@ export const translations: Record<Language, Record<string, string>> = {
     extraExpenses: 'Дополнительные расходы (UAH)',
     tradeNotes: 'Комментарий к сделке (необязательно)',
     tradeNotesPlaceholder: 'Например: связка Mono -> Privat через Binance',
-    // Results
+
     calculationResult: 'Результат расчёта',
     boughtUsdt: 'Куплено USDT',
     soldUsdt: 'Продано USDT',
@@ -261,7 +271,7 @@ export const translations: Record<Language, Record<string, string>> = {
     clearFormBtn: 'Очистить форму',
     savingTrade: 'Сохранение...',
     tradeSavedSuccess: 'Сделка успешно сохранена и учтена в вашей статистике!',
-    // Banks
+
     myBanksTitle: 'Мои банки',
     myBanksSubtitle: 'Контроль лимитов оборота, раздельный учёт и доходность',
     addBankBtn: 'Добавить банк',
@@ -279,7 +289,7 @@ export const translations: Record<Language, Record<string, string>> = {
     cancel: 'Отмена',
     limitExceeded: 'Лимит исчерпан!',
     limitWarning: 'Внимание: использовано более 80% лимита',
-    // History
+
     historyTitle: 'История сделок',
     historySubtitle: 'Полный журнал операций ученика с поиском, фильтрами и экспортом',
     searchTrades: 'Поиск по комментарию, банку или бирже...',
@@ -293,7 +303,7 @@ export const translations: Record<Language, Record<string, string>> = {
     deleteTrade: 'Удалить',
     deleteTradeConfirm: 'Вы уверены, что хотите удалить эту сделку? Показатели банков будут пересчитаны.',
     tradeDetails: 'Подробности сделки',
-    // Settings
+
     settingsTitle: 'Настройки',
     profileSection: 'Профиль ученика',
     registrationDate: 'Дата регистрации',
@@ -313,7 +323,7 @@ export const translations: Record<Language, Record<string, string>> = {
     copyTelegram: 'Скопировать',
     copied: 'Скопировано!',
     openInTelegram: 'Открыть в Telegram',
-    // Admin
+
     adminTitle: 'Административная панель',
     adminOverview: 'Обзор',
     adminAccounts: 'Аккаунты',
@@ -342,10 +352,10 @@ export const translations: Record<Language, Record<string, string>> = {
     backupSuccess: 'Резервная копия создана успешно!',
   },
   en: {
-    // Brand & App
+
     appName: 'P2P Calculator',
     appTagline: 'Professional P2P Trading Platform & Ledger',
-    // Navigation
+
     navDashboard: 'Dashboard',
     navCalculator: 'P2P Calculator',
     navBanks: 'My Banks',
@@ -353,7 +363,7 @@ export const translations: Record<Language, Record<string, string>> = {
     navSettings: 'Settings',
     navAdmin: 'Admin Panel',
     logout: 'Log Out',
-    // Auth
+
     loginTitle: 'Sign In to Platform',
     loginSubtitle: 'Closed platform for P2P trading students',
     registerTitle: 'Student Registration',
@@ -376,15 +386,19 @@ export const translations: Record<Language, Record<string, string>> = {
     contactCuratorBtn: 'Contact Curator on Telegram',
     close: 'Close',
     loginRateLimitError: 'Too many failed login attempts. Please wait before trying again.',
-    // Dashboard
+
     greeting: 'Welcome, {name}! Welcome to P2P Calculator.',
     todayProfit: 'Today Profit',
-    yesterdayProfit: 'Yesterday Profit',
     monthProfit: 'This Month Profit',
-    allTimeProfit: 'All Time Profit',
+    todayRoiSpread: 'Today ROI / Spread',
+    buyTurnoverToday: 'Buy Turnover Today',
+    sellTurnoverToday: 'Sell Turnover Today',
+    totalTurnoverToday: 'Total Turnover Today',
+    tradesCountToday: 'Trades Today',
+    turnoverToggleHint: 'Tap to view in USDT (NBU rate)',
+    nbuRateLabel: 'NBU rate',
     buyTurnover: 'Buy Turnover',
     sellTurnover: 'Sell Turnover',
-    totalTurnover: 'Total Turnover',
     tradesCount: 'Trades Count',
     banksUsed: 'Banks Used',
     recentTrades: 'Recent Operations',
@@ -395,7 +409,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterMonth: 'Month',
     noTradesYet: 'No saved trades yet. Head over to the Calculator to compute and log your first operation!',
     calculateFirstTrade: 'Calculate Trade',
-    // Calculator
+
     calcTitle: 'P2P Calculator',
     calcSubtitle: 'Instant and high-precision financial result calculator',
     buyBlock: 'Buy Order',
@@ -406,6 +420,7 @@ export const translations: Record<Language, Record<string, string>> = {
     sellRate: 'Sell Rate (UAH/USDT)',
     buyAmountUah: 'Amount (UAH)',
     usdtAmount: 'USDT Quantity',
+    usdtAmountOptional: 'optional',
     sellAmountUah: 'Sell Amount (UAH)',
     commission: 'Commission',
     commissionType: 'Commission Type',
@@ -415,7 +430,7 @@ export const translations: Record<Language, Record<string, string>> = {
     extraExpenses: 'Extra Expenses (UAH)',
     tradeNotes: 'Trade Note (Optional)',
     tradeNotesPlaceholder: 'e.g., Bybit maker order with Monobank',
-    // Results
+
     calculationResult: 'Calculation Breakdown',
     boughtUsdt: 'Bought USDT',
     soldUsdt: 'Sold USDT',
@@ -431,7 +446,7 @@ export const translations: Record<Language, Record<string, string>> = {
     clearFormBtn: 'Clear Form',
     savingTrade: 'Saving...',
     tradeSavedSuccess: 'Trade saved and added to your portfolio statistics!',
-    // Banks
+
     myBanksTitle: 'My Banks',
     myBanksSubtitle: 'Track bank limits, turnover flows, and net yield',
     addBankBtn: 'Add Bank',
@@ -449,7 +464,7 @@ export const translations: Record<Language, Record<string, string>> = {
     cancel: 'Cancel',
     limitExceeded: 'Limit Exceeded!',
     limitWarning: 'Warning: Over 80% limit utilized',
-    // History
+
     historyTitle: 'Trade History',
     historySubtitle: 'Complete ledger with live search, filters, and CSV export',
     searchTrades: 'Search notes, bank, or exchange...',
@@ -463,7 +478,7 @@ export const translations: Record<Language, Record<string, string>> = {
     deleteTrade: 'Delete',
     deleteTradeConfirm: 'Are you sure you want to delete this trade? Bank metrics will be safely recalculated.',
     tradeDetails: 'Trade Details',
-    // Settings
+
     settingsTitle: 'Settings',
     profileSection: 'Student Profile',
     registrationDate: 'Member Since',
@@ -483,7 +498,7 @@ export const translations: Record<Language, Record<string, string>> = {
     copyTelegram: 'Copy Handle',
     copied: 'Copied!',
     openInTelegram: 'Open in Telegram',
-    // Admin
+
     adminTitle: 'Administration Panel',
     adminOverview: 'Overview',
     adminAccounts: 'Accounts',

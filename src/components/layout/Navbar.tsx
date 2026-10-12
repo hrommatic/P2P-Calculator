@@ -60,8 +60,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
     <header className="sticky top-0 z-40 w-full border-b backdrop-blur-md transition-colors border-slate-200/80 bg-white/90 dark:border-slate-800/90 dark:bg-[#0a0f1d]/90">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          
-          {/* Zone 1: Brand Wordmark (Single text element, 1 line, no pills or tags) */}
+
+
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => handleNavClick('dashboard')}
@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
             </button>
           </div>
 
-          {/* Zone 2: Primary Nav Links (Single line, text with clean active indicator) */}
+
           <nav className="hidden md:flex items-center gap-1 lg:gap-2">
             {navItems.map(item => {
               const Icon = item.icon;
@@ -96,9 +96,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
             })}
           </nav>
 
-          {/* Zone 3: Single Primary Action & Controls Cluster */}
+
           <div className="flex items-center gap-2 shrink-0">
-            {/* Language Switcher */}
+
             <div className="relative">
               <button
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
@@ -134,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
               )}
             </div>
 
-            {/* Theme Toggle Button */}
+
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 dark:text-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-700 transition-colors shrink-0"
@@ -143,7 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
               {theme === 'navy' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* User Profile Info (desktop) */}
+
             {user && (
               <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
                 <div className="flex flex-col text-right">
@@ -164,7 +164,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
               </div>
             )}
 
-            {/* Logout Button */}
+
             <button
               onClick={logout}
               className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors shrink-0"
@@ -173,7 +173,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
               <LogOut className="w-4 h-4" />
             </button>
 
-            {/* Mobile Menu Hamburger */}
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -185,7 +185,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
         </div>
       </div>
 
-      {/* Mobile Navigation Drawer */}
+
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0a0f1d]/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-1">
           {user && (

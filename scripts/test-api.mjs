@@ -1,8 +1,5 @@
 #!/usr/bin/env node
-/**
- * End-to-end API smoke test against BASE_URL (default: production).
- * Usage: node scripts/test-api.mjs [baseUrl]
- */
+
 const BASE = (process.argv[2] || 'https://p2p-calculator-weld.vercel.app').replace(/\/$/, '');
 const ADMIN_PASS = process.env.ADMIN_INITIAL_PASSWORD || 'ChangeMeOnFirstDeploy!';
 

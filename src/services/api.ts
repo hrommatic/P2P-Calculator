@@ -59,7 +59,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const api = {
-  // Auth
+
   register: (body: { nickname: string; telegram: string; password: string; confirmPassword: string }) =>
     request<{ token: string; user: User }>('/auth/register', {
       method: 'POST',
@@ -92,7 +92,6 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  // Trades
   getTrades: (params?: { dateRange?: string; bankId?: string; exchange?: string; search?: string; sort?: string; targetUserId?: string }) => {
     const q = new URLSearchParams();
     if (params?.dateRange) q.set('dateRange', params.dateRange);
@@ -124,7 +123,6 @@ export const api = {
 
   exportCsvUrl: () => '/api/trades/export-csv',
 
-  // Banks
   getBanks: (targetUserId?: string) => {
     const q = targetUserId ? `?targetUserId=${targetUserId}` : '';
     return request<{ banks: UserBank[]; globalBanks: GlobalBank[] }>(`/banks${q}`);
@@ -147,17 +145,14 @@ export const api = {
       method: 'DELETE',
     }),
 
-  // Dashboard
   getDashboardStats: (targetUserId?: string) => {
     const q = targetUserId ? `?targetUserId=${targetUserId}` : '';
     return request<DashboardStats>(`/dashboard/stats${q}`);
   },
 
-  // Catalogs
   getExchanges: () => request<{ exchanges: Exchange[] }>('/exchanges'),
   getPublicSettings: () => request<SiteSettings>('/settings/public'),
 
-  // Admin
   getAdminOverview: () => request<AdminOverview>('/admin/overview'),
   getAdminUsers: (params?: { search?: string; status?: string }) => {
     const q = new URLSearchParams();

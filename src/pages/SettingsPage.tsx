@@ -22,19 +22,16 @@ import { Language, ThemeMode } from '../types';
 export const SettingsPage: React.FC = () => {
   const { user, siteSettings, theme, setTheme, language, setLanguage, logout, t } = useAuth();
 
-  // Profile Edit
   const [telegram, setTelegram] = useState(user?.telegram || '');
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  // Password Change
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Copy Curator Handle
   const [copied, setCopied] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -108,8 +105,8 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      
-      {/* Page Header */}
+
+
       <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
           <SettingsIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
@@ -120,10 +117,10 @@ export const SettingsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Grid: 2 columns */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Profile Card */}
+
+
         <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <User className="w-4 h-4 text-blue-600 dark:text-sky-400" />
@@ -191,7 +188,7 @@ export const SettingsPage: React.FC = () => {
           </form>
         </div>
 
-        {/* Change Password Card */}
+
         <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Lock className="w-4 h-4 text-blue-600 dark:text-sky-400" />
@@ -266,7 +263,7 @@ export const SettingsPage: React.FC = () => {
           </form>
         </div>
 
-        {/* Appearance Card */}
+
         <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Palette className="w-4 h-4 text-blue-600 dark:text-sky-400" />
@@ -276,7 +273,7 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {/* Light Theme */}
+
             <button
               type="button"
               onClick={() => setTheme('light')}
@@ -293,7 +290,7 @@ export const SettingsPage: React.FC = () => {
               </div>
             </button>
 
-            {/* Dark Navy Theme */}
+
             <button
               type="button"
               onClick={() => setTheme('navy')}
@@ -312,7 +309,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Language Selection Card */}
+
         <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Globe className="w-4 h-4 text-blue-600 dark:text-sky-400" />
@@ -346,7 +343,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Curator Support Card (Section 7) */}
+
         <div className="md:col-span-2 bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Send className="w-4 h-4 text-blue-600 dark:text-sky-400" />
@@ -385,7 +382,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Logout Section */}
+
         <div className="md:col-span-2 pt-2 flex justify-end">
           <button
             onClick={logout}

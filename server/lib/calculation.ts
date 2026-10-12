@@ -1,6 +1,4 @@
-/**
- * Precise P2P calculation logic avoiding floating-point precision pitfalls
- */
+
 
 export interface CalculationInput {
   buyRate: number;
@@ -53,7 +51,6 @@ export function calculateTrade(input: CalculationInput): CalculationResult {
   const buyRate = Math.max(0.0001, Number(input.buyRate) || 0);
   const sellRate = Math.max(0.0001, Number(input.sellRate) || 0);
 
-  // Determine Buy amounts
   let buyAmountUah = Number(input.buyAmountUah) || 0;
   let buyUsdtAmount = Number(input.buyUsdtAmount) || 0;
 
@@ -66,7 +63,6 @@ export function calculateTrade(input: CalculationInput): CalculationResult {
     buyUsdtAmount = buyAmountUah / buyRate;
   }
 
-  // Calculate Buy Commission
   const buyCommVal = Number(input.buyCommission) || 0;
   const buyCommType = input.buyCommissionType || 'percent';
   let buyCommissionUah = 0;
@@ -78,7 +74,6 @@ export function calculateTrade(input: CalculationInput): CalculationResult {
     buyCommissionUah = buyCommVal * buyRate;
   }
 
-  // Determine Sell amounts (by default, sells the USDT bought)
   let sellUsdtAmount = Number(input.sellUsdtAmount) || 0;
   let sellAmountUah = Number(input.sellAmountUah) || 0;
 
@@ -91,7 +86,6 @@ export function calculateTrade(input: CalculationInput): CalculationResult {
     sellUsdtAmount = sellAmountUah / sellRate;
   }
 
-  // Calculate Sell Commission
   const sellCommVal = Number(input.sellCommission) || 0;
   const sellCommType = input.sellCommissionType || 'percent';
   let sellCommissionUah = 0;

@@ -17,10 +17,8 @@ export const AuthPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
 
-  // Curator handle
   const curator = siteSettings?.curatorTelegram || '@Chromatik';
 
-  // Password strength check
   const getPasswordStrength = (pwd: string) => {
     if (!pwd) return { score: 0, text: '' };
     let score = 0;
@@ -75,8 +73,8 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-between transition-colors bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100">
-      
-      {/* Top Bar for Auth Page */}
+
+
       <div className="w-full max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-sm shadow-blue-500/20">
@@ -86,7 +84,7 @@ export const AuthPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Language Selector */}
+
           <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700/60 shadow-xs">
             {languages.map(l => (
               <button
@@ -103,7 +101,7 @@ export const AuthPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Theme Toggle */}
+
           <button
             onClick={() => setTheme(theme === 'navy' ? 'light' : 'navy')}
             className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 shadow-xs"
@@ -114,11 +112,11 @@ export const AuthPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Auth Form Container */}
+
       <div className="w-full max-w-md mx-auto px-4 py-8">
         <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm p-6 sm:p-8">
-          
-          {/* Header */}
+
+
           <div className="text-center mb-6">
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               {mode === 'login' ? t('loginTitle') : t('registerTitle')}
@@ -128,7 +126,7 @@ export const AuthPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Mode Switch Tabs */}
+
           <div className="flex p-1 mb-6 rounded-xl bg-slate-100 dark:bg-slate-800/80">
             <button
               type="button"
@@ -154,7 +152,7 @@ export const AuthPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Error Message */}
+
           {error && (
             <div className="mb-4 p-3 rounded-lg text-xs flex items-start gap-2.5 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -162,9 +160,9 @@ export const AuthPage: React.FC = () => {
             </div>
           )}
 
-          {/* Form */}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nickname field */}
+
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 {t('nickname')}
@@ -184,7 +182,7 @@ export const AuthPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Telegram field (in register mode) */}
+
             {mode === 'register' && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
@@ -207,7 +205,7 @@ export const AuthPage: React.FC = () => {
               </div>
             )}
 
-            {/* Password field */}
+
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 {t('password')}
@@ -226,7 +224,7 @@ export const AuthPage: React.FC = () => {
                 />
               </div>
 
-              {/* Password strength indicator in register mode */}
+
               {mode === 'register' && password && (
                 <div className="mt-2 space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
@@ -245,7 +243,7 @@ export const AuthPage: React.FC = () => {
               )}
             </div>
 
-            {/* Confirm Password field (in register mode) */}
+
             {mode === 'register' && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
@@ -267,7 +265,7 @@ export const AuthPage: React.FC = () => {
               </div>
             )}
 
-            {/* Forgot password link */}
+
             {mode === 'login' && (
               <div className="flex justify-end pt-1">
                 <button
@@ -280,7 +278,7 @@ export const AuthPage: React.FC = () => {
               </div>
             )}
 
-            {/* Submit Button */}
+
             <button
               type="submit"
               disabled={isLoading}
@@ -300,7 +298,7 @@ export const AuthPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Forgot Password Modal */}
+
       {forgotModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
@@ -351,7 +349,7 @@ export const AuthPage: React.FC = () => {
         </div>
       )}
 
-      {/* Footer */}
+
       <footer className="w-full text-center py-4 text-xs text-slate-400 dark:text-slate-600">
         © 2026 P2P Calculator. All rights reserved.
       </footer>

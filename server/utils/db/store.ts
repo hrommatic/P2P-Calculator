@@ -23,6 +23,12 @@ import {
   parseDate,
 } from "./mappers.js";
 import { buildBootstrapDatabase, needsSeed } from "./seed.js";
+import {
+  accumulateKyivProfitBuckets,
+  isKyivToday,
+  tradeMatchesKyivDateRange,
+  type TradeDateRange,
+} from "../../lib/kyiv-dates.js";
 
 const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
 
@@ -336,7 +342,7 @@ export async function syncUserBankStats(userId: string) {
         }
         if (involved) {
           count += 1;
-          // Credit full link profit to every bank involved (buy and/or sell).
+
           netProfit += trade.netProfitUah;
         }
       }
@@ -383,25 +389,17 @@ export async function getTradesForUser(
   const sort = filters.sort ? String(filters.sort) : undefined;
 
   if (dateRange) {
-    const now = new Date();
-    const todayStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    ).getTime();
-    const yesterdayStart = todayStart - 86400000;
-    const weekStart = todayStart - 7 * 86400000;
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-    trades = trades.filter((t) => {
-      const time = new Date(t.createdAt).getTime();
-      if (dateRange === "today") return time >= todayStart;
-      if (dateRange === "yesterday")
-        return time >= yesterdayStart && time < todayStart;
-      if (dateRange === "week") return time >= weekStart;
-      if (dateRange === "month") return time >= monthStart;
-      return true;
-    });
+    const range = dateRange as TradeDateRange;
+    if (
+      range === "today" ||
+      range === "yesterday" ||
+      range === "week" ||
+      range === "month"
+    ) {
+      trades = trades.filter((t) =>
+        tradeMatchesKyivDateRange(t.createdAt, range),
+      );
+    }
   }
 
   if (bankId && bankId !== "all") {
@@ -504,32 +502,41 @@ export async function getDashboardStats(userId: string) {
     prisma.userBank.count({ where: { userId, isArchived: false } }),
   ]);
 
-  const now = new Date();
-  const todayStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
-  const yesterdayStart = todayStart - 86400000;
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const profitBuckets = {
+    profitToday: 0,
+    profitYesterday: 0,
+    profitMonth: 0,
+  };
 
-  let profitToday = 0;
-  let profitYesterday = 0;
-  let profitMonth = 0;
-  let profitAllTime = 0;
-  let buyTurnover = 0;
-  let sellTurnover = 0;
+  let buyTurnoverToday = 0;
+  let sellTurnoverToday = 0;
+  let tradesCountToday = 0;
+  let spreadWeightSum = 0;
+  let spreadWeighted = 0;
+  let roiWeightSum = 0;
+  let roiWeighted = 0;
 
   for (const t of trades) {
-    const time = t.createdAt.getTime();
-    profitAllTime += t.netProfitUah;
-    buyTurnover += t.buyAmountUah;
-    sellTurnover += t.sellAmountUah;
-    if (time >= todayStart) profitToday += t.netProfitUah;
-    if (time >= yesterdayStart && time < todayStart)
-      profitYesterday += t.netProfitUah;
-    if (time >= monthStart) profitMonth += t.netProfitUah;
+    accumulateKyivProfitBuckets(t.createdAt, t.netProfitUah, profitBuckets);
+
+    if (isKyivToday(t.createdAt)) {
+      tradesCountToday += 1;
+      buyTurnoverToday += t.buyAmountUah;
+      sellTurnoverToday += t.sellAmountUah;
+      spreadWeightSum += t.buyAmountUah;
+      spreadWeighted += t.spreadPercent * t.buyAmountUah;
+      roiWeightSum += t.totalCostUah;
+      roiWeighted += t.roiPercent * t.totalCostUah;
+    }
   }
+
+  const { profitToday, profitMonth } = profitBuckets;
+  const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+  const spreadTodayPercent =
+    spreadWeightSum > 0 ? spreadWeighted / spreadWeightSum : 0;
+  const roiTodayPercent = roiWeightSum > 0 ? roiWeighted / roiWeightSum : 0;
+  const totalTurnoverToday = buyTurnoverToday + sellTurnoverToday;
 
   const recentTrades = [...trades]
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
@@ -537,15 +544,14 @@ export async function getDashboardStats(userId: string) {
     .map(mapTrade);
 
   return {
-    profitToday: Math.round((profitToday + Number.EPSILON) * 100) / 100,
-    profitYesterday: Math.round((profitYesterday + Number.EPSILON) * 100) / 100,
-    profitMonth: Math.round((profitMonth + Number.EPSILON) * 100) / 100,
-    profitAllTime: Math.round((profitAllTime + Number.EPSILON) * 100) / 100,
-    buyTurnover: Math.round((buyTurnover + Number.EPSILON) * 100) / 100,
-    sellTurnover: Math.round((sellTurnover + Number.EPSILON) * 100) / 100,
-    totalTurnover:
-      Math.round((buyTurnover + sellTurnover + Number.EPSILON) * 100) / 100,
-    tradesCount: trades.length,
+    profitToday: round2(profitToday),
+    profitMonth: round2(profitMonth),
+    spreadTodayPercent: round2(spreadTodayPercent),
+    roiTodayPercent: round2(roiTodayPercent),
+    buyTurnoverToday: round2(buyTurnoverToday),
+    sellTurnoverToday: round2(sellTurnoverToday),
+    totalTurnoverToday: round2(totalTurnoverToday),
+    tradesCountToday,
     banksCount,
     recentTrades,
   };
@@ -763,34 +769,25 @@ export async function getStudentsStats() {
   const students = await prisma.user.findMany({ where: { role: "student" } });
   const trades = await prisma.trade.findMany();
 
-  const now = new Date();
-  const todayStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
-  const yesterdayStart = todayStart - 86400000;
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
   return students.map((student) => {
     const userTrades = trades.filter((t) => t.userId === student.id);
-    let profitToday = 0;
-    let profitYesterday = 0;
-    let profitMonth = 0;
+    const profitBuckets = {
+      profitToday: 0,
+      profitYesterday: 0,
+      profitMonth: 0,
+    };
     let profitAllTime = 0;
     let buyTurnover = 0;
     let sellTurnover = 0;
 
     for (const t of userTrades) {
-      const time = t.createdAt.getTime();
       profitAllTime += t.netProfitUah;
       buyTurnover += t.buyAmountUah;
       sellTurnover += t.sellAmountUah;
-      if (time >= todayStart) profitToday += t.netProfitUah;
-      if (time >= yesterdayStart && time < todayStart)
-        profitYesterday += t.netProfitUah;
-      if (time >= monthStart) profitMonth += t.netProfitUah;
+      accumulateKyivProfitBuckets(t.createdAt, t.netProfitUah, profitBuckets);
     }
+
+    const { profitToday, profitYesterday, profitMonth } = profitBuckets;
 
     return {
       userId: student.id,

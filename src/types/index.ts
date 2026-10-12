@@ -90,14 +90,15 @@ export interface Trade {
 
 export interface DashboardStats {
   profitToday: number;
-  profitYesterday: number;
   profitMonth: number;
-  profitAllTime: number;
-  buyTurnover: number;
-  sellTurnover: number;
-  totalTurnover: number;
-  tradesCount: number;
+  spreadTodayPercent: number;
+  roiTodayPercent: number;
+  buyTurnoverToday: number;
+  sellTurnoverToday: number;
+  totalTurnoverToday: number;
+  tradesCountToday: number;
   banksCount: number;
+  usdUahRate: number | null;
   recentTrades: Trade[];
 }
 
