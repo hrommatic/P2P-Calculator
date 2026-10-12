@@ -27,6 +27,8 @@ import {
   accumulateKyivProfitBuckets,
   isKyivToday,
   tradeMatchesKyivDateRange,
+  tradeMatchesKyivMonthDays,
+  tradeMatchesKyivYmdRange,
   type TradeDateRange,
 } from "../../lib/kyiv-dates.js";
 
@@ -365,6 +367,11 @@ export async function syncUserBankStats(userId: string) {
 
 type TradeFilters = {
   dateRange?: string | string[];
+  dateFrom?: string | string[];
+  dateTo?: string | string[];
+  monthKey?: string | string[];
+  monthDayFrom?: string | string[];
+  monthDayTo?: string | string[];
   bankId?: string | string[];
   exchange?: string | string[];
   search?: string | string[];
@@ -383,12 +390,38 @@ export async function getTradesForUser(
   let trades = rows.map(mapTrade);
 
   const dateRange = filters.dateRange ? String(filters.dateRange) : undefined;
+  const dateFrom = filters.dateFrom ? String(filters.dateFrom) : undefined;
+  const dateTo = filters.dateTo ? String(filters.dateTo) : undefined;
+  const monthKey = filters.monthKey ? String(filters.monthKey) : undefined;
+  const monthDayFrom = filters.monthDayFrom
+    ? Number(filters.monthDayFrom)
+    : undefined;
+  const monthDayTo = filters.monthDayTo
+    ? Number(filters.monthDayTo)
+    : undefined;
   const bankId = filters.bankId ? String(filters.bankId) : undefined;
   const exchange = filters.exchange ? String(filters.exchange) : undefined;
   const search = filters.search ? String(filters.search) : undefined;
   const sort = filters.sort ? String(filters.sort) : undefined;
 
-  if (dateRange) {
+  if (dateFrom || dateTo) {
+    trades = trades.filter((t) =>
+      tradeMatchesKyivYmdRange(t.createdAt, dateFrom, dateTo),
+    );
+  } else if (
+    monthKey &&
+    Number.isFinite(monthDayFrom) &&
+    Number.isFinite(monthDayTo)
+  ) {
+    trades = trades.filter((t) =>
+      tradeMatchesKyivMonthDays(
+        t.createdAt,
+        monthKey,
+        monthDayFrom!,
+        monthDayTo!,
+      ),
+    );
+  } else if (dateRange) {
     const range = dateRange as TradeDateRange;
     if (
       range === "today" ||

@@ -92,9 +92,26 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  getTrades: (params?: { dateRange?: string; bankId?: string; exchange?: string; search?: string; sort?: string; targetUserId?: string }) => {
+  getTrades: (params?: {
+    dateRange?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    monthKey?: string;
+    monthDayFrom?: string;
+    monthDayTo?: string;
+    bankId?: string;
+    exchange?: string;
+    search?: string;
+    sort?: string;
+    targetUserId?: string;
+  }) => {
     const q = new URLSearchParams();
     if (params?.dateRange) q.set('dateRange', params.dateRange);
+    if (params?.dateFrom) q.set('dateFrom', params.dateFrom);
+    if (params?.dateTo) q.set('dateTo', params.dateTo);
+    if (params?.monthKey) q.set('monthKey', params.monthKey);
+    if (params?.monthDayFrom) q.set('monthDayFrom', params.monthDayFrom);
+    if (params?.monthDayTo) q.set('monthDayTo', params.monthDayTo);
     if (params?.bankId) q.set('bankId', params.bankId);
     if (params?.exchange) q.set('exchange', params.exchange);
     if (params?.search) q.set('search', params.search);

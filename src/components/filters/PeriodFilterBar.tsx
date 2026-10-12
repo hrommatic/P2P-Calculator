@@ -1,0 +1,89 @@
+import React, { useRef, useState } from 'react';
+import { CalendarDays } from 'lucide-react';
+import { KyivRangeCalendar } from './KyivRangeCalendar';
+import { periodLabelUk, type PeriodFilterState, type PeriodPreset } from '../../lib/period-filter';
+
+type Props = {
+  value: PeriodFilterState;
+  onChange: (next: PeriodFilterState) => void;
+  t: (key: string) => string;
+  presetLabels: Record<PeriodPreset, string>;
+  compact?: boolean;
+};
+
+const PRESETS: PeriodPreset[] = ['all', 'today', 'yesterday', 'week', 'month'];
+
+export const PeriodFilterBar: React.FC<Props> = ({
+  value,
+  onChange,
+  t,
+  presetLabels,
+  compact,
+}) => {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const activePreset = value.kind === 'preset' ? value.preset : null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2" ref={wrapRef}>
+      <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+        {PRESETS.map(p => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => {
+              onChange({ kind: 'preset', preset: p });
+              setOpen(false);
+            }}
+            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+              activePreset === p
+                ? 'bg-white dark:bg-[#1c2541] text-slate-900 dark:text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            {presetLabels[p]}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+            value.kind !== 'preset'
+              ? 'border-sky-500/60 bg-sky-950/30 text-sky-300'
+              : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-sky-500/40'
+          }`}
+        >
+          <CalendarDays className="w-4 h-4 text-sky-500" />
+          {!compact && <span>{t('calendarPick')}</span>}
+          {value.kind !== 'preset' && (
+            <span className="font-mono tabular-nums text-[11px] opacity-90">
+              {periodLabelUk(value)}
+            </span>
+          )}
+        </button>
+        {open && (
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-40 cursor-default"
+              aria-label="Закрити"
+              onClick={() => setOpen(false)}
+            />
+            <div className="absolute left-0 top-full mt-2 z-50">
+              <KyivRangeCalendar
+                value={value}
+                onConfirm={onChange}
+                onClose={() => setOpen(false)}
+                resetLabel={t('reset')}
+              />
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};

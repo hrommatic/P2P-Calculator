@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { DashboardStats, Trade } from '../types';
+import { DashboardStats, Exchange, Trade, UserBank } from '../types';
 import {
   TrendingUp,
   Activity,
@@ -12,6 +12,11 @@ import {
   Percent,
 } from 'lucide-react';
 import { PageLoader } from '../components/ui/Loader';
+import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
+import { TradeFiltersBar } from '../components/filters/TradeFiltersBar';
+import { useFilterLayout } from '../components/filters/useFilterLayout';
+import { defaultPeriodFilter, periodToQuery, type PeriodPreset } from '../lib/period-filter';
+import { aggregateTradePeriodStats } from '../lib/trade-period-stats';
 
 interface DashboardPageProps {
   onNavigateToCalculator: () => void;
@@ -21,16 +26,42 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
   const { user, language, t } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [banks, setBanks] = useState<UserBank[]>([]);
+  const [exchanges, setExchanges] = useState<Exchange[]>([]);
+  const [period, setPeriod] = useState(defaultPeriodFilter);
+  const [search, setSearch] = useState('');
+  const [bankId, setBankId] = useState('all');
+  const [exchange, setExchange] = useState('all');
+  const [sort, setSort] = useState('newest');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [turnoverInUsdt, setTurnoverInUsdt] = useState(false);
 
-  const fetchDashboardData = async (filter: string) => {
+  const { order, move, add, remove, missing } = useFilterLayout('p2p_dash_filter_order', [
+    'search',
+    'bank',
+    'sort',
+  ]);
+
+  useEffect(() => {
+    Promise.all([api.getBanks(), api.getExchanges()]).then(([b, e]) => {
+      setBanks(b.banks);
+      setExchanges(e.exchanges);
+    });
+  }, []);
+
+  const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
+      const tradeParams = {
+        ...periodToQuery(period),
+        search: search.trim() || undefined,
+        bankId: bankId !== 'all' ? bankId : undefined,
+        exchange: exchange !== 'all' ? exchange : undefined,
+        sort: sort !== 'newest' ? sort : undefined,
+      };
       const [sData, tData] = await Promise.all([
         api.getDashboardStats(),
-        api.getTrades({ dateRange: filter === 'all' ? undefined : filter }),
+        api.getTrades(tradeParams),
       ]);
       setStats(sData);
       setTrades(tData.trades);
@@ -42,10 +73,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
   };
 
   useEffect(() => {
-    fetchDashboardData(dateFilter);
-  }, [dateFilter]);
+    fetchDashboardData();
+  }, [period, bankId, exchange, sort]);
 
-  const displayName = user?.nickname ? user.nickname.charAt(0).toUpperCase() + user.nickname.slice(1) : 'Учень';
+  useEffect(() => {
+    const handler = setTimeout(() => fetchDashboardData(), 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const periodStats = useMemo(() => aggregateTradePeriodStats(trades), [trades]);
+
+  const displayName = user?.nickname
+    ? user.nickname.charAt(0).toUpperCase() + user.nickname.slice(1)
+    : 'Учень';
 
   const formatUah = (val: number) => {
     return new Intl.NumberFormat('uk-UA', {
@@ -81,26 +121,36 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
     'bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs text-left w-full transition-colors' +
     (nbuRate ? ' cursor-pointer hover:border-blue-400/60 dark:hover:border-sky-500/40' : '');
 
-  const filterOptions = [
-    { id: 'all', label: t('filterAll') },
-    { id: 'today', label: t('filterToday') },
-    { id: 'yesterday', label: t('filterYesterday') },
-    { id: 'week', label: t('filterWeek') },
-    { id: 'month', label: t('filterMonth') },
-  ];
+  const presetLabels: Record<PeriodPreset, string> = {
+    all: t('filterAll'),
+    today: t('filterToday'),
+    yesterday: t('filterYesterday'),
+    week: t('filterWeek'),
+    month: t('filterMonth'),
+  };
+
+  const filterLabels = {
+    search: t('filterSearch'),
+    bank: t('filterBank'),
+    exchange: t('filterExchange'),
+    sort: t('filterSort'),
+  };
+
+  const sortLabels = {
+    newest: t('sortNewest'),
+    profit_desc: t('sortProfitDesc'),
+    profit_asc: t('sortProfitAsc'),
+    spread_desc: t('sortSpreadDesc'),
+  };
 
   return (
     <div className="space-y-6">
-
-
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {t('greeting', { name: displayName })}
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {t('appTagline')}
-          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('appTagline')}</p>
         </div>
 
         <button
@@ -112,29 +162,60 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
         </button>
       </div>
 
+      <PeriodFilterBar
+        value={period}
+        onChange={setPeriod}
+        t={t}
+        presetLabels={presetLabels}
+      />
+
+      <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
+        <TradeFiltersBar
+          order={order}
+          missing={missing}
+          onMove={move}
+          onAdd={add}
+          onRemove={remove}
+          values={{ search, bankId, exchange, sort }}
+          onChange={patch => {
+            if (patch.search !== undefined) setSearch(patch.search);
+            if (patch.bankId !== undefined) setBankId(patch.bankId);
+            if (patch.exchange !== undefined) setExchange(patch.exchange);
+            if (patch.sort !== undefined) setSort(patch.sort);
+          }}
+          banks={banks}
+          exchanges={exchanges}
+          labels={filterLabels}
+          sortLabels={sortLabels}
+          searchPlaceholder={t('searchTrades')}
+          allBanksLabel="Всі банки"
+          allExchangesLabel={t('allExchanges')}
+          addFilterLabel={t('addFilter')}
+        />
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('todayProfit')}</span>
+            <span>{t('periodProfit')}</span>
             <TrendingUp className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
-            +{formatUah(stats?.profitToday || 0)} <span className="text-xs font-normal">UAH</span>
+            +{formatUah(periodStats.profit)} <span className="text-xs font-normal">UAH</span>
           </div>
         </div>
 
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('todayRoiSpread')}</span>
+            <span>{t('periodRoiSpread')}</span>
             <Percent className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-blue-600 dark:text-sky-400">
-            +{(stats?.roiTodayPercent ?? 0).toFixed(2)}%
+            +{periodStats.roiPercent.toFixed(2)}%
             <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-1">ROI</span>
           </div>
           <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400 mt-1">
-            {t('spread')}: +{(stats?.spreadTodayPercent ?? 0).toFixed(2)}%
+            {t('spread')}: +{periodStats.spreadPercent.toFixed(2)}%
           </div>
         </div>
 
@@ -150,11 +231,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
 
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('tradesCountToday')}</span>
+            <span>{t('periodTradesCount')}</span>
             <Activity className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {stats?.tradesCountToday ?? 0}
+            {periodStats.tradesCount}
           </div>
         </div>
 
@@ -163,14 +244,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
           onClick={toggleTurnoverUnit}
           disabled={!nbuRate}
           className={turnoverCardClass}
-          title={nbuRate ? t('turnoverToggleHint') : undefined}
         >
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('totalTurnoverToday')}</span>
+            <span>{t('totalTurnoverPeriod')}</span>
             <Layers className="w-4 h-4 text-purple-500" />
           </div>
           <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {formatTurnoverValue(stats?.totalTurnoverToday || 0)}{' '}
+            {formatTurnoverValue(periodStats.totalTurnover)}{' '}
             <span className="text-xs font-normal text-slate-500">{turnoverUnitLabel}</span>
           </div>
           {nbuRate && turnoverInUsdt && (
@@ -191,45 +271,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
         </div>
       </div>
 
-      {nbuRate && (
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 -mt-2">
-          {t('turnoverToggleHint')}
-          {turnoverInUsdt ? ` · ${t('nbuRateLabel')}: ${nbuRate.toFixed(2)} ₴/$` : ''}
-        </p>
-      )}
-
-
       <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
-
-
-        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              {t('recentTrades')}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {trades.length} {language === 'en' ? 'trades recorded' : 'угод знайдено'}
-            </p>
-          </div>
-
-
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
-            {filterOptions.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => setDateFilter(opt.id)}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  dateFilter === opt.id
-                    ? 'bg-white dark:bg-[#1c2541] text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">{t('recentTrades')}</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {trades.length} {language === 'en' ? 'trades recorded' : 'угод знайдено'}
+          </p>
         </div>
-
 
         {isLoading ? (
           <PageLoader label="Завантаження даних..." className="p-8" />
@@ -273,7 +321,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
                       key={trade.id}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
-
                       <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400">
                         {new Date(trade.createdAt).toLocaleDateString('uk-UA', {
                           day: '2-digit',
@@ -285,66 +332,49 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
                           minute: '2-digit',
                         })}
                       </td>
-
-
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
                         {trade.buyExchange}
                       </td>
-
-
                       <td className="py-3 px-4">
                         <span className="font-medium text-slate-900 dark:text-slate-200">
                           {trade.buyBankName}
                         </span>
                       </td>
-
-
                       <td className="py-3 px-4 text-right font-mono tabular-nums">
                         {trade.buyRate.toFixed(2)}
                       </td>
-
-
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold">
-                        {formatUah(trade.buyAmountUah)} <span className="text-[10px] text-slate-400">₴</span>
+                        {formatUah(trade.buyAmountUah)}{' '}
+                        <span className="text-[10px] text-slate-400">₴</span>
                       </td>
-
-
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
                         {trade.sellExchange}
                       </td>
-
-
                       <td className="py-3 px-4">
                         <span className="font-medium text-slate-900 dark:text-slate-200">
                           {trade.sellBankName}
                         </span>
                       </td>
-
-
                       <td className="py-3 px-4 text-right font-mono tabular-nums">
                         {trade.sellRate.toFixed(2)}
                       </td>
-
-
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold">
-                        {formatUah(trade.sellAmountUah)} <span className="text-[10px] text-slate-400">₴</span>
+                        {formatUah(trade.sellAmountUah)}{' '}
+                        <span className="text-[10px] text-slate-400">₴</span>
                       </td>
-
-
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-500">
                         {trade.totalCommissionsUah.toFixed(2)} ₴
                       </td>
-
-
-                      <td className={`py-3 px-4 text-right font-mono tabular-nums font-bold ${
-                        isProfit
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-rose-600 dark:text-rose-400'
-                      }`}>
-                        {isProfit ? '+' : ''}{formatUah(trade.netProfitUah)} ₴
+                      <td
+                        className={`py-3 px-4 text-right font-mono tabular-nums font-bold ${
+                          isProfit
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-rose-600 dark:text-rose-400'
+                        }`}
+                      >
+                        {isProfit ? '+' : ''}
+                        {formatUah(trade.netProfitUah)} ₴
                       </td>
-
-
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-blue-600 dark:text-sky-400">
                         +{trade.spreadPercent.toFixed(2)}%
                       </td>
@@ -355,9 +385,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
             </table>
           </div>
         )}
-
       </div>
-
     </div>
   );
 };

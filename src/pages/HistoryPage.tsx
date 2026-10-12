@@ -4,7 +4,6 @@ import { api } from '../services/api';
 import { Trade, UserBank, Exchange } from '../types';
 import {
   History as HistoryIcon,
-  Search,
   Download,
   Trash2,
   Edit,
@@ -12,6 +11,14 @@ import {
   X,
 } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
+import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
+import { TradeFiltersBar } from '../components/filters/TradeFiltersBar';
+import { useFilterLayout } from '../components/filters/useFilterLayout';
+import {
+  defaultPeriodFilter,
+  periodToQuery,
+  type PeriodPreset,
+} from '../lib/period-filter';
 
 export const HistoryPage: React.FC = () => {
   const { t, language } = useAuth();
@@ -24,10 +31,17 @@ export const HistoryPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [search, setSearch] = useState('');
-  const [dateRange, setDateRange] = useState('all');
+  const [period, setPeriod] = useState(defaultPeriodFilter);
   const [bankId, setBankId] = useState('all');
   const [exchange, setExchange] = useState('all');
   const [sort, setSort] = useState('newest');
+
+  const { order, move, add, remove, missing } = useFilterLayout('p2p_history_filter_order', [
+    'search',
+    'bank',
+    'exchange',
+    'sort',
+  ]);
 
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
@@ -52,8 +66,8 @@ export const HistoryPage: React.FC = () => {
     try {
       const [tRes, bRes, eRes] = await Promise.all([
         api.getTrades({
+          ...periodToQuery(period),
           search: search || undefined,
-          dateRange: dateRange !== 'all' ? dateRange : undefined,
           bankId: bankId !== 'all' ? bankId : undefined,
           exchange: exchange !== 'all' ? exchange : undefined,
           sort: sort !== 'newest' ? sort : undefined,
@@ -73,7 +87,7 @@ export const HistoryPage: React.FC = () => {
 
   useEffect(() => {
     fetchHistory();
-  }, [dateRange, bankId, exchange, sort]);
+  }, [period, bankId, exchange, sort]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -149,6 +163,28 @@ export const HistoryPage: React.FC = () => {
     }).format(val || 0);
   };
 
+  const presetLabels: Record<PeriodPreset, string> = {
+    all: t('filterAll'),
+    today: t('filterToday'),
+    yesterday: t('filterYesterday'),
+    week: t('filterWeek'),
+    month: t('filterMonth'),
+  };
+
+  const filterLabels = {
+    search: t('filterSearch'),
+    bank: t('filterBank'),
+    exchange: t('filterExchange'),
+    sort: t('filterSort'),
+  };
+
+  const sortLabels = {
+    newest: t('sortNewest'),
+    profit_desc: t('sortProfitDesc'),
+    profit_asc: t('sortProfitAsc'),
+    spread_desc: t('sortSpreadDesc'),
+  };
+
   return (
     <div className="space-y-6">
 
@@ -175,63 +211,31 @@ export const HistoryPage: React.FC = () => {
       </div>
 
 
-      <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <PeriodFilterBar value={period} onChange={setPeriod} t={t} presetLabels={presetLabels} />
 
-
-        <div className="relative lg:col-span-2">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder={t('searchTrades')}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-
-        <div>
-          <select
-            value={dateRange}
-            onChange={e => setDateRange(e.target.value)}
-            className="select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-          >
-            <option value="all">{t('filterAll')}</option>
-            <option value="today">{t('filterToday')}</option>
-            <option value="yesterday">{t('filterYesterday')}</option>
-            <option value="week">{t('filterWeek')}</option>
-            <option value="month">{t('filterMonth')}</option>
-          </select>
-        </div>
-
-
-        <div>
-          <select
-            value={bankId}
-            onChange={e => setBankId(e.target.value)}
-            className="select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-          >
-            <option value="all">Всі банки</option>
-            {banks.map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-        </div>
-
-
-        <div>
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value)}
-            className="select-field w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-          >
-            <option value="newest">{t('sortNewest')}</option>
-            <option value="profit_desc">{t('sortProfitDesc')}</option>
-            <option value="profit_asc">{t('sortProfitAsc')}</option>
-            <option value="spread_desc">{t('sortSpreadDesc')}</option>
-          </select>
-        </div>
-
+      <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
+        <TradeFiltersBar
+          order={order}
+          missing={missing}
+          onMove={move}
+          onAdd={add}
+          onRemove={remove}
+          values={{ search, bankId, exchange, sort }}
+          onChange={patch => {
+            if (patch.search !== undefined) setSearch(patch.search);
+            if (patch.bankId !== undefined) setBankId(patch.bankId);
+            if (patch.exchange !== undefined) setExchange(patch.exchange);
+            if (patch.sort !== undefined) setSort(patch.sort);
+          }}
+          banks={banks}
+          exchanges={exchanges}
+          labels={filterLabels}
+          sortLabels={sortLabels}
+          searchPlaceholder={t('searchTrades')}
+          allBanksLabel="Всі банки"
+          allExchangesLabel={t('allExchanges')}
+          addFilterLabel={t('addFilter')}
+        />
       </div>
 
 

@@ -39,6 +39,31 @@ export function getKyivDayStartMs(ymd: string): number {
 
 export type TradeDateRange = 'today' | 'yesterday' | 'week' | 'month';
 
+export function tradeMatchesKyivYmdRange(
+  createdAt: Date | string,
+  fromYmd: string | null | undefined,
+  toYmd: string | null | undefined,
+): boolean {
+  const ymd = getKyivYmd(createdAt);
+  if (fromYmd && ymd < fromYmd) return false;
+  if (toYmd && ymd > toYmd) return false;
+  return true;
+}
+
+export function tradeMatchesKyivMonthDays(
+  createdAt: Date | string,
+  monthKey: string,
+  dayFrom: number,
+  dayTo: number,
+): boolean {
+  const ymd = getKyivYmd(createdAt);
+  if (!ymd.startsWith(monthKey)) return false;
+  const day = Number(ymd.slice(8, 10));
+  const lo = Math.min(dayFrom, dayTo);
+  const hi = Math.max(dayFrom, dayTo);
+  return day >= lo && day <= hi;
+}
+
 export function tradeMatchesKyivDateRange(
   createdAt: Date | string,
   dateRange: TradeDateRange,
