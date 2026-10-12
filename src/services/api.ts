@@ -51,6 +51,14 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   if (!response.ok) {
+    const isHtml =
+      typeof data === 'string' &&
+      (data.trimStart().startsWith('<!') || contentType?.includes('text/html'));
+    if (isHtml || (response.status === 404 && endpoint.startsWith('/auth'))) {
+      throw new Error(
+        'API недоступне локально. Запустіть npm run dev:full і відкрийте http://localhost:5173.',
+      );
+    }
     const errorMsg = data?.error || (typeof data === 'string' ? data : 'Сталася невідома помилка');
     throw new Error(errorMsg);
   }

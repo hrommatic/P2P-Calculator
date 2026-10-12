@@ -120,3 +120,19 @@
   height: 0.875rem;
   stroke-width: 2.5;
 }
+
+.auth-password-field::-ms-reveal,
+.auth-password-field::-ms-clear {
+  display: none;
+}
+
+.auth-password-field::-webkit-credentials-auto-fill-button,
+.auth-password-field::-webkit-strong-password-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.auth-password-mask {
+  -webkit-text-security: disc;
+}

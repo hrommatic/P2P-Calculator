@@ -132,7 +132,7 @@ export const AuthPage: React.FC = () => {
 
 
       <div className="w-full max-w-md mx-auto px-4 py-8">
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm p-6 sm:p-8">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-sm p-5 sm:p-6">
 
 
           <div className="text-center mb-6">
@@ -229,16 +229,16 @@ export const AuthPage: React.FC = () => {
                 {t('password')}
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type="text"
                   name="password"
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder={t('passwordPlaceholder')}
-                  className="w-full pl-9 pr-10 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className={`auth-password-field w-full pl-9 pr-10 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors${showPassword ? '' : ' auth-password-mask'}`}
                 />
                 <button
                   type="button"
@@ -280,16 +280,16 @@ export const AuthPage: React.FC = () => {
                   {t('confirmPassword')}
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type="text"
                     name="confirm-password"
                     autoComplete="new-password"
                     required
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     placeholder={t('confirmPasswordPlaceholder')}
-                    className="w-full pl-9 pr-10 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className={`auth-password-field w-full pl-9 pr-10 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors${showConfirmPassword ? '' : ' auth-password-mask'}`}
                   />
                   <button
                     type="button"

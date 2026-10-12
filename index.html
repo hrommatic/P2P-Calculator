@@ -2,26 +2,6 @@
 <html lang="uk" class="dark theme-navy">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      (function () {
-        try {
-          var theme = localStorage.getItem('p2p_calc_theme');
-          var root = document.documentElement;
-          if (theme === 'light') {
-            root.classList.remove('dark', 'theme-navy');
-            root.classList.add('theme-light');
-            root.style.colorScheme = 'light';
-          } else {
-            root.classList.add('dark', 'theme-navy');
-            root.classList.remove('theme-light');
-            root.style.colorScheme = 'dark';
-          }
-        } catch (e) {
-          document.documentElement.classList.add('dark', 'theme-navy');
-          document.documentElement.style.colorScheme = 'dark';
-        }
-      })();
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>P2P Calculator</title>
     <meta name="application-name" content="P2P Calculator" />
