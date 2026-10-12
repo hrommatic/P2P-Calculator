@@ -173,11 +173,13 @@ export const AuthPage: React.FC = () => {
                 <User className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
                 <input
                   type="text"
+                  name="username"
+                  autoComplete="username"
                   required
                   value={nickname}
                   onChange={e => setNickname(e.target.value)}
                   placeholder={t('nicknamePlaceholder')}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
                 />
               </div>
             </div>
@@ -214,11 +216,13 @@ export const AuthPage: React.FC = () => {
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
                 <input
                   type="password"
+                  name="password"
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder={t('passwordPlaceholder')}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
                 />
               </div>
 
@@ -251,11 +255,13 @@ export const AuthPage: React.FC = () => {
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
                   <input
                     type="password"
+                    name="confirm-password"
+                    autoComplete="new-password"
                     required
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     placeholder={t('confirmPasswordPlaceholder')}
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>

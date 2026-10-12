@@ -35,18 +35,18 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   // Form State
   const [buyExchange, setBuyExchange] = useState('Binance');
   const [buyBankId, setBuyBankId] = useState('');
-  const [buyRate, setBuyRate] = useState<string>('44.00');
-  const [buyAmountUah, setBuyAmountUah] = useState<string>('10000');
-  const [buyCommission, setBuyCommission] = useState<string>('0');
+  const [buyRate, setBuyRate] = useState<string>('');
+  const [buyAmountUah, setBuyAmountUah] = useState<string>('');
+  const [buyCommission, setBuyCommission] = useState<string>('');
   const [buyCommissionType, setBuyCommissionType] = useState<'percent' | 'fixed_uah' | 'fixed_usdt'>('percent');
 
   const [sellExchange, setSellExchange] = useState('Binance');
   const [sellBankId, setSellBankId] = useState('');
-  const [sellRate, setSellRate] = useState<string>('46.00');
+  const [sellRate, setSellRate] = useState<string>('');
   const [sellUsdtAmount, setSellUsdtAmount] = useState<string>(''); // if blank, auto-uses bought USDT
-  const [sellCommission, setSellCommission] = useState<string>('0');
+  const [sellCommission, setSellCommission] = useState<string>('');
   const [sellCommissionType, setSellCommissionType] = useState<'percent' | 'fixed_uah' | 'fixed_usdt'>('percent');
-  const [extraExpensesUah, setExtraExpensesUah] = useState<string>('0');
+  const [extraExpensesUah, setExtraExpensesUah] = useState<string>('');
 
   const [notes, setNotes] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -78,7 +78,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   }, []);
 
   // Compute live calculations
-  const numBuyRate = Math.max(0.0001, parseFloat(buyRate) || 0);
+  const numBuyRate = parseFloat(buyRate) || 0;
   const numBuyAmountUah = parseFloat(buyAmountUah) || 0;
   const numBuyComm = parseFloat(buyCommission) || 0;
 
@@ -96,7 +96,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   }
 
   // Sell Side
-  const numSellRate = Math.max(0.0001, parseFloat(sellRate) || 0);
+  const numSellRate = parseFloat(sellRate) || 0;
   const numCustomSellUsdt = parseFloat(sellUsdtAmount) || 0;
   const effectiveSellUsdt = numCustomSellUsdt > 0 ? numCustomSellUsdt : calcBuyUsdt;
   const calcGrossRevenueUah = effectiveSellUsdt * numSellRate;
@@ -135,14 +135,22 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   const isBuyOverLimit = selectedBuyBank && numBuyAmountUah > buyBankAvailable;
 
   const handleClear = () => {
-    setBuyRate('44.00');
-    setBuyAmountUah('10000');
-    setBuyCommission('0');
-    setSellRate('46.00');
+    const defaultExchange = exchanges[0]?.name ?? 'Binance';
+    setBuyExchange(defaultExchange);
+    setSellExchange(defaultExchange);
+    setBuyBankId('');
+    setSellBankId('');
+    setBuyRate('');
+    setBuyAmountUah('');
+    setBuyCommission('');
+    setBuyCommissionType('percent');
+    setSellRate('');
     setSellUsdtAmount('');
-    setSellCommission('0');
-    setExtraExpensesUah('0');
+    setSellCommission('');
+    setSellCommissionType('percent');
+    setExtraExpensesUah('');
     setNotes('');
+    setSaveSuccess(false);
     setErrorMessage(null);
   };
 
@@ -300,8 +308,10 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   className={fieldSelectClass}
                   disabled={banks.length === 0}
                 >
-                  {banks.length === 0 && (
+                  {banks.length === 0 ? (
                     <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
+                  ) : (
+                    <option value="">— Оберіть банк —</option>
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
@@ -323,7 +333,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     min="0"
                     value={buyRate}
                     onChange={e => setBuyRate(e.target.value)}
-                    className={fieldNumberSuffixClass}
+                    placeholder="44.00"
+                    className={`${fieldNumberSuffixClass} placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                   />
                   <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">₴/$</span>
                 </div>
@@ -341,7 +352,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     min="0"
                     value={buyAmountUah}
                     onChange={e => setBuyAmountUah(e.target.value)}
-                    className={`${fieldNumberSuffixClass} font-bold`}
+                    placeholder="10000"
+                    className={`${fieldNumberSuffixClass} font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                   />
                   <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">UAH</span>
                 </div>
@@ -360,7 +372,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   min="0"
                   value={buyCommission}
                   onChange={e => setBuyCommission(e.target.value)}
-                  className={fieldNumberSmClass}
+                  placeholder="0"
+                  className={`${fieldNumberSmClass} placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                 />
               </div>
 
@@ -436,8 +449,10 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   className={fieldSelectClass}
                   disabled={banks.length === 0}
                 >
-                  {banks.length === 0 && (
+                  {banks.length === 0 ? (
                     <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
+                  ) : (
+                    <option value="">— Оберіть банк —</option>
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
@@ -459,7 +474,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     min="0"
                     value={sellRate}
                     onChange={e => setSellRate(e.target.value)}
-                    className={fieldNumberSuffixClass}
+                    placeholder="46.00"
+                    className={`${fieldNumberSuffixClass} placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                   />
                   <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">₴/$</span>
                 </div>
@@ -475,10 +491,10 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                     type="number"
                     step="0.0001"
                     min="0"
-                    placeholder={formatUsdt(calcBuyUsdt)}
+                    placeholder={calcBuyUsdt > 0 ? formatUsdt(calcBuyUsdt) : '0.0000'}
                     value={sellUsdtAmount}
                     onChange={e => setSellUsdtAmount(e.target.value)}
-                    className={fieldNumberSuffixClass}
+                    className={`${fieldNumberSuffixClass} placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                   />
                   <span className="absolute right-3 top-2 text-xs text-slate-400 pointer-events-none">USDT</span>
                 </div>
@@ -497,7 +513,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   min="0"
                   value={sellCommission}
                   onChange={e => setSellCommission(e.target.value)}
-                  className={fieldNumberSmClass}
+                  placeholder="0"
+                  className={`${fieldNumberSmClass} placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                 />
               </div>
 
@@ -526,7 +543,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   min="0"
                   value={extraExpensesUah}
                   onChange={e => setExtraExpensesUah(e.target.value)}
-                  className={fieldNumberSmClass}
+                  placeholder="0"
+                  className={`${fieldNumberSmClass} placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                 />
               </div>
             </div>

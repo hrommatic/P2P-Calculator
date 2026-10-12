@@ -208,7 +208,7 @@ export async function handleDeleteAdminGlobalBank(req: VercelRequest, res: Verce
 
   bank.isActive = false;
   await updateGlobalBank(bank);
-  await logAdminAction(user, 'BANK_ARCHIVE', `Archived global bank ${bank.name}`);
+  await logAdminAction(user, 'BANK_DEACTIVATE', `Deactivated global bank ${bank.name}`);
 
   return res.json({ success: true, message: 'Банк деактивовано' });
 }

@@ -228,7 +228,7 @@ await test('Cleanup: delete trade', async () => {
   assert('delete trade 200', r.status === 200 && r.data?.success, JSON.stringify(r.data));
 });
 
-await test('Cleanup: archive bank', async () => {
+await test('Cleanup: delete bank', async () => {
   if (!bankId) return assert('skip delete bank', true);
   const r = await req('DELETE', `/banks/${bankId}`);
   assert('delete bank 200', r.status === 200 && r.data?.success, JSON.stringify(r.data));

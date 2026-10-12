@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
-import { UserBank, GlobalBank } from "../types";
+import { UserBank } from "../types";
 import {
   Building2,
   Plus,
   Edit2,
-  Archive,
+  Trash2,
   ArrowDownLeft,
   ArrowUpRight,
   X,
@@ -18,7 +18,6 @@ export const BanksPage: React.FC = () => {
   const { t } = useAuth();
 
   const [banks, setBanks] = useState<UserBank[]>([]);
-  const [globalBanks, setGlobalBanks] = useState<GlobalBank[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
@@ -27,23 +26,18 @@ export const BanksPage: React.FC = () => {
 
   // Form Fields
   const [name, setName] = useState("");
-  const [globalBankId, setGlobalBankId] = useState("");
   const [turnoverLimit, setTurnoverLimit] = useState("100000");
-  const [initialTurnover, setInitialTurnover] = useState("0");
-  const [color, setColor] = useState("#2563EB");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Archive Confirm Modal
-  const [archiveTarget, setArchiveTarget] = useState<UserBank | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserBank | null>(null);
 
   const fetchBanks = async () => {
     setIsLoading(true);
     try {
       const res = await api.getBanks();
       setBanks(res.banks);
-      setGlobalBanks(res.globalBanks);
     } catch (err) {
       console.error("Error fetching banks:", err);
     } finally {
@@ -58,10 +52,7 @@ export const BanksPage: React.FC = () => {
   const handleOpenAddModal = () => {
     setEditingBank(null);
     setName("");
-    setGlobalBankId("");
     setTurnoverLimit("100000");
-    setInitialTurnover("0");
-    setColor("#2563EB");
     setNotes("");
     setFormError(null);
     setIsSaving(false);
@@ -71,27 +62,11 @@ export const BanksPage: React.FC = () => {
   const handleOpenEditModal = (bank: UserBank) => {
     setEditingBank(bank);
     setName(bank.name);
-    setGlobalBankId(bank.globalBankId || "");
     setTurnoverLimit(bank.turnoverLimitUah.toString());
-    setInitialTurnover(bank.initialTurnoverUah.toString());
-    setColor(bank.color || "#2563EB");
     setNotes(bank.notes || "");
     setFormError(null);
     setIsSaving(false);
     setIsModalOpen(true);
-  };
-
-  const handleSelectGlobalTemplate = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const selectedId = e.target.value;
-    setGlobalBankId(selectedId);
-    const tmpl = globalBanks.find((g) => g.id === selectedId);
-    if (tmpl) {
-      setName(tmpl.name);
-      setTurnoverLimit(tmpl.defaultLimitUah.toString());
-      setColor(tmpl.color);
-    }
   };
 
   const normalizeBankName = (value: string) => value.trim().toLowerCase();
@@ -132,17 +107,12 @@ export const BanksPage: React.FC = () => {
         await api.updateBank(editingBank.id, {
           name: trimmedName,
           turnoverLimitUah: limitNum,
-          initialTurnoverUah: parseFloat(initialTurnover) || 0,
-          color,
           notes: notes.trim(),
         });
       } else {
         await api.createBank({
           name: trimmedName,
-          globalBankId: globalBankId || undefined,
           turnoverLimitUah: limitNum,
-          initialTurnoverUah: parseFloat(initialTurnover) || 0,
-          color,
           notes: notes.trim(),
         });
       }
@@ -156,14 +126,14 @@ export const BanksPage: React.FC = () => {
     }
   };
 
-  const handleArchiveConfirm = async () => {
-    if (!archiveTarget) return;
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.deleteBank(archiveTarget.id);
-      setArchiveTarget(null);
+      await api.deleteBank(deleteTarget.id);
+      setDeleteTarget(null);
       fetchBanks();
     } catch (err) {
-      console.error("Failed to archive bank:", err);
+      console.error("Failed to delete bank:", err);
     }
   };
 
@@ -273,11 +243,11 @@ export const BanksPage: React.FC = () => {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setArchiveTarget(bank)}
+                        onClick={() => setDeleteTarget(bank)}
                         className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                        title={t("archiveBank")}
+                        title={t("deleteBank")}
                       >
-                        <Archive className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -400,29 +370,6 @@ export const BanksPage: React.FC = () => {
             )}
 
             <form onSubmit={handleSaveBank} className="space-y-4 text-xs">
-              {!editingBank && globalBanks.length > 0 && (
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Швидкий шаблон банку
-                  </label>
-                  <select
-                    value={globalBankId}
-                    onChange={handleSelectGlobalTemplate}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                  >
-                    <option value="">
-                      -- Оберіть шаблон або введіть свій --
-                    </option>
-                    {globalBanks.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name} (Стандартний ліміт:{" "}
-                        {formatUah(g.defaultLimitUah)} ₴)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t("bankName")} *
@@ -437,48 +384,18 @@ export const BanksPage: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t("turnoverLimit")} *
-                  </label>
-                  <input
-                    type="number"
-                    step="1000"
-                    required
-                    value={turnoverLimit}
-                    onChange={(e) => setTurnoverLimit(e.target.value)}
-                    className="w-full px-3 py-2 font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t("initialTurnover")}
-                  </label>
-                  <input
-                    type="number"
-                    step="100"
-                    value={initialTurnover}
-                    onChange={(e) => setInitialTurnover(e.target.value)}
-                    className="w-full px-3 py-2 font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Колір картки
+                  {t("turnoverLimit")} *
                 </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-9 h-9 p-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent cursor-pointer"
-                  />
-                  <span className="font-mono text-slate-500">{color}</span>
-                </div>
+                <input
+                  type="number"
+                  step="1000"
+                  required
+                  value={turnoverLimit}
+                  onChange={(e) => setTurnoverLimit(e.target.value)}
+                  className="w-full px-3 py-2 font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                />
               </div>
 
               <div>
@@ -499,7 +416,7 @@ export const BanksPage: React.FC = () => {
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   disabled={isSaving}
-                  className="px-4 py-2 font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 disabled:opacity-50"
+                  className="px-4 py-2 font-semibold rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600 disabled:opacity-50"
                 >
                   {t("cancel")}
                 </button>
@@ -520,29 +437,28 @@ export const BanksPage: React.FC = () => {
         </div>
       )}
 
-      {/* Archive Bank Confirmation Modal */}
-      {archiveTarget && (
+      {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
-            <Archive className="w-10 h-10 text-amber-500 mx-auto" />
+            <Trash2 className="w-10 h-10 text-rose-500 mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              {t("archiveBank")} «{archiveTarget.name}»?
+              {t("deleteBank")} «{deleteTarget.name}»?
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {t("archiveBankConfirm")}
+              {t("deleteBankConfirm")}
             </p>
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
-                onClick={() => setArchiveTarget(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
               >
                 {t("cancel")}
               </button>
               <button
-                onClick={handleArchiveConfirm}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white"
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
               >
-                {t("archiveBank")}
+                {t("deleteBank")}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/layout/Navbar';
 import { AuthPage } from './pages/AuthPage';
@@ -14,7 +14,29 @@ import { PageLoader } from './components/ui/Loader';
 function AppContent() {
   const { user, isLoading, siteSettings } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  const [showAnnouncement, setShowAnnouncement] = useState<boolean>(true);
+  const [showAnnouncement, setShowAnnouncement] = useState<boolean>(false);
+
+  const announcementText = siteSettings?.announcement?.trim() || '';
+
+  useEffect(() => {
+    if (!user || !announcementText) {
+      setShowAnnouncement(false);
+      return;
+    }
+    const storageKey = `p2p_calc_announcement_dismissed_${user.id}`;
+    const dismissed = localStorage.getItem(storageKey);
+    setShowAnnouncement(dismissed !== announcementText);
+  }, [user, announcementText]);
+
+  const dismissAnnouncement = () => {
+    if (user && announcementText) {
+      localStorage.setItem(
+        `p2p_calc_announcement_dismissed_${user.id}`,
+        announcementText,
+      );
+    }
+    setShowAnnouncement(false);
+  };
 
   if (isLoading) {
     return (
@@ -36,16 +58,18 @@ function AppContent() {
       <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />
 
       {/* Optional System Announcement Banner */}
-      {showAnnouncement && siteSettings?.announcement && (
+      {showAnnouncement && announcementText && (
         <div className="bg-blue-600 text-white text-xs py-2 px-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Bell className="w-3.5 h-3.5 shrink-0" />
-              <span>{siteSettings.announcement}</span>
+              <span>{announcementText}</span>
             </div>
             <button
-              onClick={() => setShowAnnouncement(false)}
+              type="button"
+              onClick={dismissAnnouncement}
               className="hover:opacity-75 p-0.5"
+              aria-label="Закрити оголошення"
             >
               <X className="w-3.5 h-3.5" />
             </button>

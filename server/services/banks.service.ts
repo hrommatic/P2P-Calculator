@@ -3,7 +3,7 @@ import type { User } from '../schemas/auth.schema.js';
 import type { UserBank } from '../schemas/banks.schema.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
 import {
-  archiveUserBankRecord,
+  deleteUserBankRecord,
   createUserBank,
   findDuplicateUserBankName,
   findUserBankById,
@@ -123,7 +123,6 @@ export async function handleDeleteBank(req: VercelRequest, res: VercelResponse, 
     return res.status(404).json({ error: 'Банк не знайдено' });
   }
 
-  const updatedAt = new Date().toISOString();
-  await archiveUserBankRecord(bank.id, updatedAt);
-  return res.json({ success: true, message: 'Банк архівовано' });
+  await deleteUserBankRecord(bank.id);
+  return res.json({ success: true, message: 'Банк видалено' });
 }
