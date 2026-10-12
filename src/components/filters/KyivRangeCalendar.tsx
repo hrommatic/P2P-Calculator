@@ -5,12 +5,10 @@ import {
   formatMonthYearUk,
   getKyivYmd,
   mondayFirstWeekday,
-  parseYmd,
   ymdFromParts,
 } from '../../lib/kyiv-dates';
 import {
   clampRangeYmd,
-  monthKeyFromYearMonth,
   type PeriodFilterState,
   viewMonthFromPeriod,
 } from '../../lib/period-filter';
@@ -34,27 +32,21 @@ export const KyivRangeCalendar: React.FC<Props> = ({
   const [viewYear, setViewYear] = useState(initialView.year);
   const [viewMonth, setViewMonth] = useState(initialView.month);
 
-  const [draftFrom, setDraftFrom] = useState<string | null>(() => {
-    if (value.kind === 'range') return value.dateFrom;
-    if (value.kind === 'monthDays') return null;
-    return null;
-  });
-  const [draftTo, setDraftTo] = useState<string | null>(() => {
-    if (value.kind === 'range') return value.dateTo;
-    return null;
-  });
-  const [dayFrom, setDayFrom] = useState(() =>
-    value.kind === 'monthDays' ? value.dayFrom : 10,
+  const [draftFrom, setDraftFrom] = useState<string | null>(() =>
+    value.kind === 'range' ? value.dateFrom : null,
   );
-  const [dayTo, setDayTo] = useState(() =>
-    value.kind === 'monthDays' ? value.dayTo : 15,
+  const [draftTo, setDraftTo] = useState<string | null>(() =>
+    value.kind === 'range' ? value.dateTo : null,
   );
-  const [useMonthDays, setUseMonthDays] = useState(value.kind === 'monthDays');
 
   useEffect(() => {
     const v = viewMonthFromPeriod(value);
     setViewYear(v.year);
     setViewMonth(v.month);
+    if (value.kind === 'range') {
+      setDraftFrom(value.dateFrom);
+      setDraftTo(value.dateTo);
+    }
   }, [value]);
 
   const monthCells = useMemo(() => {
@@ -83,7 +75,6 @@ export const KyivRangeCalendar: React.FC<Props> = ({
   };
 
   const handleDayClick = (day: number) => {
-    setUseMonthDays(false);
     const ymd = ymdFromParts(viewYear, viewMonth, day);
     if (!draftFrom || (draftFrom && draftTo)) {
       setDraftFrom(ymd);
@@ -104,28 +95,14 @@ export const KyivRangeCalendar: React.FC<Props> = ({
   const handleReset = () => {
     setDraftFrom(null);
     setDraftTo(null);
-    setUseMonthDays(false);
-    setDayFrom(10);
-    setDayTo(15);
   };
 
   const handleConfirm = () => {
-    if (useMonthDays) {
-      onConfirm({
-        kind: 'monthDays',
-        monthKey: monthKeyFromYearMonth(viewYear, viewMonth),
-        dayFrom: Math.min(dayFrom, dayTo),
-        dayTo: Math.max(dayFrom, dayTo),
-      });
-      onClose();
-      return;
-    }
-    if (draftFrom) {
-      const to = draftTo ?? draftFrom;
-      const { from, to: end } = clampRangeYmd(draftFrom, to);
-      onConfirm({ kind: 'range', dateFrom: from, dateTo: end });
-      onClose();
-    }
+    if (!draftFrom) return;
+    const to = draftTo ?? draftFrom;
+    const { from, to: end } = clampRangeYmd(draftFrom, to);
+    onConfirm({ kind: 'range', dateFrom: from, dateTo: end });
+    onClose();
   };
 
   const todayYmd = getKyivYmd();
@@ -137,13 +114,9 @@ export const KyivRangeCalendar: React.FC<Props> = ({
       aria-modal="true"
     >
       <div className="flex items-center justify-between mb-4">
-        <button
-          type="button"
-          className="flex items-center gap-1 text-sm font-semibold capitalize hover:text-sky-400"
-        >
+        <span className="text-sm font-semibold capitalize">
           {formatMonthYearUk(viewYear, viewMonth)}
-          <ChevronRight className="w-4 h-4 text-sky-500 rotate-90" />
-        </button>
+        </span>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -200,40 +173,6 @@ export const KyivRangeCalendar: React.FC<Props> = ({
         })}
       </div>
 
-      <div className="flex items-center gap-2 mb-4 text-xs">
-        <label className="flex items-center gap-2 text-slate-400 shrink-0">
-          <input
-            type="checkbox"
-            checked={useMonthDays}
-            onChange={e => setUseMonthDays(e.target.checked)}
-            className="rounded border-slate-600"
-          />
-          Дні
-        </label>
-        <input
-          type="number"
-          min={1}
-          max={31}
-          value={dayFrom}
-          disabled={!useMonthDays}
-          onChange={e => setDayFrom(Number(e.target.value) || 1)}
-          className="w-14 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-center font-mono disabled:opacity-40"
-        />
-        <span className="text-slate-500">—</span>
-        <input
-          type="number"
-          min={1}
-          max={31}
-          value={dayTo}
-          disabled={!useMonthDays}
-          onChange={e => setDayTo(Number(e.target.value) || 1)}
-          className="w-14 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-center font-mono disabled:opacity-40"
-        />
-        <span className="text-slate-500 truncate">
-          {parseYmd(getKyivYmd()).month === viewMonth ? '' : ` (${viewMonth})`}
-        </span>
-      </div>
-
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -245,7 +184,7 @@ export const KyivRangeCalendar: React.FC<Props> = ({
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!useMonthDays && !draftFrom}
+          disabled={!draftFrom}
           className="w-12 h-12 flex items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-400 disabled:opacity-40 disabled:pointer-events-none shrink-0"
           aria-label="Застосувати"
         >

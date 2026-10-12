@@ -12,8 +12,6 @@ import {
 } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
 import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
-import { TradeFiltersBar } from '../components/filters/TradeFiltersBar';
-import { useFilterLayout } from '../components/filters/useFilterLayout';
 import {
   defaultPeriodFilter,
   periodToQuery,
@@ -30,18 +28,7 @@ export const HistoryPage: React.FC = () => {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [search, setSearch] = useState('');
   const [period, setPeriod] = useState(defaultPeriodFilter);
-  const [bankId, setBankId] = useState('all');
-  const [exchange, setExchange] = useState('all');
-  const [sort, setSort] = useState('newest');
-
-  const { order, move, add, remove, missing } = useFilterLayout('p2p_history_filter_order', [
-    'search',
-    'bank',
-    'exchange',
-    'sort',
-  ]);
 
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
@@ -65,13 +52,7 @@ export const HistoryPage: React.FC = () => {
     setIsLoading(true);
     try {
       const [tRes, bRes, eRes] = await Promise.all([
-        api.getTrades({
-          ...periodToQuery(period),
-          search: search || undefined,
-          bankId: bankId !== 'all' ? bankId : undefined,
-          exchange: exchange !== 'all' ? exchange : undefined,
-          sort: sort !== 'newest' ? sort : undefined,
-        }),
+        api.getTrades(periodToQuery(period)),
         api.getBanks(),
         api.getExchanges(),
       ]);
@@ -87,14 +68,7 @@ export const HistoryPage: React.FC = () => {
 
   useEffect(() => {
     fetchHistory();
-  }, [period, bankId, exchange, sort]);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchHistory();
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [search]);
+  }, [period]);
 
   const handleOpenEdit = (trade: Trade) => {
     setEditingTrade(trade);
@@ -171,20 +145,6 @@ export const HistoryPage: React.FC = () => {
     month: t('filterMonth'),
   };
 
-  const filterLabels = {
-    search: t('filterSearch'),
-    bank: t('filterBank'),
-    exchange: t('filterExchange'),
-    sort: t('filterSort'),
-  };
-
-  const sortLabels = {
-    newest: t('sortNewest'),
-    profit_desc: t('sortProfitDesc'),
-    profit_asc: t('sortProfitAsc'),
-    spread_desc: t('sortSpreadDesc'),
-  };
-
   return (
     <div className="space-y-6">
 
@@ -212,32 +172,6 @@ export const HistoryPage: React.FC = () => {
 
 
       <PeriodFilterBar value={period} onChange={setPeriod} t={t} presetLabels={presetLabels} />
-
-      <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-        <TradeFiltersBar
-          order={order}
-          missing={missing}
-          onMove={move}
-          onAdd={add}
-          onRemove={remove}
-          values={{ search, bankId, exchange, sort }}
-          onChange={patch => {
-            if (patch.search !== undefined) setSearch(patch.search);
-            if (patch.bankId !== undefined) setBankId(patch.bankId);
-            if (patch.exchange !== undefined) setExchange(patch.exchange);
-            if (patch.sort !== undefined) setSort(patch.sort);
-          }}
-          banks={banks}
-          exchanges={exchanges}
-          labels={filterLabels}
-          sortLabels={sortLabels}
-          searchPlaceholder={t('searchTrades')}
-          allBanksLabel="Всі банки"
-          allExchangesLabel={t('allExchanges')}
-          addFilterLabel={t('addFilter')}
-        />
-      </div>
-
 
       <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
         {isLoading ? (

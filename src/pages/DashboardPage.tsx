@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { DashboardStats, Exchange, Trade, UserBank } from '../types';
+import { DashboardStats, Trade } from '../types';
 import {
   TrendingUp,
   Activity,
@@ -13,8 +13,6 @@ import {
 } from 'lucide-react';
 import { PageLoader } from '../components/ui/Loader';
 import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
-import { TradeFiltersBar } from '../components/filters/TradeFiltersBar';
-import { useFilterLayout } from '../components/filters/useFilterLayout';
 import { defaultPeriodFilter, periodToQuery, type PeriodPreset } from '../lib/period-filter';
 import { aggregateTradePeriodStats } from '../lib/trade-period-stats';
 
@@ -26,42 +24,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
   const { user, language, t } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [banks, setBanks] = useState<UserBank[]>([]);
-  const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [period, setPeriod] = useState(defaultPeriodFilter);
-  const [search, setSearch] = useState('');
-  const [bankId, setBankId] = useState('all');
-  const [exchange, setExchange] = useState('all');
-  const [sort, setSort] = useState('newest');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [turnoverInUsdt, setTurnoverInUsdt] = useState(false);
-
-  const { order, move, add, remove, missing } = useFilterLayout('p2p_dash_filter_order', [
-    'search',
-    'bank',
-    'sort',
-  ]);
-
-  useEffect(() => {
-    Promise.all([api.getBanks(), api.getExchanges()]).then(([b, e]) => {
-      setBanks(b.banks);
-      setExchanges(e.exchanges);
-    });
-  }, []);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      const tradeParams = {
-        ...periodToQuery(period),
-        search: search.trim() || undefined,
-        bankId: bankId !== 'all' ? bankId : undefined,
-        exchange: exchange !== 'all' ? exchange : undefined,
-        sort: sort !== 'newest' ? sort : undefined,
-      };
       const [sData, tData] = await Promise.all([
         api.getDashboardStats(),
-        api.getTrades(tradeParams),
+        api.getTrades(periodToQuery(period)),
       ]);
       setStats(sData);
       setTrades(tData.trades);
@@ -74,12 +46,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
 
   useEffect(() => {
     fetchDashboardData();
-  }, [period, bankId, exchange, sort]);
-
-  useEffect(() => {
-    const handler = setTimeout(() => fetchDashboardData(), 300);
-    return () => clearTimeout(handler);
-  }, [search]);
+  }, [period]);
 
   const periodStats = useMemo(() => aggregateTradePeriodStats(trades), [trades]);
 
@@ -129,20 +96,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
     month: t('filterMonth'),
   };
 
-  const filterLabels = {
-    search: t('filterSearch'),
-    bank: t('filterBank'),
-    exchange: t('filterExchange'),
-    sort: t('filterSort'),
-  };
-
-  const sortLabels = {
-    newest: t('sortNewest'),
-    profit_desc: t('sortProfitDesc'),
-    profit_asc: t('sortProfitAsc'),
-    spread_desc: t('sortSpreadDesc'),
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
@@ -168,31 +121,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
         t={t}
         presetLabels={presetLabels}
       />
-
-      <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-        <TradeFiltersBar
-          order={order}
-          missing={missing}
-          onMove={move}
-          onAdd={add}
-          onRemove={remove}
-          values={{ search, bankId, exchange, sort }}
-          onChange={patch => {
-            if (patch.search !== undefined) setSearch(patch.search);
-            if (patch.bankId !== undefined) setBankId(patch.bankId);
-            if (patch.exchange !== undefined) setExchange(patch.exchange);
-            if (patch.sort !== undefined) setSort(patch.sort);
-          }}
-          banks={banks}
-          exchanges={exchanges}
-          labels={filterLabels}
-          sortLabels={sortLabels}
-          searchPlaceholder={t('searchTrades')}
-          allBanksLabel="Всі банки"
-          allExchangesLabel={t('allExchanges')}
-          addFilterLabel={t('addFilter')}
-        />
-      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
