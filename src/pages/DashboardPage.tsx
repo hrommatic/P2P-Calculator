@@ -6,7 +6,6 @@ import {
   TrendingUp,
   Activity,
   Layers,
-  Calendar,
   PlusCircle,
   ArrowRight,
   Percent,
@@ -84,9 +83,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
     setTurnoverInUsdt(v => !v);
   };
 
+  const statCardClass =
+    'bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs flex flex-col h-full min-h-[6.75rem]';
+
   const turnoverCardClass =
-    'bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs text-left w-full transition-colors' +
+    statCardClass +
+    ' text-left w-full transition-colors' +
     (nbuRate ? ' cursor-pointer hover:border-blue-400/60 dark:hover:border-sky-500/40' : '');
+
+  const statCardHeaderClass =
+    'flex items-start justify-between gap-1 text-xs text-slate-500 dark:text-slate-400 mb-2 min-h-[2.25rem]';
+
+  const statCardValueClass =
+    'text-xl sm:text-2xl font-bold font-mono tabular-nums leading-tight text-slate-900 dark:text-white';
+
+  const statCardSublineClass =
+    'min-h-[1.125rem] mt-1 text-[11px] font-mono tabular-nums leading-tight text-slate-500 dark:text-slate-400';
 
   const presetLabels: Record<PeriodPreset, string> = {
     all: t('filterAll'),
@@ -122,48 +134,40 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
         presetLabels={presetLabels}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('periodProfit')}</span>
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 items-stretch">
+        <div className={statCardClass}>
+          <div className={statCardHeaderClass}>
+            <span className="leading-snug">{t('periodProfit')}</span>
+            <TrendingUp className="w-4 h-4 shrink-0 text-emerald-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
-            +{formatUah(periodStats.profit)} <span className="text-xs font-normal">UAH</span>
+          <div className={`${statCardValueClass} text-emerald-600 dark:text-emerald-400`}>
+            +{formatUah(periodStats.profit)}{' '}
+            <span className="text-xs font-normal">UAH</span>
+          </div>
+          <div className={statCardSublineClass} aria-hidden="true">
+            {'\u00A0'}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('periodRoiSpread')}</span>
-            <Percent className="w-4 h-4 text-blue-500" />
+        <div className={statCardClass}>
+          <div className={statCardHeaderClass}>
+            <span className="leading-snug">{t('periodRoiSpread')}</span>
+            <Percent className="w-4 h-4 shrink-0 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-blue-600 dark:text-sky-400">
+          <div className={`${statCardValueClass} text-blue-600 dark:text-sky-400`}>
             +{periodStats.roiPercent.toFixed(2)}%
-            <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-1">ROI</span>
           </div>
-          <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400 mt-1">
-            {t('spread')}: +{periodStats.spreadPercent.toFixed(2)}%
-          </div>
+          <div className={statCardSublineClass}>+{periodStats.spreadPercent.toFixed(2)}%</div>
         </div>
 
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('monthProfit')}</span>
-            <Calendar className="w-4 h-4 text-indigo-500" />
+        <div className={statCardClass}>
+          <div className={statCardHeaderClass}>
+            <span className="leading-snug">{t('periodTradesCount')}</span>
+            <Activity className="w-4 h-4 shrink-0 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
-            +{formatUah(stats?.profitMonth || 0)} <span className="text-xs font-normal">UAH</span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('periodTradesCount')}</span>
-            <Activity className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {periodStats.tradesCount}
+          <div className={statCardValueClass}>{periodStats.tradesCount}</div>
+          <div className={statCardSublineClass} aria-hidden="true">
+            {'\u00A0'}
           </div>
         </div>
 
@@ -173,28 +177,31 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToCalcul
           disabled={!nbuRate}
           className={turnoverCardClass}
         >
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('totalTurnoverPeriod')}</span>
-            <Layers className="w-4 h-4 text-purple-500" />
+          <div className={statCardHeaderClass}>
+            <span className="leading-snug">{t('totalTurnoverPeriod')}</span>
+            <Layers className="w-4 h-4 shrink-0 text-purple-500" />
           </div>
-          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+          <div className={statCardValueClass}>
             {formatTurnoverValue(periodStats.totalTurnover)}{' '}
-            <span className="text-xs font-normal text-slate-500">{turnoverUnitLabel}</span>
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+              {turnoverUnitLabel}
+            </span>
           </div>
-          {nbuRate && turnoverInUsdt && (
-            <p className="text-[10px] text-slate-400 mt-1.5">
-              {t('nbuRateLabel')}: {nbuRate.toFixed(2)} ₴/$
-            </p>
-          )}
+          <div className={statCardSublineClass}>
+            {nbuRate && turnoverInUsdt
+              ? `${t('nbuRateLabel')}: ${nbuRate.toFixed(2)} ₴/$`
+              : '\u00A0'}
+          </div>
         </button>
 
-        <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-            <span>{t('banksUsed')}</span>
-            <Layers className="w-4 h-4 text-teal-500" />
+        <div className={statCardClass}>
+          <div className={statCardHeaderClass}>
+            <span className="leading-snug">{t('banksUsed')}</span>
+            <Layers className="w-4 h-4 shrink-0 text-teal-500" />
           </div>
-          <div className="text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {stats?.banksCount || 0}
+          <div className={statCardValueClass}>{stats?.banksCount || 0}</div>
+          <div className={statCardSublineClass} aria-hidden="true">
+            {'\u00A0'}
           </div>
         </div>
       </div>
