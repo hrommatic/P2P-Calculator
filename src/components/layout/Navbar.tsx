@@ -16,6 +16,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { Language } from '../../types';
+import { layoutShellClass } from '../../lib/layout-shell';
 
 interface NavbarProps {
   currentTab: string;
@@ -58,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b backdrop-blur-md transition-colors border-slate-200/80 bg-white/90 dark:border-slate-800/90 dark:bg-[#0a0f1d]/90">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={layoutShellClass}>
         <div className="flex items-center justify-between h-16 gap-4">
 
 
@@ -187,7 +188,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
 
 
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0a0f1d]/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-1">
+        <div
+          className={`md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0a0f1d]/95 backdrop-blur-md pt-3 pb-5 space-y-1 ${layoutShellClass}`}
+        >
           {user && (
             <div className="px-3 py-2 mb-2 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
               <div>

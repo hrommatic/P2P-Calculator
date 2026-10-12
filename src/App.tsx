@@ -9,6 +9,7 @@ import { HistoryPage } from './pages/HistoryPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import { PageLoader } from './components/ui/Loader';
+import { layoutShellClass } from './lib/layout-shell';
 
 function AppContent() {
   const { user, isLoading, siteSettings } = useAuth();
@@ -33,7 +34,7 @@ function AppContent() {
       <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />
 
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className={`flex-1 py-6 sm:py-8 ${layoutShellClass}`}>
         {currentTab === 'dashboard' && (
           <DashboardPage onNavigateToCalculator={() => setCurrentTab('calculator')} />
         )}
@@ -55,8 +56,8 @@ function AppContent() {
       </main>
 
 
-      <footer className="border-t border-slate-200/80 dark:border-slate-800/80 py-4 px-4 text-center text-xs text-slate-400 dark:text-slate-600">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <footer className="border-t border-slate-200/80 dark:border-slate-800/80 py-4 text-center text-xs text-slate-400 dark:text-slate-600">
+        <div className={`${layoutShellClass} flex flex-col sm:flex-row items-center justify-between gap-2`}>
           <span>© 2026 {siteSettings?.siteName || 'P2P Calculator'}. Всі права захищено.</span>
           <div className="flex items-center gap-3 text-[11px]">
             <span>Куратор: <strong className="text-blue-600 dark:text-sky-400">{siteSettings?.curatorTelegram || '@Chromatik'}</strong></span>

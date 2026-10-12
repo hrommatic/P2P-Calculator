@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ButtonLoader } from '../components/ui/Loader';
 import { Language } from '../types';
+import { layoutShellClass } from '../lib/layout-shell';
 
 export const AuthPage: React.FC = () => {
   const { login, register, siteSettings, theme, setTheme, language, setLanguage, t } = useAuth();
@@ -93,7 +94,7 @@ export const AuthPage: React.FC = () => {
     <div className="min-h-screen flex flex-col justify-between transition-colors bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100">
 
 
-      <div className="w-full max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div className={`${layoutShellClass} py-4 flex items-center justify-between`}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-sm shadow-blue-500/20">
             P2P
