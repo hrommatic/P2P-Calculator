@@ -95,6 +95,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterYesterday: "Вчора",
     filterWeek: "Тиждень",
     filterMonth: "Місяць",
+    filterRange: "Діапазон",
     noTradesYet:
       "Поки що немає збережених угод. Перейдіть до калькулятора, щоб розрахувати та зберегти першу!",
     calculateFirstTrade: "Розрахувати угоду",
@@ -315,6 +316,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterYesterday: "Вчера",
     filterWeek: "Неделя",
     filterMonth: "Месяц",
+    filterRange: "Диапазон",
     noTradesYet:
       "Пока нет сохранённых сделок. Перейдите в калькулятор, чтобы рассчитать и сохранить первую операцию!",
     calculateFirstTrade: "Рассчитать сделку",
@@ -534,6 +536,7 @@ export const translations: Record<Language, Record<string, string>> = {
     filterYesterday: "Yesterday",
     filterWeek: "Week",
     filterMonth: "Month",
+    filterRange: "Range",
     noTradesYet:
       "No saved trades yet. Head over to the Calculator to compute and log your first operation!",
     calculateFirstTrade: "Calculate Trade",

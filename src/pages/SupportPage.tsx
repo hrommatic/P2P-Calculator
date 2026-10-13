@@ -51,10 +51,7 @@ export const SupportPage: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const curatorHandle = resolveCuratorTelegram(siteSettings?.curatorTelegram);
-  const curatorTelegramUrl = telegramDeepLink(
-    curatorHandle,
-    t('supportTemplateCurator'),
-  );
+  const curatorTelegramUrl = `https://t.me/${telegramUsername(curatorHandle)}`;
 
   const options: { id: SupportKind; titleKey: string; descKey: string }[] = [
     {

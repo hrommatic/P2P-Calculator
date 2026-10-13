@@ -143,12 +143,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     "flex items-start justify-between gap-2 mb-1.5 sm:mb-2 min-h-[2.125rem] sm:min-h-[1.375rem]";
 
   const statLabelClass = (theme: StatTheme) =>
-    `text-[10px] sm:text-sm font-bold uppercase tracking-wide sm:tracking-[0.14em] leading-tight break-words flex-1 min-w-0 ${statThemeClass[theme].label}`;
+    `text-sm sm:text-sm font-bold uppercase tracking-wide sm:tracking-[0.14em] leading-snug break-words flex-1 min-w-0 ${statThemeClass[theme].label}`;
 
-  const statHeaderIconSlotClass = "w-3.5 h-3.5 shrink-0 mt-0.5";
+  const statHeaderIconSlotClass = "w-4 h-4 shrink-0 mt-0.5 sm:w-3.5 sm:h-3.5";
 
   const statValueClass = (theme: StatTheme) =>
-    `mt-auto text-base sm:text-2xl font-extrabold font-mono tabular-nums leading-none break-all sm:break-normal ${statThemeClass[theme].value}`;
+    `mt-auto text-xl sm:text-2xl font-extrabold font-mono tabular-nums leading-tight break-all sm:break-normal ${statThemeClass[theme].value}`;
+
+  const statUnitClass = (theme: StatTheme) =>
+    `text-base sm:text-base font-bold ${statThemeClass[theme].unit}`;
 
   const turnoverCardClass =
     statCardShell("turnover") +
@@ -211,11 +214,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <p className={statValueClass("profit")}>
             {periodStats.profit < 0 ? "-" : ""}
             {formatUah(Math.abs(periodStats.profit))}{" "}
-            <span
-              className={`text-sm sm:text-base font-bold ${statThemeClass.profit.unit}`}
-            >
-              UAH
-            </span>
+            <span className={statUnitClass("profit")}>UAH</span>
           </p>
         </div>
 
@@ -248,11 +247,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
           <p className={statValueClass("turnover")}>
             {formatTurnoverValue(periodStats.totalTurnover)}{" "}
-            <span
-              className={`text-sm sm:text-base font-bold ${statThemeClass.turnover.unit}`}
-            >
-              {turnoverUnitLabel}
-            </span>
+            <span className={statUnitClass("turnover")}>{turnoverUnitLabel}</span>
           </p>
         </button>
 
