@@ -34,9 +34,15 @@ const kindMeta: Record<
   },
 };
 
+function telegramUsername(handle: string): string {
+  return handle.replace(/^@/, '');
+}
+
 function telegramDeepLink(handle: string, text: string): string {
-  const username = handle.replace(/^@/, '');
-  return `https://t.me/${username}?text=${encodeURIComponent(text)}`;
+  const username = telegramUsername(handle);
+  const trimmed = text.trim();
+  if (!trimmed) return `https://t.me/${username}`;
+  return `https://t.me/${username}?text=${encodeURIComponent(trimmed)}`;
 }
 
 export const SupportPage: React.FC = () => {
@@ -45,6 +51,10 @@ export const SupportPage: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const curatorHandle = resolveCuratorTelegram(siteSettings?.curatorTelegram);
+  const curatorTelegramUrl = telegramDeepLink(
+    curatorHandle,
+    t('supportTemplateCurator'),
+  );
 
   const options: { id: SupportKind; titleKey: string; descKey: string }[] = [
     {
@@ -64,37 +74,46 @@ export const SupportPage: React.FC = () => {
     },
   ];
 
-  const templateKey = (supportKind: SupportKind) =>
-    supportKind === 'curator'
-      ? 'supportTemplateCurator'
-      : supportKind === 'feature'
-        ? 'supportTemplateFeature'
-        : 'supportTemplateBug';
+  const templateKey = (supportKind: Exclude<SupportKind, 'curator'>) =>
+    supportKind === 'feature' ? 'supportTemplateFeature' : 'supportTemplateBug';
 
   const defaultBody = useMemo(() => {
-    if (!kind) return '';
+    if (!kind || kind === 'curator') return '';
     return t(templateKey(kind));
   }, [kind, t]);
 
-  const templateFor = (supportKind: SupportKind) => t(templateKey(supportKind));
-
-  const openTelegram = (supportKind: SupportKind) => {
-    window.location.href = telegramDeepLink(curatorHandle, templateFor(supportKind));
-  };
-
   const openKind = (next: SupportKind) => {
-    if (next === 'curator') {
-      openTelegram('curator');
-      return;
-    }
+    if (next === 'curator') return;
     setKind(next);
-    setMessage(templateFor(next));
+    setMessage(t(templateKey(next)));
   };
 
   const telegramHref = telegramDeepLink(
     curatorHandle,
     message.trim() || defaultBody,
   );
+
+  const optionCardClass = (id: SupportKind) =>
+    `flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-colors hover:brightness-[1.02] dark:hover:brightness-110 ${kindMeta[id].accent}`;
+
+  const optionInner = (opt: (typeof options)[number]) => {
+    const Icon = kindMeta[opt.id].icon;
+    return (
+      <>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/70 dark:bg-slate-900/50">
+          <Icon className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="min-w-0 pt-0.5">
+          <span className="block text-base font-bold text-slate-900 dark:text-white">
+            {t(opt.titleKey)}
+          </span>
+          <span className="mt-1 block text-sm leading-snug opacity-90">
+            {t(opt.descKey)}
+          </span>
+        </span>
+      </>
+    );
+  };
 
   return (
     <div className="mx-auto max-w-lg space-y-6 min-w-0">
@@ -110,30 +129,30 @@ export const SupportPage: React.FC = () => {
 
       {!kind ? (
         <ul className="space-y-3">
-          {options.map(opt => {
-            const Icon = kindMeta[opt.id].icon;
-            return (
+          {options.map(opt =>
+            opt.id === 'curator' ? (
+              <li key={opt.id}>
+                <a
+                  href={curatorTelegramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={optionCardClass('curator')}
+                >
+                  {optionInner(opt)}
+                </a>
+              </li>
+            ) : (
               <li key={opt.id}>
                 <button
                   type="button"
                   onClick={() => openKind(opt.id)}
-                  className={`flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-colors hover:brightness-[1.02] dark:hover:brightness-110 ${kindMeta[opt.id].accent}`}
+                  className={optionCardClass(opt.id)}
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/70 dark:bg-slate-900/50">
-                    <Icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <span className="min-w-0 pt-0.5">
-                    <span className="block text-base font-bold text-slate-900 dark:text-white">
-                      {t(opt.titleKey)}
-                    </span>
-                    <span className="mt-1 block text-sm leading-snug opacity-90">
-                      {t(opt.descKey)}
-                    </span>
-                  </span>
+                  {optionInner(opt)}
                 </button>
               </li>
-            );
-          })}
+            ),
+          )}
         </ul>
       ) : (
         <div className="space-y-4">
@@ -149,16 +168,12 @@ export const SupportPage: React.FC = () => {
             {t('supportBackToChoice')}
           </button>
 
-          <div
-            className={`rounded-2xl border p-4 ${kindMeta[kind].accent}`}
-          >
+          <div className={`rounded-2xl border p-4 ${kindMeta[kind].accent}`}>
             <p className="text-base font-bold text-slate-900 dark:text-white">
               {t(
-                kind === 'curator'
-                  ? 'supportOptionCurator'
-                  : kind === 'feature'
-                    ? 'supportOptionFeature'
-                    : 'supportOptionBug',
+                kind === 'feature'
+                  ? 'supportOptionFeature'
+                  : 'supportOptionBug',
               )}
             </p>
             <p className="mt-1 text-sm opacity-90">

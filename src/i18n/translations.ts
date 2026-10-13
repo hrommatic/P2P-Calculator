@@ -29,11 +29,10 @@ export const translations: Record<Language, Record<string, string>> = {
     supportMessageLabel: "Ваше повідомлення",
     supportMessagePlaceholder: "Опишіть детальніше…",
     supportSendTelegram: "Надіслати в Telegram",
-    supportTemplateCurator: "Привіт!\n\nМоє питання:\n..",
+    supportTemplateCurator: "Привіт!",
     supportTemplateFeature:
-      "Привіт!\nМаю таку ідею для реалізації на платформі:\n\nЩо хочете додати або змінити:\n..\n\nНавіщо це корисно:\n..\n\nЯк це має працювати (кроки або приклад):\n..",
-    supportTemplateBug:
-      "Привіт!\nПомітив помилку на платформі:\n\nРозділ / сторінка:\n..\n\nЩо робили перед цим:\n..\n\nОчікували:\n..\n\nСталося насправді:\n..\n\nТелефон / браузер (за бажанням):\n..",
+      "Привіт!\nМаю таку ідею для реалізації на платформі:",
+    supportTemplateBug: "Привіт!\nПомітив помилку на платформі:",
 
     loginTitle: "Вхід до платформи",
     loginSubtitle: "Закрита платформа для учнів курсу P2P",
@@ -249,11 +248,10 @@ export const translations: Record<Language, Record<string, string>> = {
     supportMessageLabel: "Ваше сообщение",
     supportMessagePlaceholder: "Опишите подробнее…",
     supportSendTelegram: "Отправить в Telegram",
-    supportTemplateCurator: "Привет!\n\nМой вопрос:\n..",
+    supportTemplateCurator: "Привет!",
     supportTemplateFeature:
-      "Привет!\nЕсть идея для реализации на платформе:\n\nЧто хотите добавить или изменить:\n..\n\nЗачем это нужно:\n..\n\nКак это должно работать (шаги или пример):\n..",
-    supportTemplateBug:
-      "Привет!\nЗаметил(а) ошибку на платформе:\n\nРаздел / страница:\n..\n\nЧто делали перед этим:\n..\n\nОжидали:\n..\n\nПолучилось на самом деле:\n..\n\nТелефон / браузер (по желанию):\n..",
+      "Привет!\nЕсть идея для реализации на платформе:",
+    supportTemplateBug: "Привет!\nЗаметил(а) ошибку на платформе:",
 
     loginTitle: "Вход на платформу",
     loginSubtitle: "Закрытая веб-платформа для учеников P2P-торговли",
@@ -471,11 +469,9 @@ export const translations: Record<Language, Record<string, string>> = {
     supportMessageLabel: "Your message",
     supportMessagePlaceholder: "Add more details…",
     supportSendTelegram: "Send via Telegram",
-    supportTemplateCurator: "Hi!\n\nMy question:\n..",
-    supportTemplateFeature:
-      "Hi!\nI have an idea for the platform:\n\nWhat to add or change:\n..\n\nWhy it helps:\n..\n\nHow it should work (steps or example):\n..",
-    supportTemplateBug:
-      "Hi!\nI noticed a bug on the platform:\n\nPage / section:\n..\n\nSteps before the issue:\n..\n\nExpected:\n..\n\nActual result:\n..\n\nDevice / browser (optional):\n..",
+    supportTemplateCurator: "Hi!",
+    supportTemplateFeature: "Hi!\nI have an idea for the platform:",
+    supportTemplateBug: "Hi!\nI noticed a bug on the platform:",
 
     loginTitle: "Sign In to Platform",
     loginSubtitle: "Closed platform for P2P trading students",
