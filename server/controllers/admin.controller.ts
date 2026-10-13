@@ -58,23 +58,3 @@ export async function handlePutAdminExchange(req: VercelRequest, res: VercelResp
   return service.handlePutAdminExchange(req, res, user);
 }
 
-export async function handleGetAdminSettings(req: VercelRequest, res: VercelResponse, user: User) {
-  return service.handleGetAdminSettings(req, res, user);
-}
-
-export async function handlePutAdminSettings(req: VercelRequest, res: VercelResponse, user: User) {
-  return service.handlePutAdminSettings(req, res, user);
-}
-
-export async function handleAdminAuditLogs(req: VercelRequest, res: VercelResponse, user: User) {
-  return service.handleAdminAuditLogs(req, res, user);
-}
-
-export async function handleAdminBackup(req: VercelRequest, res: VercelResponse, user: User) {
-  return service.handleAdminBackup(req, res, user);
-}
-
-export async function handleAdminBackups(req: VercelRequest, res: VercelResponse, user: User) {
-  return service.handleAdminBackups(req, res, user);
-}
-

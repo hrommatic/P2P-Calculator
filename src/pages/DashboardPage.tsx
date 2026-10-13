@@ -178,8 +178,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 sm:gap-6 min-w-0 max-w-full">
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800 min-w-0">
+    <div className="space-y-6 min-w-0 max-w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800 min-w-0">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white break-words">
             {t("greeting", { name: displayName })}
@@ -198,16 +198,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </button>
       </div>
 
-      <div className="shrink-0">
-        <PeriodFilterBar
-          value={period}
-          onChange={setPeriod}
-          t={t}
-          presetLabels={presetLabels}
-        />
-      </div>
+      <PeriodFilterBar
+        value={period}
+        onChange={setPeriod}
+        t={t}
+        presetLabels={presetLabels}
+      />
 
-      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
         <div
           className={`${statCardShell("profit")} col-span-2 md:col-span-1 order-1 md:order-1`}
         >
@@ -280,8 +278,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden min-w-0 max-w-full">
-        <div className="shrink-0 p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800">
+      <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden min-w-0 max-w-full">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">
             {t("recentTrades")}
           </h2>
@@ -307,9 +305,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </button>
           </div>
         ) : (
-          <div className="min-h-0 flex-1 resize-none overflow-auto overscroll-contain bg-white dark:bg-[#111827] [scrollbar-gutter:stable]">
+          <div className="overflow-x-auto bg-white dark:bg-[#111827]">
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900/95 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold backdrop-blur-sm">
+              <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
                 <tr>
                   <th className="py-3 px-4">Дата / Час</th>
                   <th className="py-3 px-4">Покупка</th>

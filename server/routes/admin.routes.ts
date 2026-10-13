@@ -73,28 +73,3 @@ export const adminExchangeUpdateHandler = withAdmin(async (req, res, user) => {
   return methodNotAllowed(res, ['PUT']);
 });
 
-export const adminSettingsGetHandler = withAdmin(async (req, res, user) => {
-  if (req.method === 'GET') return controller.handleGetAdminSettings(req, res, user);
-  return methodNotAllowed(res, ['GET']);
-});
-
-export const adminSettingsPutHandler = withAdmin(async (req, res, user) => {
-  if (req.method === 'PUT') return controller.handlePutAdminSettings(req, res, user);
-  return methodNotAllowed(res, ['PUT']);
-});
-
-export const adminAuditLogsHandler = withAdmin(async (req, res, user) => {
-  if (req.method === 'GET') return controller.handleAdminAuditLogs(req, res, user);
-  return methodNotAllowed(res, ['GET']);
-});
-
-export const adminBackupHandler = withAdmin(async (req, res, user) => {
-  if (req.method === 'POST') return controller.handleAdminBackup(req, res, user);
-  return methodNotAllowed(res, ['POST']);
-});
-
-export const adminBackupsHandler = withAdmin(async (req, res, user) => {
-  if (req.method === 'GET') return controller.handleAdminBackups(req, res, user);
-  return methodNotAllowed(res, ['GET']);
-});
-

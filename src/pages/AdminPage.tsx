@@ -6,8 +6,6 @@ import {
   StudentStatsItem,
   GlobalBank,
   Exchange,
-  SiteSettings,
-  AuditLog,
   Trade,
 } from '../types';
 import {
@@ -16,9 +14,6 @@ import {
   BarChart3,
   Building2,
   TrendingUp,
-  Settings2,
-  FileText,
-  Database,
   Search,
   Lock,
   Unlock,
@@ -37,7 +32,7 @@ import { PageLoader } from '../components/ui/Loader';
 export const AdminPage: React.FC = () => {
   const { user, t } = useAuth();
 
-  const [activeSection, setActiveSection] = useState<'overview' | 'accounts' | 'students' | 'banks' | 'exchanges' | 'settings' | 'audit' | 'backups'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'accounts' | 'students' | 'banks' | 'exchanges'>('overview');
   const [isLoading, setIsLoading] = useState(false);
 
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -68,14 +63,6 @@ export const AdminPage: React.FC = () => {
   const [newExName, setNewExName] = useState('');
   const [newExCode, setNewExCode] = useState('');
 
-  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
-  const [settingsSuccess, setSettingsSuccess] = useState(false);
-
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-
-  const [backups, setBackups] = useState<string[]>([]);
-  const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
-
   const [adminMessage, setAdminMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const showMsg = (text: string, type: 'success' | 'error' = 'success') => {
@@ -105,15 +92,6 @@ export const AdminPage: React.FC = () => {
       } else if (section === 'exchanges') {
         const data = await api.getAdminExchanges();
         setExchanges(data.exchanges);
-      } else if (section === 'settings') {
-        const data = await api.getAdminSettings();
-        setSiteSettings(data.settings);
-      } else if (section === 'audit') {
-        const data = await api.getAuditLogs();
-        setAuditLogs(data.logs);
-      } else if (section === 'backups') {
-        const data = await api.getBackups();
-        setBackups(data.backups);
       }
     } catch (err: any) {
       showMsg(err.message || 'Помилка завантаження даних адмін-панелі', 'error');
@@ -279,30 +257,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  const handleSaveSiteSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!siteSettings) return;
-    try {
-      await api.updateAdminSettings(siteSettings);
-      setSettingsSuccess(true);
-      setTimeout(() => setSettingsSuccess(false), 3000);
-      showMsg('Налаштування сайту збережено');
-    } catch (err: any) {
-      showMsg(err.message, 'error');
-    }
-  };
-
-  const handleCreateBackup = async () => {
-    try {
-      const res = await api.createBackup();
-      setBackupSuccess(res.filename);
-      setBackups(res.backups);
-      showMsg(`Резервну копію ${res.filename} створено успішно`);
-    } catch (err: any) {
-      showMsg(err.message, 'error');
-    }
-  };
-
   const formatUah = (val: number) => {
     return new Intl.NumberFormat('uk-UA', {
       minimumFractionDigits: 2,
@@ -316,9 +270,6 @@ export const AdminPage: React.FC = () => {
     { id: 'students', label: t('adminStudentsStats'), icon: TrendingUp },
     { id: 'banks', label: t('adminBanksCatalog'), icon: Building2 },
     { id: 'exchanges', label: t('adminExchanges'), icon: RefreshCw },
-    { id: 'settings', label: t('adminSiteSettings'), icon: Settings2 },
-    { id: 'audit', label: t('adminAuditLog'), icon: FileText },
-    { id: 'backups', label: t('adminBackups'), icon: Database },
   ];
 
   return (
@@ -713,149 +664,6 @@ export const AdminPage: React.FC = () => {
                 </button>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-
-      {!isLoading && activeSection === 'settings' && siteSettings && (
-        <form onSubmit={handleSaveSiteSettings} className="space-y-4 max-w-xl bg-white dark:bg-[#111827] p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-sm">
-          {settingsSuccess && (
-            <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-700 flex items-center gap-2">
-              <Check className="w-4 h-4" />
-              <span>Налаштування успішно збережено</span>
-            </div>
-          )}
-
-          <div>
-            <label className="block font-semibold mb-1">Назва сайту</label>
-            <input
-              type="text"
-              value={siteSettings.siteName}
-              onChange={e => setSiteSettings({ ...siteSettings, siteName: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-1">Telegram куратора (для відновлення доступу)</label>
-            <input
-              type="text"
-              value={siteSettings.curatorTelegram}
-              onChange={e => setSiteSettings({ ...siteSettings, curatorTelegram: e.target.value })}
-              className="w-full px-3 py-2 font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-1">Режим обліку ліміту банків</label>
-            <select
-              value={siteSettings.bankLimitMode}
-              onChange={e => setSiteSettings({ ...siteSettings, bankLimitMode: e.target.value as any })}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-            >
-              <option value="separate">Роздільний облік (окремо оборот покупок і продажів)</option>
-              <option value="total">Спільний оборот (покупка + продаж)</option>
-              <option value="buy_only">Лише покупки витрачають ліміт</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-1">Оголошення на сайті (баннер)</label>
-            <textarea
-              rows={2}
-              value={siteSettings.announcement || ''}
-              onChange={e => setSiteSettings({ ...siteSettings, announcement: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="allowReg"
-              checked={siteSettings.allowRegistration}
-              onChange={e => setSiteSettings({ ...siteSettings, allowRegistration: e.target.checked })}
-              className="w-4 h-4 rounded text-blue-600"
-            />
-            <label htmlFor="allowReg" className="font-semibold cursor-pointer">
-              Дозволити нову реєстрацію учнів
-            </label>
-          </div>
-
-          <div className="pt-3">
-            <button
-              type="submit"
-              className="px-5 py-2.5 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Зберегти налаштування
-            </button>
-          </div>
-        </form>
-      )}
-
-
-      {!isLoading && activeSection === 'audit' && (
-        <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 border-b border-slate-200 dark:border-slate-800 font-semibold">
-              <tr>
-                <th className="py-3 px-4">Час</th>
-                <th className="py-3 px-4">Тип дії</th>
-                <th className="py-3 px-4">Адміністратор</th>
-                <th className="py-3 px-4">Деталі</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-slate-700 dark:text-slate-300">
-              {auditLogs.map(log => (
-                <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                  <td className="py-2.5 px-4 text-slate-400">
-                    {new Date(log.timestamp).toLocaleString('uk-UA')}
-                  </td>
-                  <td className="py-2.5 px-4 font-bold text-blue-600 dark:text-sky-400">
-                    {log.actionType}
-                  </td>
-                  <td className="py-2.5 px-4">
-                    {log.adminNickname}
-                  </td>
-                  <td className="py-2.5 px-4 font-sans text-slate-600 dark:text-slate-300">
-                    {log.details}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-
-      {!isLoading && activeSection === 'backups' && (
-        <div className="space-y-4 max-w-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Резервні копії бази даних</h3>
-              <p className="text-sm text-slate-500">Миттєве створення зліпка бази даних без зупинки системи</p>
-            </div>
-            <button
-              onClick={handleCreateBackup}
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1.5"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>{t('createBackupBtn')}</span>
-            </button>
-          </div>
-
-          <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-            {backups.length === 0 ? (
-              <div className="p-6 text-center text-slate-500">Копії ще не створювалися</div>
-            ) : (
-              backups.map(b => (
-                <div key={b} className="p-3 flex items-center justify-between font-mono">
-                  <span>{b}</span>
-                  <span className="text-emerald-600 font-semibold text-xs">Збережено</span>
-                </div>
-              ))
-            )}
           </div>
         </div>
       )}

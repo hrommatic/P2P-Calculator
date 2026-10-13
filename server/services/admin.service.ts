@@ -1,9 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { User, UserStatus, UserRole, LanguagePreference, ThemePreference, BankLimitMode } from '../schemas/auth.schema.js';
+import type { User, UserStatus, UserRole } from '../schemas/auth.schema.js';
 import type { GlobalBank, Exchange } from '../schemas/banks.schema.js';
 import { hashPassword, generateTemporaryPassword } from '../lib/crypto.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
-import { createBackup, listBackups } from '../utils/db/index.js';
 import {
   createExchangeRecord,
   createGlobalBank,
@@ -13,15 +12,12 @@ import {
   getAdminUsers,
   getAllExchanges,
   getAllGlobalBanks,
-  getAuditLogs,
-  getSiteSettings,
   getStudentsStats,
   insertAuditLog,
   nicknameTaken,
   resetUserPassword,
   updateExchangeRecord,
   updateGlobalBank,
-  updateSiteSettings,
   updateUserAdminProfile,
   updateUserStatus,
 } from '../utils/db/store.js';
@@ -256,54 +252,3 @@ export async function handlePutAdminExchange(req: VercelRequest, res: VercelResp
   return res.json({ success: true, exchange: ex });
 }
 
-export async function handleGetAdminSettings(req: VercelRequest, res: VercelResponse, _user: User) {
-  const settings = await getSiteSettings();
-  return res.json({ settings });
-}
-
-export async function handlePutAdminSettings(req: VercelRequest, res: VercelResponse, user: User) {
-  const settings = await getSiteSettings();
-  const body = parseJsonBody(req);
-
-  if (typeof body.siteName === 'string' && body.siteName) settings.siteName = body.siteName.trim();
-  if (typeof body.curatorTelegram === 'string' && body.curatorTelegram) {
-    let clean = body.curatorTelegram.trim();
-    if (!clean.startsWith('@')) clean = `@${clean}`;
-    settings.curatorTelegram = clean;
-  }
-  if (typeof body.defaultLanguage === 'string' && ['uk', 'ru', 'en'].includes(body.defaultLanguage)) {
-    settings.defaultLanguage = body.defaultLanguage as LanguagePreference;
-  }
-  if (typeof body.defaultTheme === 'string' && ['light', 'navy'].includes(body.defaultTheme)) {
-    settings.defaultTheme = body.defaultTheme as ThemePreference;
-  }
-  if (typeof body.bankLimitMode === 'string' && ['separate', 'total', 'buy_only'].includes(body.bankLimitMode)) {
-    settings.bankLimitMode = body.bankLimitMode as BankLimitMode;
-  }
-  if (body.announcement !== undefined) {
-    settings.announcement = String(body.announcement).trim();
-  }
-  if (body.allowRegistration !== undefined) {
-    settings.allowRegistration = Boolean(body.allowRegistration);
-  }
-
-  await updateSiteSettings(settings);
-  await logAdminAction(user, 'SETTINGS_UPDATE', 'Updated site configuration');
-
-  return res.json({ success: true, settings });
-}
-
-export async function handleAdminAuditLogs(req: VercelRequest, res: VercelResponse, _user: User) {
-  const logs = await getAuditLogs(100);
-  return res.json({ logs });
-}
-
-export async function handleAdminBackup(req: VercelRequest, res: VercelResponse, user: User) {
-  const filename = await createBackup();
-  await logAdminAction(user, 'SYSTEM_BACKUP', `Created system snapshot ${filename}`);
-  return res.json({ success: true, filename, backups: await listBackups() });
-}
-
-export async function handleAdminBackups(req: VercelRequest, res: VercelResponse, _user: User) {
-  return res.json({ backups: await listBackups() });
-}

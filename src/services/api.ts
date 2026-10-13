@@ -8,7 +8,6 @@ import {
   SiteSettings,
   AdminOverview,
   StudentStatsItem,
-  AuditLog,
 } from '../types';
 const TOKEN_KEY = 'p2p_calc_token';
 
@@ -266,13 +265,4 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
-  getAdminSettings: () => request<{ settings: SiteSettings }>('/admin/settings'),
-  updateAdminSettings: (body: any) =>
-    request<{ success: boolean; settings: SiteSettings }>('/admin/settings', {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    }),
-  getAuditLogs: () => request<{ logs: AuditLog[] }>('/admin/audit-logs'),
-  createBackup: () => request<{ success: boolean; filename: string; backups: string[] }>('/admin/backup', { method: 'POST' }),
-  getBackups: () => request<{ backups: string[] }>('/admin/backups'),
 };

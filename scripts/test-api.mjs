@@ -204,21 +204,6 @@ await test('Admin: exchanges', async () => {
   assert('admin exchanges 200', r.status === 200 && Array.isArray(r.data?.exchanges), `status=${r.status}`);
 });
 
-await test('Admin: settings', async () => {
-  const r = await req('GET', '/admin/settings');
-  assert('admin settings 200', r.status === 200 && r.data?.settings, JSON.stringify(r.data)?.slice(0, 120));
-});
-
-await test('Admin: audit-logs', async () => {
-  const r = await req('GET', '/admin/audit-logs');
-  assert('audit-logs 200', r.status === 200 && Array.isArray(r.data?.logs), JSON.stringify(r.data)?.slice(0, 120));
-});
-
-await test('Admin: backups', async () => {
-  const r = await req('GET', '/admin/backups');
-  assert('backups 200', r.status === 200 && Array.isArray(r.data?.backups), JSON.stringify(r.data)?.slice(0, 120));
-});
-
 await test('Cleanup: delete trade', async () => {
   if (!tradeId) return assert('skip delete trade', true);
   const r = await req('DELETE', `/trades/${tradeId}`);

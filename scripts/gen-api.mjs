@@ -34,11 +34,6 @@ const routes = [
   { path: 'admin/exchanges', module: 'admin.routes', method: 'GET', export: 'adminExchangesGetHandler' },
   { path: 'admin/exchanges', module: 'admin.routes', method: 'POST', export: 'adminExchangesPostHandler' },
   { path: 'admin/exchanges/:id', module: 'admin.routes', method: 'PUT', export: 'adminExchangeUpdateHandler' },
-  { path: 'admin/settings', module: 'admin.routes', method: 'GET', export: 'adminSettingsGetHandler' },
-  { path: 'admin/settings', module: 'admin.routes', method: 'PUT', export: 'adminSettingsPutHandler' },
-  { path: 'admin/audit-logs', module: 'admin.routes', method: 'GET', export: 'adminAuditLogsHandler' },
-  { path: 'admin/backup', module: 'admin.routes', method: 'POST', export: 'adminBackupHandler' },
-  { path: 'admin/backups', module: 'admin.routes', method: 'GET', export: 'adminBackupsHandler' },
 ];
 
 const groups = {
