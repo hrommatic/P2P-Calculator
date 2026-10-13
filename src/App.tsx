@@ -77,12 +77,16 @@ function AppContent() {
 
       <main
         id="app-main"
-        className={`flex-1 min-h-0 min-w-0 w-full overflow-x-hidden overflow-y-auto overscroll-y-contain ${
+        className={`flex-1 min-h-0 min-w-0 w-full overflow-x-hidden overscroll-y-contain ${
+          currentTab === 'dashboard' ? 'overflow-y-hidden' : 'overflow-y-auto'
+        } ${
           currentTab === 'calculator' ? 'pt-3 pb-6 sm:pt-4 sm:pb-8' : 'py-6 sm:py-8'
         } ${layoutShellClass}`}
       >
         {mountedTabs.dashboard && (
-          <div className={`${panelClass('dashboard')} ${pageContentClass}`}>
+          <div
+            className={`${panelClass('dashboard')} ${pageContentClass} h-full min-h-0 flex flex-col`}
+          >
             <DashboardPage onNavigateToCalculator={() => setCurrentTab('calculator')} />
           </div>
         )}

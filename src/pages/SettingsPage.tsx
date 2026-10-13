@@ -105,7 +105,7 @@ export const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
 
 
       <div className="pb-2 border-b border-slate-200 dark:border-slate-800">

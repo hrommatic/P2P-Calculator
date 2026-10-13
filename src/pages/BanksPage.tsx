@@ -341,10 +341,25 @@ export const BanksPage: React.FC = () => {
 
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          onClick={() => {
+            if (!isSaving) setIsModalOpen(false);
+          }}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bank-modal-title"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3
+                id="bank-modal-title"
+                className="text-base font-bold text-slate-900 dark:text-white"
+              >
                 {editingBank ? t("editBank") : t("addBankBtn")}
               </h3>
               <button
@@ -431,8 +446,17 @@ export const BanksPage: React.FC = () => {
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          onClick={() => setDeleteTarget(null)}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <Trash2 className="w-10 h-10 text-rose-500 mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               {t("deleteBank")} «{deleteTarget.name}»?
