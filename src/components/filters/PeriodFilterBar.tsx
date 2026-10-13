@@ -76,17 +76,19 @@ export const PeriodFilterBar: React.FC<Props> = ({
   const rangeGroupActive = rangeActive || open;
 
   const filterItemClass = (active: boolean, iconOnly?: boolean) =>
-    `inline-flex min-w-0 flex-1 basis-0 items-center justify-center rounded-md px-1 py-2 text-[10px] font-semibold leading-none whitespace-nowrap transition-colors sm:flex-none sm:basis-auto sm:px-3 sm:py-1.5 sm:text-sm ${
-      iconOnly ? "sm:px-2" : ""
+    `inline-flex min-w-0 items-center justify-center rounded-md py-2 text-[11px] font-bold leading-none whitespace-nowrap transition-colors sm:py-1.5 sm:text-sm sm:font-semibold ${
+      iconOnly
+        ? "shrink-0 px-1.5 sm:flex-none sm:px-2"
+        : "flex-1 basis-0 px-1 sm:flex-none sm:basis-auto sm:px-3"
     } ${
       active
-        ? "bg-white text-slate-900 shadow-xs dark:bg-[#1c2541] dark:text-white"
-        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+        ? "bg-white text-slate-900 shadow-xs dark:bg-[#1c2541] dark:text-white max-sm:font-extrabold"
+        : "text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
     } ${
       active && iconOnly
         ? "text-sky-500 dark:text-sky-400"
         : iconOnly
-          ? "text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400"
+          ? "text-slate-600 hover:text-sky-500 dark:text-slate-300 dark:hover:text-sky-400"
           : ""
     }`;
 
@@ -115,6 +117,10 @@ export const PeriodFilterBar: React.FC<Props> = ({
         >
           {t("filterRange")}
         </button>
+        <span
+          className="my-1 w-px shrink-0 self-stretch bg-slate-300 dark:bg-slate-600"
+          aria-hidden
+        />
         <button
           ref={calendarBtnRef}
           type="button"
@@ -125,7 +131,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
           className={filterItemClass(rangeGroupActive, true)}
         >
           <CalendarDays
-            className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4"
+            className="h-4 w-4 shrink-0 stroke-[2.5] sm:h-4 sm:w-4"
             aria-hidden
           />
         </button>
