@@ -8,8 +8,10 @@ import { CalculatorPage } from './pages/CalculatorPage';
 import { BanksPage } from './pages/BanksPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SupportPage } from './pages/SupportPage';
 import { PageLoader } from './components/ui/Loader';
 import { layoutShellClass, pageContentClass } from './lib/layout-shell';
+import { resolveCuratorTelegram } from './lib/site-defaults';
 
 const AdminPage = React.lazy(() =>
   import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })),
@@ -21,6 +23,7 @@ type AppTab =
   | 'banks'
   | 'history'
   | 'settings'
+  | 'support'
   | 'admin';
 
 function AppContent() {
@@ -32,6 +35,7 @@ function AppContent() {
     banks: false,
     history: false,
     settings: false,
+    support: false,
     admin: false,
   });
 
@@ -102,6 +106,11 @@ function AppContent() {
             <SettingsPage />
           </div>
         )}
+        {mountedTabs.support && (
+          <div className={`${panelClass('support')} ${pageContentClass}`}>
+            <SupportPage />
+          </div>
+        )}
         {user.role === 'admin' && mountedTabs.admin && (
           <div className={`${panelClass('admin')} ${pageContentClass}`}>
             <Suspense fallback={<PageLoader label="Завантаження адмін-панелі..." />}>
@@ -116,7 +125,7 @@ function AppContent() {
         <div className={`${layoutShellClass} flex flex-col sm:flex-row items-center justify-between gap-2 min-w-0`}>
           <span>© 2026 {siteSettings?.siteName || 'P2P Calculator'}. Всі права захищено.</span>
           <div className="flex items-center gap-3 text-xs">
-            <span>Куратор: <strong className="text-blue-600 dark:text-sky-400">{siteSettings?.curatorTelegram || '@Chromatik'}</strong></span>
+            <span>Куратор: <strong className="text-blue-600 dark:text-sky-400">{resolveCuratorTelegram(siteSettings?.curatorTelegram)}</strong></span>
           </div>
         </div>
       </footer>

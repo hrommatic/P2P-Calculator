@@ -2,6 +2,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Language, ThemeMode, SiteSettings } from '../types';
 import { api, getStoredToken, setStoredToken, removeStoredToken } from '../services/api';
 import { translations } from '../i18n/translations';
+import { resolveCuratorTelegram } from '../lib/site-defaults';
+
+function normalizeSiteSettings(
+  settings: SiteSettings | null | undefined,
+): SiteSettings | null {
+  if (!settings) return null;
+  return {
+    ...settings,
+    curatorTelegram: resolveCuratorTelegram(settings.curatorTelegram),
+  };
+}
 
 interface AuthContextType {
   user: User | null;
@@ -59,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!existingToken) {
         try {
           const pub = await api.getPublicSettings();
-          setSiteSettings(pub);
+          setSiteSettings(normalizeSiteSettings(pub));
           if (!localStorage.getItem('p2p_calc_theme')) {
             setThemeState('navy');
           }
@@ -71,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { user: me, siteSettings: settings } = await api.getMe();
         setUser(me);
-        setSiteSettings(settings);
+        setSiteSettings(normalizeSiteSettings(settings));
         if (me.languagePreference) setLanguageState(me.languagePreference);
         if (me.themePreference) setThemeState(me.themePreference);
       } catch (err) {
@@ -95,7 +106,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (res.user.languagePreference) setLanguageState(res.user.languagePreference);
     if (res.user.themePreference) setThemeState(res.user.themePreference);
     if (res.siteSettings) {
-      setSiteSettings(prev => ({ ...prev, ...res.siteSettings }));
+      setSiteSettings(prev =>
+        normalizeSiteSettings({ ...prev, ...res.siteSettings } as SiteSettings),
+      );
     }
   };
 
@@ -141,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { user: me, siteSettings: settings } = await api.getMe();
       setUser(me);
-      setSiteSettings(settings);
+      setSiteSettings(normalizeSiteSettings(settings));
     } catch {}
   };
 

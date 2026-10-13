@@ -48,7 +48,7 @@ export async function buildBootstrapDatabase(): Promise<DatabaseSchema> {
   const adminUser: User = {
     id: adminId,
     nickname: 'admin',
-    telegram: '@Chromatik',
+    telegram: '@hrommatic',
     passwordHash: hashPassword(adminPassword),
     role: 'admin',
     status: 'active',
@@ -61,7 +61,7 @@ export async function buildBootstrapDatabase(): Promise<DatabaseSchema> {
 
   const siteSettings: SiteSettings = {
     siteName: 'P2P Calculator',
-    curatorTelegram: '@Chromatik',
+    curatorTelegram: '@hrommatic',
     defaultLanguage: 'uk',
     defaultTheme: 'navy',
     bankLimitMode: 'separate',

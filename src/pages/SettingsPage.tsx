@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ButtonLoader } from '../components/ui/Loader';
 import { Language, ThemeMode } from '../types';
+import { resolveCuratorTelegram } from '../lib/site-defaults';
 
 export const SettingsPage: React.FC = () => {
   const { user, siteSettings, theme, setTheme, language, setLanguage, logout, t } = useAuth();
@@ -36,7 +37,7 @@ export const SettingsPage: React.FC = () => {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
-  const curatorHandle = siteSettings?.curatorTelegram || '@Chromatik';
+  const curatorHandle = resolveCuratorTelegram(siteSettings?.curatorTelegram);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();

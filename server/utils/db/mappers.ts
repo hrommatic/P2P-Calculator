@@ -12,6 +12,7 @@ import type { User, Session, SiteSettings } from '../../schemas/auth.schema.js';
 import type { GlobalBank, UserBank, Exchange } from '../../schemas/banks.schema.js';
 import type { Trade } from '../../schemas/trades.schema.js';
 import type { AuditLog } from '../../schemas/admin.schema.js';
+import { normalizeCuratorTelegram } from '../curator-telegram.js';
 
 export function toIso(d: Date): string {
   return d.toISOString();
@@ -131,7 +132,7 @@ export function mapTrade(row: PrismaTrade): Trade {
 export function mapSiteSettings(row: PrismaSiteSettings): SiteSettings {
   const settings: SiteSettings = {
     siteName: row.siteName,
-    curatorTelegram: row.curatorTelegram,
+    curatorTelegram: normalizeCuratorTelegram(row.curatorTelegram),
     defaultLanguage: row.defaultLanguage as SiteSettings['defaultLanguage'],
     defaultTheme: row.defaultTheme as SiteSettings['defaultTheme'],
     bankLimitMode: row.bankLimitMode as SiteSettings['bankLimitMode'],

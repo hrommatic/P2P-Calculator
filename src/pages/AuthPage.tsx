@@ -15,6 +15,7 @@ import {
 import { ButtonLoader } from '../components/ui/Loader';
 import { Language } from '../types';
 import { layoutShellClass } from '../lib/layout-shell';
+import { resolveCuratorTelegram } from '../lib/site-defaults';
 
 export const AuthPage: React.FC = () => {
   const { login, register, siteSettings, theme, setTheme, language, setLanguage, t } = useAuth();
@@ -31,7 +32,7 @@ export const AuthPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const curator = siteSettings?.curatorTelegram || '@Chromatik';
+  const curator = resolveCuratorTelegram(siteSettings?.curatorTelegram);
 
   useEffect(() => {
     setShowPassword(false);
