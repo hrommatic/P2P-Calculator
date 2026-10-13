@@ -82,8 +82,8 @@ export const PeriodFilterBar: React.FC<Props> = ({
         : "flex-1 basis-0 px-1 sm:flex-none sm:basis-auto sm:px-3"
     } ${
       active
-        ? "bg-white text-slate-900 shadow-xs dark:bg-[#1c2541] dark:text-white max-sm:font-extrabold"
-        : "text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+        ? "bg-white text-slate-900 shadow-xs dark:bg-[#0f1829] dark:text-white dark:shadow-none max-sm:font-extrabold"
+        : "text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white dark:hover:bg-slate-700/40"
     } ${
       active && iconOnly
         ? "text-sky-500 dark:text-sky-400"
