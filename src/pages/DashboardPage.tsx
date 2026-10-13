@@ -137,10 +137,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   const statCardShell = (theme: StatTheme) =>
-    `p-3.5 sm:p-4 rounded-2xl border backdrop-blur-[2px] flex flex-col h-full min-h-[5.25rem] items-stretch ${statThemeClass[theme].card}`;
+    `p-3 sm:p-3.5 rounded-2xl border backdrop-blur-[2px] flex flex-col h-full min-h-[4.75rem] items-stretch ${statThemeClass[theme].card}`;
 
   const statHeaderClass =
-    "flex items-start justify-between gap-2 mb-1.5 sm:mb-2 min-h-[2.125rem] sm:min-h-[1.375rem]";
+    "flex items-start justify-between gap-2 mb-2";
 
   const statLabelClass = (theme: StatTheme) =>
     `text-sm sm:text-sm font-bold uppercase tracking-wide sm:tracking-[0.14em] leading-snug break-words flex-1 min-w-0 ${statThemeClass[theme].label}`;
@@ -148,7 +148,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const statHeaderIconSlotClass = "w-4 h-4 shrink-0 mt-0.5 sm:w-3.5 sm:h-3.5";
 
   const statValueClass = (theme: StatTheme) =>
-    `mt-auto text-xl sm:text-2xl font-extrabold font-mono tabular-nums leading-tight break-all sm:break-normal ${statThemeClass[theme].value}`;
+    `text-xl sm:text-2xl font-extrabold font-mono tabular-nums leading-tight break-all sm:break-normal ${statThemeClass[theme].value}`;
 
   const statUnitClass = (theme: StatTheme) =>
     `text-base sm:text-base font-bold ${statThemeClass[theme].unit}`;
@@ -206,7 +206,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
-        <div className={statCardShell("profit")}>
+        <div
+          className={`${statCardShell("profit")} col-span-2 md:col-span-1 order-1 md:order-1`}
+        >
           <div className={statHeaderClass}>
             <p className={statLabelClass("profit")}>{t("periodProfit")}</p>
             <span className={statHeaderIconSlotClass} aria-hidden />
@@ -218,7 +220,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </p>
         </div>
 
-        <div className={statCardShell("roi")}>
+        <div className={`${statCardShell("roi")} order-3 md:order-2`}>
           <div className={statHeaderClass}>
             <p className={statLabelClass("roi")}>{t("periodRoiSpread")}</p>
             <span className={statHeaderIconSlotClass} aria-hidden />
@@ -233,7 +235,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           type="button"
           onClick={toggleTurnoverUnit}
           disabled={!nbuRate}
-          className={turnoverCardClass}
+          className={`${turnoverCardClass} col-span-2 md:col-span-1 order-2 md:order-3`}
           aria-label={t("switchTurnoverUnit")}
         >
           <div className={statHeaderClass}>
@@ -254,7 +256,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <button
           type="button"
           onClick={toggleActivityView}
-          className={activityCardClass}
+          className={`${activityCardClass} order-4 md:order-4`}
           aria-label={t("switchTradesBanks")}
         >
           <div className={statHeaderClass}>
