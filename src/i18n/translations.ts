@@ -250,8 +250,7 @@ export const translations: Record<Language, Record<string, string>> = {
     supportMessagePlaceholder: "Опишите подробнее…",
     supportSendTelegram: "Отправить в Telegram",
     supportTemplateCurator: "Привет!",
-    supportTemplateFeature:
-      "Привет!\nЕсть идея для реализации на платформе:",
+    supportTemplateFeature: "Привет!\nЕсть идея для реализации на платформе:",
     supportTemplateBug: "Привет!\nЗаметил(а) ошибку на платформе:",
 
     loginTitle: "Вход на платформу",

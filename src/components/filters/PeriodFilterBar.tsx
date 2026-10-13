@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { CalendarDays } from 'lucide-react';
-import { KyivRangeCalendar } from './KyivRangeCalendar';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { CalendarDays } from "lucide-react";
+import { KyivRangeCalendar } from "./KyivRangeCalendar";
 import {
   periodLabelUk,
   type PeriodFilterState,
   type PeriodPreset,
-} from '../../lib/period-filter';
+} from "../../lib/period-filter";
 
 type Props = {
   value: PeriodFilterState;
@@ -15,7 +15,7 @@ type Props = {
   presetLabels: Record<PeriodPreset, string>;
 };
 
-const PRESETS: PeriodPreset[] = ['today', 'yesterday', 'week', 'month'];
+const PRESETS: PeriodPreset[] = ["today", "yesterday", "week", "month"];
 
 const POPOVER_MAX_WIDTH = 320;
 
@@ -40,11 +40,11 @@ export const PeriodFilterBar: React.FC<Props> = ({
   const wrapRef = useRef<HTMLDivElement>(null);
   const calendarBtnRef = useRef<HTMLButtonElement>(null);
 
-  const activePreset = value.kind === 'preset' ? value.preset : null;
-  const rangeActive = value.kind !== 'preset';
+  const activePreset = value.kind === "preset" ? value.preset : null;
+  const rangeActive = value.kind !== "preset";
 
   const customRangeLabel =
-    value.kind !== 'preset' ? periodLabelUk(value) : t('filterRange');
+    value.kind !== "preset" ? periodLabelUk(value) : t("filterRange");
 
   const syncPopoverPos = useCallback(() => {
     const el = calendarBtnRef.current;
@@ -65,11 +65,11 @@ export const PeriodFilterBar: React.FC<Props> = ({
     if (!open) return;
     syncPopoverPos();
     const onReposition = () => syncPopoverPos();
-    window.addEventListener('resize', onReposition);
-    window.addEventListener('scroll', onReposition, true);
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
     return () => {
-      window.removeEventListener('resize', onReposition);
-      window.removeEventListener('scroll', onReposition, true);
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
     };
   }, [open, syncPopoverPos]);
 
@@ -77,28 +77,28 @@ export const PeriodFilterBar: React.FC<Props> = ({
 
   const filterItemClass = (active: boolean, iconOnly?: boolean) =>
     `inline-flex min-w-0 flex-1 basis-0 items-center justify-center rounded-md px-1 py-2 text-[10px] font-semibold leading-none whitespace-nowrap transition-colors sm:flex-none sm:basis-auto sm:px-3 sm:py-1.5 sm:text-sm ${
-      iconOnly ? 'sm:px-2' : ''
+      iconOnly ? "sm:px-2" : ""
     } ${
       active
-        ? 'bg-white text-slate-900 shadow-xs dark:bg-[#1c2541] dark:text-white'
-        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+        ? "bg-white text-slate-900 shadow-xs dark:bg-[#1c2541] dark:text-white"
+        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
     } ${
       active && iconOnly
-        ? 'text-sky-500 dark:text-sky-400'
+        ? "text-sky-500 dark:text-sky-400"
         : iconOnly
-          ? 'text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400'
-          : ''
+          ? "text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400"
+          : ""
     }`;
 
   return (
     <div className="min-w-0 max-w-full w-full" ref={wrapRef}>
       <div className="flex w-full min-w-0 flex-nowrap items-stretch gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800 sm:inline-flex sm:w-auto">
-        {PRESETS.map(p => (
+        {PRESETS.map((p) => (
           <button
             key={p}
             type="button"
             onClick={() => {
-              onChange({ kind: 'preset', preset: p });
+              onChange({ kind: "preset", preset: p });
               closeCalendar();
             }}
             className={filterItemClass(activePreset === p)}
@@ -113,7 +113,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
           title={customRangeLabel}
           className={filterItemClass(rangeGroupActive)}
         >
-          {t('filterRange')}
+          {t("filterRange")}
         </button>
         <button
           ref={calendarBtnRef}
@@ -124,7 +124,10 @@ export const PeriodFilterBar: React.FC<Props> = ({
           aria-expanded={open}
           className={filterItemClass(rangeGroupActive, true)}
         >
-          <CalendarDays className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden />
+          <CalendarDays
+            className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4"
+            aria-hidden
+          />
         </button>
       </div>
 
@@ -141,16 +144,16 @@ export const PeriodFilterBar: React.FC<Props> = ({
             <div
               className="fixed z-50"
               style={{ top: popoverPos.top, left: popoverPos.left }}
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
-              aria-label={t('filterRange')}
+              aria-label={t("filterRange")}
             >
               <KyivRangeCalendar
                 value={value}
                 onConfirm={onChange}
                 onClose={closeCalendar}
-                resetLabel={t('reset')}
+                resetLabel={t("reset")}
               />
             </div>
           </>,
