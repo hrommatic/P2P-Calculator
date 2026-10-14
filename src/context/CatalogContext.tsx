@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { api } from "../services/api";
@@ -30,17 +31,32 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({
   const [globalBanks, setGlobalBanks] = useState<GlobalBank[]>([]);
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [catalogReady, setCatalogReady] = useState(false);
+  const refreshGenRef = useRef(0);
+  const catalogAbortRef = useRef<AbortController | null>(null);
 
   const refreshCatalog = useCallback(async (sync?: boolean) => {
-    const catalog = await api.getCatalog(sync);
-    setBanks(catalog.banks);
-    setGlobalBanks(catalog.globalBanks);
-    setExchanges(catalog.exchanges);
-    setCatalogReady(true);
+    catalogAbortRef.current?.abort();
+    const controller = new AbortController();
+    catalogAbortRef.current = controller;
+    const generation = ++refreshGenRef.current;
+
+    try {
+      const catalog = await api.getCatalog(sync, controller.signal);
+      if (generation !== refreshGenRef.current) return;
+      setBanks(catalog.banks);
+      setGlobalBanks(catalog.globalBanks);
+      setExchanges(catalog.exchanges);
+      setCatalogReady(true);
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      throw err;
+    }
   }, []);
 
   useEffect(() => {
     if (!user) {
+      catalogAbortRef.current?.abort();
+      refreshGenRef.current += 1;
       setBanks([]);
       setGlobalBanks([]);
       setExchanges([]);
@@ -57,6 +73,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({
     })();
     return () => {
       cancelled = true;
+      catalogAbortRef.current?.abort();
     };
   }, [user?.id, refreshCatalog]);
 

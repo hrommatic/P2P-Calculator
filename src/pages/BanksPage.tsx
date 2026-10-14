@@ -34,7 +34,8 @@ function getAddableGlobalBanks(
 
 export const BanksPage: React.FC = () => {
   const { t } = useAuth();
-  const { banks, globalBanks, catalogReady, refreshCatalog } = useCatalog();
+  const { banks, globalBanks, catalogReady, refreshCatalog, setBanksLocal } =
+    useCatalog();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,6 +48,7 @@ export const BanksPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<UserBank | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedGlobalBankId, setSelectedGlobalBankId] = useState("");
 
@@ -161,19 +163,25 @@ export const BanksPage: React.FC = () => {
     setIsSaving(true);
     try {
       if (editingBank) {
-        await api.updateBank(editingBank.id, {
+        const { bank } = await api.updateBank(editingBank.id, {
           name: name.trim(),
           turnoverLimitUah: limitNum,
           notes: notes.trim(),
         });
+        setBanksLocal((prev) =>
+          prev.map((b) => (b.id === bank.id ? bank : b)),
+        );
       } else {
         const selected = globalBanks.find((g) => g.id === selectedGlobalBankId)!;
-        await api.createBank({
+        const { bank } = await api.createBank({
           name: selected.name,
           turnoverLimitUah: limitNum,
           globalBankId: selected.id,
           notes: notes.trim(),
         });
+        setBanksLocal((prev) =>
+          prev.some((b) => b.id === bank.id) ? prev : [...prev, bank],
+        );
       }
 
       setIsModalOpen(false);
@@ -188,12 +196,17 @@ export const BanksPage: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget || isDeleting) return;
     setIsDeleting(true);
+    setDeleteError(null);
+    const bankId = deleteTarget.id;
     try {
-      await api.deleteBank(deleteTarget.id);
+      await api.deleteBank(bankId);
+      setBanksLocal((prev) => prev.filter((b) => b.id !== bankId));
       setDeleteTarget(null);
       void fetchBanks(undefined, true);
-    } catch (err) {
-      console.error("Failed to delete bank:", err);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Не вдалося видалити банк";
+      setDeleteError(message);
     } finally {
       setIsDeleting(false);
     }
@@ -306,7 +319,10 @@ export const BanksPage: React.FC = () => {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setDeleteTarget(bank)}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setDeleteTarget(bank);
+                        }}
                         className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                         title={t("deleteBank")}
                       >
@@ -571,6 +587,11 @@ export const BanksPage: React.FC = () => {
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {t("deleteBankConfirm")}
             </p>
+            {deleteError && (
+              <div className="p-3 rounded-lg text-sm text-left bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200">
+                {deleteError}
+              </div>
+            )}
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
                 type="button"
