@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { useCatalog } from "../context/CatalogContext";
-import { UserBank } from "../types";
+import type { GlobalBank, UserBank } from "../types";
 import {
   Building2,
   Plus,
@@ -14,10 +14,27 @@ import {
   CreditCard,
 } from "lucide-react";
 import { ButtonLoader, PageLoader } from "../components/ui/Loader";
+import { BankLogo } from "../components/banks/BankLogo";
+import { resolveBankLogoSvg } from "../lib/resolve-bank-logo";
+
+function getAddableGlobalBanks(
+  banks: UserBank[],
+  globalBanks: GlobalBank[],
+): GlobalBank[] {
+  const usedGlobalIds = new Set(
+    banks.map((b) => b.globalBankId).filter(Boolean) as string[],
+  );
+  const usedNames = new Set(banks.map((b) => b.name.trim().toLowerCase()));
+  return globalBanks
+    .filter((gb) => gb.isActive)
+    .filter((gb) => !usedGlobalIds.has(gb.id))
+    .filter((gb) => !usedNames.has(gb.name.trim().toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name, "uk"));
+}
 
 export const BanksPage: React.FC = () => {
   const { t } = useAuth();
-  const { banks, catalogReady, refreshCatalog } = useCatalog();
+  const { banks, globalBanks, catalogReady, refreshCatalog } = useCatalog();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +47,12 @@ export const BanksPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<UserBank | null>(null);
+  const [selectedGlobalBankId, setSelectedGlobalBankId] = useState("");
+
+  const addableGlobalBanks = useMemo(
+    () => getAddableGlobalBanks(banks, globalBanks),
+    [banks, globalBanks],
+  );
 
   const fetchBanks = async (sync?: boolean) => {
     setIsRefreshing(true);
@@ -42,13 +65,40 @@ export const BanksPage: React.FC = () => {
     }
   };
 
-  const handleOpenAddModal = () => {
+  const applyGlobalBankSelection = (globalBankId: string) => {
+    setSelectedGlobalBankId(globalBankId);
+    const gb = globalBanks.find((g) => g.id === globalBankId);
+    if (gb) {
+      setName(gb.name);
+      setTurnoverLimit(String(gb.defaultLimitUah));
+    }
+  };
+
+  const handleOpenAddModal = async () => {
     setEditingBank(null);
-    setName("");
-    setTurnoverLimit("100000");
     setNotes("");
     setFormError(null);
     setIsSaving(false);
+    let catalogBanks = banks;
+    let catalogGlobalBanks = globalBanks;
+    try {
+      const catalog = await refreshCatalog();
+      catalogBanks = catalog.banks;
+      catalogGlobalBanks = catalog.globalBanks;
+    } catch (err) {
+      console.error("Failed to refresh bank catalog:", err);
+    }
+    const addable = getAddableGlobalBanks(catalogBanks, catalogGlobalBanks);
+    const first = addable[0];
+    if (first) {
+      setSelectedGlobalBankId(first.id);
+      setName(first.name);
+      setTurnoverLimit(String(first.defaultLimitUah));
+    } else {
+      setSelectedGlobalBankId("");
+      setName("");
+      setTurnoverLimit("100000");
+    }
     setIsModalOpen(true);
   };
 
@@ -77,35 +127,52 @@ export const BanksPage: React.FC = () => {
 
     setFormError(null);
 
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      setFormError("Вкажіть назву банку");
-      return;
-    }
-
     const limitNum = parseFloat(turnoverLimit);
     if (isNaN(limitNum) || limitNum <= 0) {
       setFormError("Вкажіть коректний ліміт обороту");
       return;
     }
 
-    if (hasDuplicateName(trimmedName, editingBank?.id)) {
-      setFormError("Банк з такою назвою вже існує");
-      return;
+    if (editingBank) {
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        setFormError("Вкажіть назву банку");
+        return;
+      }
+      if (hasDuplicateName(trimmedName, editingBank.id)) {
+        setFormError("Банк з такою назвою вже існує");
+        return;
+      }
+    } else {
+      if (!selectedGlobalBankId) {
+        setFormError("Оберіть банк зі списку");
+        return;
+      }
+      const selected = globalBanks.find((g) => g.id === selectedGlobalBankId);
+      if (!selected) {
+        setFormError("Обраний банк недоступний");
+        return;
+      }
+      if (hasDuplicateName(selected.name)) {
+        setFormError("Цей банк уже додано");
+        return;
+      }
     }
 
     setIsSaving(true);
     try {
       if (editingBank) {
         await api.updateBank(editingBank.id, {
-          name: trimmedName,
+          name: name.trim(),
           turnoverLimitUah: limitNum,
           notes: notes.trim(),
         });
       } else {
+        const selected = globalBanks.find((g) => g.id === selectedGlobalBankId)!;
         await api.createBank({
-          name: trimmedName,
+          name: selected.name,
           turnoverLimitUah: limitNum,
+          globalBankId: selected.id,
           notes: notes.trim(),
         });
       }
@@ -209,12 +276,11 @@ export const BanksPage: React.FC = () => {
 
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-xs shrink-0"
-                        style={{ backgroundColor: bank.color || "#2563EB" }}
-                      >
-                        {bank.name.substring(0, 2).toUpperCase()}
-                      </div>
+                      <BankLogo
+                        name={bank.name}
+                        logoSvg={resolveBankLogoSvg(bank, globalBanks)}
+                        size="xl"
+                      />
                       <div>
                         <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
                           {bank.name}
@@ -382,14 +448,46 @@ export const BanksPage: React.FC = () => {
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {t("bankName")} *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Наприклад: Monobank (Чорна)"
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
+                {editingBank ? (
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Наприклад: Monobank (Чорна)"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  />
+                ) : addableGlobalBanks.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 py-2">
+                    Усі банки з довідника вже додані або довідник порожній.
+                    Зверніться до адміністратора.
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {selectedGlobalBankId && (
+                      <BankLogo
+                        name={name || "Банк"}
+                        logoSvg={
+                          globalBanks.find((g) => g.id === selectedGlobalBankId)
+                            ?.logoSvg
+                        }
+                        size="md"
+                      />
+                    )}
+                    <select
+                      required
+                      value={selectedGlobalBankId}
+                      onChange={(e) => applyGlobalBankSelection(e.target.value)}
+                      className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    >
+                      {addableGlobalBanks.map((gb) => (
+                        <option key={gb.id} value={gb.id}>
+                          {gb.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -430,7 +528,10 @@ export const BanksPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={
+                    isSaving ||
+                    (!editingBank && addableGlobalBanks.length === 0)
+                  }
                   className="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isSaving ? (

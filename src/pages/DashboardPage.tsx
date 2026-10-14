@@ -203,7 +203,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
           <p className={statValueClass("turnover")}>
             {formatTurnoverValue(periodStats.totalTurnover)}{" "}
-            <span className={statUnitClass("turnover")}>{turnoverUnitLabel}</span>
+            <span className={statUnitClass("turnover")}>
+              {turnoverUnitLabel}
+            </span>
           </p>
         </button>
 

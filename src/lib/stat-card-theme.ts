@@ -39,13 +39,13 @@ export const statThemeClass: Record<
 export const statCardShell = (theme: StatTheme) =>
   `p-3 sm:p-3.5 rounded-2xl border backdrop-blur-[2px] flex flex-col h-full min-h-[4.75rem] items-stretch ${statThemeClass[theme].card}`;
 
-export const statHeaderClass =
-  "flex items-start justify-between gap-2 mb-2";
+export const statHeaderClass = "flex items-start justify-between gap-2 mb-2";
 
 export const statLabelClass = (theme: StatTheme) =>
   `text-sm sm:text-sm font-bold uppercase tracking-wide sm:tracking-[0.14em] leading-snug break-words flex-1 min-w-0 ${statThemeClass[theme].label}`;
 
-export const statHeaderIconSlotClass = "w-4 h-4 shrink-0 mt-0.5 sm:w-3.5 sm:h-3.5";
+export const statHeaderIconSlotClass =
+  "w-4 h-4 shrink-0 mt-0.5 sm:w-3.5 sm:h-3.5";
 
 export const statValueClass = (theme: StatTheme) =>
   `text-xl sm:text-2xl font-extrabold font-mono tabular-nums leading-tight break-all sm:break-normal ${statThemeClass[theme].value}`;

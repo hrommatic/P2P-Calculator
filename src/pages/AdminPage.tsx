@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useCatalog } from "../context/CatalogContext";
 import { api } from "../services/api";
 import {
   AdminOverview,
@@ -26,8 +27,10 @@ import {
   Eye,
   RefreshCw,
   ArrowLeftRight,
+  ImagePlus,
+  ImageOff,
 } from "lucide-react";
-import { PageLoader } from "../components/ui/Loader";
+import { ButtonLoader, PageLoader } from "../components/ui/Loader";
 import { PeriodFilterBar } from "../components/filters/PeriodFilterBar";
 import {
   defaultPeriodFilter,
@@ -47,9 +50,12 @@ import {
   statLabelCompactClass,
   type StatTheme,
 } from "../lib/stat-card-theme";
+import { BankLogo } from "../components/banks/BankLogo";
+import { readBankLogoFile } from "../lib/bank-logo-file";
 
 export const AdminPage: React.FC = () => {
   const { user, t } = useAuth();
+  const { refreshCatalog } = useCatalog();
 
   const [activeSection, setActiveSection] = useState<
     "overview" | "accounts" | "students" | "banks" | "exchanges"
@@ -87,10 +93,15 @@ export const AdminPage: React.FC = () => {
     null,
   );
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [isSavingGlobalBank, setIsSavingGlobalBank] = useState(false);
+  const [deleteGlobalBankTarget, setDeleteGlobalBankTarget] =
+    useState<GlobalBank | null>(null);
+  const [isDeletingGlobalBank, setIsDeletingGlobalBank] = useState(false);
   const [bankName, setBankName] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [bankLimit, setBankLimit] = useState("100000");
-  const [bankColor, setBankColor] = useState("#2563EB");
+  const [bankLogoSvg, setBankLogoSvg] = useState<string | undefined>(undefined);
+  const [bankLogoDirty, setBankLogoDirty] = useState(false);
 
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [newExName, setNewExName] = useState("");
@@ -258,7 +269,8 @@ export const AdminPage: React.FC = () => {
     setBankName("");
     setBankCode("");
     setBankLimit("100000");
-    setBankColor("#2563EB");
+    setBankLogoSvg(undefined);
+    setBankLogoDirty(false);
     setIsBankModalOpen(true);
   };
 
@@ -267,41 +279,76 @@ export const AdminPage: React.FC = () => {
     setBankName(gb.name);
     setBankCode(gb.code);
     setBankLimit(gb.defaultLimitUah.toString());
-    setBankColor(gb.color);
+    setBankLogoSvg(gb.logoSvg);
+    setBankLogoDirty(false);
     setIsBankModalOpen(true);
+  };
+
+  const handleBankLogoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const dataUrl = await readBankLogoFile(file);
+      setBankLogoSvg(dataUrl);
+      setBankLogoDirty(true);
+    } catch (err: any) {
+      showMsg(err.message || "Не вдалося завантажити фото", "error");
+    }
   };
 
   const handleSaveGlobalBank = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingGlobalBank) return;
+
+    setIsSavingGlobalBank(true);
     try {
+      const logoPayload =
+        bankLogoDirty || !editingGlobalBank
+          ? { logoSvg: bankLogoSvg ?? "" }
+          : {};
+
       if (editingGlobalBank) {
         await api.updateGlobalBank(editingGlobalBank.id, {
           name: bankName,
           defaultLimitUah: parseFloat(bankLimit),
-          color: bankColor,
+          ...logoPayload,
         });
       } else {
         await api.createGlobalBank({
           name: bankName,
           code: bankCode,
           defaultLimitUah: parseFloat(bankLimit),
-          color: bankColor,
+          logoSvg: bankLogoSvg,
         });
       }
       setIsBankModalOpen(false);
       showMsg("Довідник банків оновлено");
-      loadSectionData("banks");
+      await Promise.all([loadSectionData("banks"), refreshCatalog()]);
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setIsSavingGlobalBank(false);
     }
   };
 
-  const handleToggleBankActive = async (gb: GlobalBank) => {
+  const handleDeleteGlobalBank = async () => {
+    if (!deleteGlobalBankTarget || isDeletingGlobalBank) return;
+
+    const target = deleteGlobalBankTarget;
+    setIsDeletingGlobalBank(true);
     try {
-      await api.updateGlobalBank(gb.id, { isActive: !gb.isActive });
-      loadSectionData("banks");
+      await api.deleteGlobalBank(target.id);
+      showMsg(`Банк «${target.name}» видалено`);
+      setDeleteGlobalBankTarget(null);
+      if (editingGlobalBank?.id === target.id) {
+        setIsBankModalOpen(false);
+      }
+      await Promise.all([loadSectionData("banks"), refreshCatalog()]);
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setIsDeletingGlobalBank(false);
     }
   };
 
@@ -500,7 +547,7 @@ export const AdminPage: React.FC = () => {
           )}
 
           {!isLoading && overview && (
-            <div className="space-y-3 sm:space-y-4 min-w-0">
+            <div className="flex min-w-0 flex-col gap-2 sm:gap-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
                 <div
                   className={`${overviewStatCardClass("profit")} col-span-2 md:col-span-1 order-1 md:order-1`}
@@ -790,70 +837,58 @@ export const AdminPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {globalBanks.map((gb) => (
-              <div
-                key={gb.id}
-                className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-2xs space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-xs"
-                      style={{ backgroundColor: gb.color }}
-                    >
-                      {gb.name.substring(0, 2).toUpperCase()}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            {globalBanks
+              .filter((gb) => gb.isActive)
+              .map((gb) => (
+                  <div
+                    key={gb.id}
+                    className="group relative rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#111827] p-3.5 sm:p-4 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all"
+                  >
+                    <div className="absolute top-2 right-2 flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditGlobalBank(gb)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Редагувати"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteGlobalBankTarget(gb)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                        title="Видалити"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                        {gb.name}
-                      </h4>
-                      <span className="text-xs text-slate-400 font-mono">
-                        {gb.code}
-                      </span>
+
+                    <div className="flex gap-3 pr-14">
+                      <div className="shrink-0 self-start rounded-xl bg-slate-50 dark:bg-slate-900/70 p-2 ring-1 ring-inset ring-slate-200/70 dark:ring-slate-700/70">
+                        <BankLogo
+                          name={gb.name}
+                          logoSvg={gb.logoSvg}
+                          size="xl"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1 flex flex-col justify-center gap-1 text-left">
+                        <h4 className="font-bold text-sm sm:text-[15px] text-slate-900 dark:text-white leading-snug line-clamp-2">
+                          {gb.name}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          <span className="text-slate-400 dark:text-slate-500">
+                            Код:{" "}
+                          </span>
+                          <span className="font-mono text-slate-600 dark:text-slate-300">
+                            {gb.code}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
-
-                  <span
-                    className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
-                      gb.isActive
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    {gb.isActive ? "Активний" : "Вимкнено"}
-                  </span>
-                </div>
-
-                <div className="text-sm text-slate-500 pt-1">
-                  Стандартний ліміт:{" "}
-                  <strong className="text-slate-900 dark:text-white font-mono">
-                    {formatUah(gb.defaultLimitUah)} ₴
-                  </strong>
-                </div>
-
-                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    onClick={() => handleToggleBankActive(gb)}
-                    className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    title="Увімкнути / Вимкнути"
-                  >
-                    {gb.isActive ? (
-                      <Lock className="w-3.5 h-3.5" />
-                    ) : (
-                      <Unlock className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleOpenEditGlobalBank(gb)}
-                    className="p-1 text-slate-400 hover:text-blue-600"
-                    title="Редагувати"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -1022,6 +1057,43 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
+      {deleteGlobalBankTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
+            <Trash2 className="w-10 h-10 text-rose-500 mx-auto" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Видалити банк «{deleteGlobalBankTarget.name}»?
+            </h3>
+            <p className="text-sm text-slate-500">
+              Шаблон зникне з довідника. Рахунки учнів залишаться, але без
+              прив&apos;язки до цього шаблону.
+            </p>
+            <div className="flex justify-center gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingGlobalBank}
+                onClick={() => setDeleteGlobalBankTarget(null)}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingGlobalBank}
+                onClick={handleDeleteGlobalBank}
+                className="inline-flex items-center justify-center min-w-[8rem] px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white disabled:opacity-70"
+              >
+                {isDeletingGlobalBank ? (
+                  <ButtonLoader label="Видалення..." />
+                ) : (
+                  "Видалити"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleteUserTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
@@ -1138,15 +1210,35 @@ export const AdminPage: React.FC = () => {
       )}
 
       {isBankModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          onClick={() => {
+            if (!isSavingGlobalBank) setIsBankModalOpen(false);
+          }}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="global-bank-modal-title"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3
+                id="global-bank-modal-title"
+                className="text-base font-bold text-slate-900 dark:text-white"
+              >
                 {editingGlobalBank
                   ? "Редагувати глобальний банк"
                   : "Додати глобальний банк"}
               </h3>
-              <button onClick={() => setIsBankModalOpen(false)}>
+              <button
+                type="button"
+                disabled={isSavingGlobalBank}
+                onClick={() => setIsBankModalOpen(false)}
+                className="disabled:opacity-50 disabled:pointer-events-none"
+              >
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
@@ -1194,32 +1286,63 @@ export const AdminPage: React.FC = () => {
 
               <div>
                 <label className="block font-semibold mb-1">
-                  Фірмовий колір
+                  Логотип банку (для всіх користувачів)
                 </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={bankColor}
-                    onChange={(e) => setBankColor(e.target.value)}
-                    className="w-9 h-9 p-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent cursor-pointer"
+                <div className="inline-flex flex-col items-center gap-2">
+                  <BankLogo
+                    name={bankName || "Банк"}
+                    logoSvg={bankLogoSvg}
+                    size="2xl"
                   />
-                  <span className="font-mono">{bankColor}</span>
+                  <div className="flex items-center gap-1">
+                    <label
+                      className="inline-flex items-center justify-center p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-sky-400 transition-colors"
+                      title="Завантажити фото"
+                    >
+                      <ImagePlus className="w-4 h-4" aria-hidden />
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={handleBankLogoPick}
+                      />
+                    </label>
+                    {bankLogoSvg && (
+                      <button
+                        type="button"
+                        title="Прибрати фото"
+                        onClick={() => {
+                          setBankLogoSvg(undefined);
+                          setBankLogoDirty(true);
+                        }}
+                        className="inline-flex items-center justify-center p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                      >
+                        <ImageOff className="w-4 h-4" aria-hidden />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
+                  disabled={isSavingGlobalBank}
                   onClick={() => setIsBankModalOpen(false)}
-                  className="px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  className="px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   Скасувати
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 text-white"
+                  disabled={isSavingGlobalBank}
+                  className="inline-flex items-center justify-center gap-2 min-w-[7.5rem] px-4 py-2 font-semibold rounded-lg bg-blue-600 text-white disabled:opacity-70 disabled:pointer-events-none"
                 >
-                  Зберегти
+                  {isSavingGlobalBank ? (
+                    <ButtonLoader label="Збереження..." />
+                  ) : (
+                    "Зберегти"
+                  )}
                 </button>
               </div>
             </form>

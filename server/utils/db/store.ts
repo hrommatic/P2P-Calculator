@@ -594,6 +594,15 @@ export async function updateGlobalBank(bank: GlobalBank) {
   invalidateReferenceDataCache();
 }
 
+export async function deleteGlobalBank(id: string) {
+  await prisma.userBank.updateMany({
+    where: { globalBankId: id },
+    data: { globalBankId: null },
+  });
+  await prisma.globalBank.delete({ where: { id } });
+  invalidateReferenceDataCache();
+}
+
 export async function createExchangeRecord(exchange: Exchange) {
   await prisma.exchange.create({
     data: {

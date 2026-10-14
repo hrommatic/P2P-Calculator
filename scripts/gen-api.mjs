@@ -19,6 +19,7 @@ const routes = [
   { path: 'banks', module: 'banks.routes', method: 'POST', export: 'banksIndexPostHandler' },
   { path: 'banks/:id', module: 'banks.routes', method: 'PUT', export: 'bankUpdateHandler' },
   { path: 'banks/:id', module: 'banks.routes', method: 'DELETE', export: 'bankDeleteHandler' },
+  { path: 'catalog', module: 'catalog.routes', method: 'GET', export: 'catalogGetHandler' },
   { path: 'dashboard/stats', module: 'dashboard.routes', method: 'GET', export: 'dashboardStatsHandler' },
   { path: 'admin/overview', module: 'admin.routes', method: 'GET', export: 'adminOverviewHandler' },
   { path: 'admin/users', module: 'admin.routes', method: 'GET', export: 'adminUsersHandler' },
@@ -66,7 +67,44 @@ function parsePathPattern(pathPattern) {
   return pathPattern.split('/');
 }
 
-function buildGroupRouter(groupRoutes, depth) {
+function pathPatternSegmentCount(pathPattern) {
+  if (!pathPattern) return 0;
+  return pathPattern.split('/').length;
+}
+
+/** Vercel file path for multi-segment routes (e.g. global-banks/:id → api/admin/global-banks/[id].ts). */
+function pathPatternToApiFile(groupName, pathPattern) {
+  const parts = pathPattern.split('/');
+  const fsParts = parts.map((p) => (p.startsWith(':') ? `[${p.slice(1)}]` : p));
+  return `api/${groupName}/${fsParts.join('/')}.ts`;
+}
+
+function buildDedicatedRouteFile(routeList, depth) {
+  const prefix = '../'.repeat(depth) + 'server/';
+  const modules = [...new Set(routeList.map((r) => r.module))];
+  const imports = modules
+    .map((mod) => {
+      const names = [...new Set(routeList.filter((r) => r.module === mod).map((r) => r.export))];
+      return `import { ${names.join(', ')} } from '${prefix}routes/${mod}.js';`;
+    })
+    .join('\n');
+  const methods = routeList.map((r) => `'${r.method}'`);
+  const dispatch = routeList
+    .map((r) => `  if (req.method === '${r.method}') return ${r.export}(req, res);`)
+    .join('\n');
+
+  return `import type { VercelRequest, VercelResponse } from '@vercel/node';
+${imports}
+import { methodNotAllowed } from '${prefix}middlewares/helpers.js';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+${dispatch}
+  return methodNotAllowed(res, [${methods.join(', ')}]);
+}
+`;
+}
+
+function buildGroupRouter(groupRoutes, depth, groupName) {
   const nestedRoutes = groupRoutes.filter((r) => r.path);
   const prefix = '../'.repeat(depth) + 'server/';
   const modules = [...new Set(nestedRoutes.map((r) => r.module))];
@@ -84,7 +122,9 @@ function buildGroupRouter(groupRoutes, depth) {
     })
     .join('\n');
 
+  const libPrefix = '../'.repeat(depth - 1);
   return `import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getGroupPathSegments } from '${libPrefix}_lib/pathSegments.js';
 ${imports}
 
 type RouteEntry = {
@@ -96,20 +136,6 @@ type RouteEntry = {
 const routes: RouteEntry[] = [
 ${routeEntries}
 ];
-
-function getPathSegments(req: VercelRequest): string[] {
-  const queryPath = req.query.path;
-  if (queryPath) {
-    return Array.isArray(queryPath) ? queryPath : [queryPath];
-  }
-  const pathname = (req.url ?? '').split('?')[0];
-  const marker = '/api/';
-  const idx = pathname.indexOf(marker);
-  if (idx >= 0) {
-    return pathname.slice(idx + marker.length).split('/').filter(Boolean).slice(1);
-  }
-  return [];
-}
 
 function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {
   if (pathSegments.length !== route.segments.length) return null;
@@ -127,7 +153,7 @@ function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, s
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const pathSegments = getPathSegments(req);
+  const pathSegments = getGroupPathSegments(req, '${groupName}');
 
   for (const route of routes) {
     if (route.method !== req.method) continue;
@@ -139,6 +165,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.status(404).json({ error: 'Not found' });
+}
+`;
+}
+
+function buildPathSegmentsLib() {
+  return `import type { VercelRequest } from '@vercel/node';
+
+/** Segments after /api/{group}/ for catch-all route handlers. */
+export function getGroupPathSegments(
+  req: VercelRequest,
+  groupName: string,
+): string[] {
+  const queryPath = req.query.path;
+  if (queryPath) {
+    const parts = Array.isArray(queryPath) ? queryPath : [queryPath];
+    return parts.flatMap((p) => String(p).split('/').filter(Boolean));
+  }
+
+  const pathname = (req.url ?? '').split('?')[0];
+  const marker = '/api/';
+  const idx = pathname.indexOf(marker);
+  if (idx < 0) return [];
+
+  const afterApi = pathname.slice(idx + marker.length).split('/').filter(Boolean);
+  if (afterApi[0] === groupName) {
+    return afterApi.slice(1);
+  }
+  return afterApi;
 }
 `;
 }
@@ -163,8 +217,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 `;
 }
 
-function buildSingleRoute(route) {
-  return `export { ${route.export} as default } from '../server/routes/${route.module}.js';\n`;
+function buildSingleRoute(route, depth = 1) {
+  const prefix = '../'.repeat(depth) + 'server/';
+  return `export { ${route.export} as default } from '${prefix}routes/${route.module}.js';\n`;
 }
 
 function buildIndexRoute(groupRoutes, depth) {
@@ -203,6 +258,8 @@ function removeDir(dir) {
 
 removeDir('api');
 fs.mkdirSync('api', { recursive: true });
+fs.mkdirSync('api/_lib', { recursive: true });
+fs.writeFileSync('api/_lib/pathSegments.ts', buildPathSegmentsLib());
 
 fs.writeFileSync('api/health.ts', buildHealthRoute());
 
@@ -220,6 +277,11 @@ const groupFiles = [
 
 let functionCount = 2;
 
+const catalogRoute = routes.find((r) => r.path === 'catalog');
+fs.mkdirSync('api/catalog', { recursive: true });
+fs.writeFileSync('api/catalog/index.ts', buildSingleRoute(catalogRoute, 2));
+functionCount += 1;
+
 for (const { name, file, depth } of groupFiles) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const groupRoutes = groups[name];
@@ -231,9 +293,55 @@ for (const { name, file, depth } of groupFiles) {
     functionCount += 1;
   }
 
-  const nestedRoutes = groupRoutes.filter((r) => r.path);
-  if (nestedRoutes.length > 0) {
-    fs.writeFileSync(file, buildGroupRouter(groupRoutes, depth));
+  const deepRoutesByPath = new Map();
+  const catchAllRoutes = [];
+  for (const route of groupRoutes) {
+    if (!route.path) continue;
+    if (pathPatternSegmentCount(route.path) > 1) {
+      if (!deepRoutesByPath.has(route.path)) deepRoutesByPath.set(route.path, []);
+      deepRoutesByPath.get(route.path).push(route);
+    } else {
+      catchAllRoutes.push(route);
+    }
+  }
+
+  for (const [pathPattern, routeList] of deepRoutesByPath) {
+    const dedicatedFile = pathPatternToApiFile(name, pathPattern);
+    fs.mkdirSync(path.dirname(dedicatedFile), { recursive: true });
+    const dedicatedDepth = dedicatedFile.split('/').length - 1;
+    fs.writeFileSync(dedicatedFile, buildDedicatedRouteFile(routeList, dedicatedDepth));
+    functionCount += 1;
+  }
+
+  const staticPrefixesFromDeep = new Set(
+    [...deepRoutesByPath.keys()].map((p) => p.split('/')[0]),
+  );
+  const folderIndexRoutes = new Map();
+  const remainingCatchAll = [];
+  for (const route of catchAllRoutes) {
+    const first = route.path.split('/')[0];
+    if (staticPrefixesFromDeep.has(first) && route.path === first) {
+      if (!folderIndexRoutes.has(first)) folderIndexRoutes.set(first, []);
+      folderIndexRoutes.get(first).push(route);
+    } else {
+      remainingCatchAll.push(route);
+    }
+  }
+
+  for (const [prefix, routeList] of folderIndexRoutes) {
+    const indexFile = `api/${name}/${prefix}/index.ts`;
+    fs.mkdirSync(path.dirname(indexFile), { recursive: true });
+    const indexDepth = indexFile.split('/').length - 1;
+    fs.writeFileSync(indexFile, buildDedicatedRouteFile(routeList, indexDepth));
+    functionCount += 1;
+  }
+
+  const routerRoutes = [
+    ...groupRoutes.filter((r) => !r.path),
+    ...remainingCatchAll,
+  ];
+  if (remainingCatchAll.length > 0 || hasIndexRoutes) {
+    fs.writeFileSync(file, buildGroupRouter(routerRoutes, depth, name));
     functionCount += 1;
   }
 }

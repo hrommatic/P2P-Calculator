@@ -4,10 +4,10 @@ import React, {
   useContext,
   useEffect,
   useState,
-} from 'react';
-import { api } from '../services/api';
-import type { Exchange, GlobalBank, UserBank } from '../types';
-import { useAuth } from './AuthContext';
+} from "react";
+import { api } from "../services/api";
+import type { Exchange, GlobalBank, UserBank } from "../types";
+import { useAuth } from "./AuthContext";
 
 type CatalogContextValue = {
   banks: UserBank[];
@@ -18,7 +18,9 @@ type CatalogContextValue = {
   setBanksLocal: React.Dispatch<React.SetStateAction<UserBank[]>>;
 };
 
-const CatalogContext = createContext<CatalogContextValue | undefined>(undefined);
+const CatalogContext = createContext<CatalogContextValue | undefined>(
+  undefined,
+);
 
 export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -50,7 +52,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         await refreshCatalog();
       } catch (err) {
-        if (!cancelled) console.error('Failed to load catalog:', err);
+        if (!cancelled) console.error("Failed to load catalog:", err);
       }
     })();
     return () => {
@@ -77,7 +79,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({
 export function useCatalog(): CatalogContextValue {
   const ctx = useContext(CatalogContext);
   if (!ctx) {
-    throw new Error('useCatalog must be used within CatalogProvider');
+    throw new Error("useCatalog must be used within CatalogProvider");
   }
   return ctx;
 }

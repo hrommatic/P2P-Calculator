@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getGroupPathSegments } from '../_lib/pathSegments.js';
 import { settingsPublicHandler } from '../../server/routes/auth.routes.js';
 
 type RouteEntry = {
@@ -10,20 +11,6 @@ type RouteEntry = {
 const routes: RouteEntry[] = [
   { segments: ["public"], method: 'GET', handler: settingsPublicHandler },
 ];
-
-function getPathSegments(req: VercelRequest): string[] {
-  const queryPath = req.query.path;
-  if (queryPath) {
-    return Array.isArray(queryPath) ? queryPath : [queryPath];
-  }
-  const pathname = (req.url ?? '').split('?')[0];
-  const marker = '/api/';
-  const idx = pathname.indexOf(marker);
-  if (idx >= 0) {
-    return pathname.slice(idx + marker.length).split('/').filter(Boolean).slice(1);
-  }
-  return [];
-}
 
 function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {
   if (pathSegments.length !== route.segments.length) return null;
@@ -41,7 +28,7 @@ function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, s
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const pathSegments = getPathSegments(req);
+  const pathSegments = getGroupPathSegments(req, 'settings');
 
   for (const route of routes) {
     if (route.method !== req.method) continue;

@@ -80,6 +80,11 @@ await test('Auth: login admin', async () => {
   assert('user is admin', r.data?.user?.role === 'admin');
 });
 
+await test('Auth: catalog', async () => {
+  const r = await req('GET', '/catalog');
+  assert('catalog 200', r.status === 200 && Array.isArray(r.data?.banks), `status=${r.status} ${JSON.stringify(r.data)?.slice(0, 80)}`);
+});
+
 await test('Auth: me', async () => {
   const r = await req('GET', '/auth/me');
   assert('me 200', r.status === 200 && r.data?.user?.nickname === 'admin');
@@ -197,6 +202,15 @@ await test('Admin: students-stats', async () => {
 await test('Admin: global-banks', async () => {
   const r = await req('GET', '/admin/global-banks');
   assert('global-banks 200', r.status === 200 && Array.isArray(r.data?.banks), `status=${r.status} ${JSON.stringify(r.data)?.slice(0, 80)}`);
+});
+
+await test('Admin: global-banks DELETE route', async () => {
+  const r = await req('DELETE', '/admin/global-banks/__nonexistent_test_id__');
+  assert(
+    'global-banks DELETE reaches API',
+    r.status === 404 && r.data?.error === 'Банк не знайдено',
+    `status=${r.status} ${JSON.stringify(r.data)?.slice(0, 120)}`,
+  );
 });
 
 await test('Admin: exchanges', async () => {

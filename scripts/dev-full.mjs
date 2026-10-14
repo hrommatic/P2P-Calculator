@@ -28,11 +28,16 @@ function waitForPort(port, timeoutMs = 180_000) {
   });
 }
 
-console.log(`Freeing port ${API_PORT} if needed…`);
-spawnSync('npx', ['--yes', 'kill-port', String(API_PORT)], {
-  shell: true,
-  stdio: 'inherit',
-});
+function freePort(port) {
+  console.log(`Freeing port ${port} if needed…`);
+  spawnSync('npx', ['--yes', 'kill-port', String(port)], {
+    shell: true,
+    stdio: 'inherit',
+  });
+}
+
+freePort(API_PORT);
+freePort(UI_PORT);
 
 const env = {
   ...process.env,
@@ -71,6 +76,8 @@ try {
   console.error(err instanceof Error ? err.message : err);
   shutdown(1);
 }
+
+freePort(UI_PORT);
 
 console.log(`\nStarting UI (Vite) on http://localhost:${UI_PORT}/`);
 console.log(`Open http://localhost:${UI_PORT}/ in the browser.\n`);

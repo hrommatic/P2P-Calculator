@@ -73,6 +73,7 @@ export async function handlePostBank(req: VercelRequest, res: VercelResponse, us
     tradesCount: 0,
     notes: notes ? String(notes).trim() : undefined,
     color: (typeof color === 'string' ? color : undefined) || matchedGlobal?.color || '#3B82F6',
+    logoSvg: matchedGlobal?.logoSvg,
     isArchived: false,
     createdAt: now,
     updatedAt: now,

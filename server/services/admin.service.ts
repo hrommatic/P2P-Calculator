@@ -8,6 +8,7 @@ import type { TradeListFilters } from '../utils/db/trade-filters.js';
 import {
   createExchangeRecord,
   createGlobalBank,
+  deleteGlobalBank,
   deleteUserAndData,
   findUserById,
   getAdminOverviewData,
@@ -194,7 +195,10 @@ export async function handlePutAdminGlobalBank(req: VercelRequest, res: VercelRe
   if (typeof body.name === 'string' && body.name) bank.name = body.name.trim();
   if (body.defaultLimitUah !== undefined) bank.defaultLimitUah = Number(body.defaultLimitUah);
   if (typeof body.color === 'string' && body.color) bank.color = body.color;
-  if (body.logoSvg !== undefined) bank.logoSvg = typeof body.logoSvg === 'string' ? body.logoSvg : undefined;
+  if (body.logoSvg !== undefined) {
+    const raw = typeof body.logoSvg === 'string' ? body.logoSvg.trim() : '';
+    bank.logoSvg = raw || undefined;
+  }
   if (body.isActive !== undefined) bank.isActive = Boolean(body.isActive);
 
   await updateGlobalBank(bank);
@@ -208,11 +212,10 @@ export async function handleDeleteAdminGlobalBank(req: VercelRequest, res: Verce
   const bank = banks.find((b) => b.id === String(req.query.id));
   if (!bank) return res.status(404).json({ error: 'Банк не знайдено' });
 
-  bank.isActive = false;
-  await updateGlobalBank(bank);
-  await logAdminAction(user, 'BANK_DEACTIVATE', `Deactivated global bank ${bank.name}`);
+  await deleteGlobalBank(bank.id);
+  await logAdminAction(user, 'BANK_DELETE', `Deleted global bank ${bank.name}`);
 
-  return res.json({ success: true, message: 'Банк деактивовано' });
+  return res.json({ success: true, message: 'Банк видалено' });
 }
 
 export async function handleGetAdminExchanges(req: VercelRequest, res: VercelResponse, _user: User) {

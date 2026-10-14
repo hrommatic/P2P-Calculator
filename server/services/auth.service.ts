@@ -96,6 +96,7 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
     netProfitUah: 0,
     tradesCount: 0,
     color: gb.color,
+    logoSvg: gb.logoSvg,
     isArchived: false,
     createdAt: now,
     updatedAt: now,
