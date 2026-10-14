@@ -11,9 +11,60 @@ import {
   Copy,
   ExternalLink,
   LogOut,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { ButtonLoader } from '../components/ui/Loader';
 import { resolveCuratorTelegram } from '../lib/site-defaults';
+
+const settingsPasswordInputClass =
+  'w-full px-3 py-2 pr-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
+
+type SettingsPasswordFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  show: boolean;
+  onToggleShow: () => void;
+  showPasswordLabel: string;
+  hidePasswordLabel: string;
+  autoComplete?: string;
+};
+
+const SettingsPasswordField: React.FC<SettingsPasswordFieldProps> = ({
+  label,
+  value,
+  onChange,
+  show,
+  onToggleShow,
+  showPasswordLabel,
+  hidePasswordLabel,
+  autoComplete,
+}) => (
+  <div>
+    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        type={show ? 'text' : 'password'}
+        required
+        autoComplete={autoComplete}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={settingsPasswordInputClass}
+      />
+      <button
+        type="button"
+        onClick={onToggleShow}
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+        aria-label={show ? hidePasswordLabel : showPasswordLabel}
+      >
+        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
+    </div>
+  </div>
+);
 
 export const SettingsPage: React.FC = () => {
   const { user, siteSettings, logout, t } = useAuth();
@@ -27,6 +78,9 @@ export const SettingsPage: React.FC = () => {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   const [copied, setCopied] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -202,44 +256,38 @@ export const SettingsPage: React.FC = () => {
           )}
 
           <form onSubmit={handleChangePassword} className="space-y-3 text-sm">
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
-                {t('currentPassword')}
-              </label>
-              <input
-                type="password"
-                required
-                value={currentPassword}
-                onChange={e => setCurrentPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-            </div>
+            <SettingsPasswordField
+              label={t('currentPassword')}
+              value={currentPassword}
+              onChange={setCurrentPassword}
+              show={showCurrentPassword}
+              onToggleShow={() => setShowCurrentPassword((v) => !v)}
+              showPasswordLabel={t('showPassword')}
+              hidePasswordLabel={t('hidePassword')}
+              autoComplete="current-password"
+            />
 
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
-                {t('newPassword')}
-              </label>
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-            </div>
+            <SettingsPasswordField
+              label={t('newPassword')}
+              value={newPassword}
+              onChange={setNewPassword}
+              show={showNewPassword}
+              onToggleShow={() => setShowNewPassword((v) => !v)}
+              showPasswordLabel={t('showPassword')}
+              hidePasswordLabel={t('hidePassword')}
+              autoComplete="new-password"
+            />
 
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
-                {t('confirmNewPassword')}
-              </label>
-              <input
-                type="password"
-                required
-                value={confirmNewPassword}
-                onChange={e => setConfirmNewPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-            </div>
+            <SettingsPasswordField
+              label={t('confirmNewPassword')}
+              value={confirmNewPassword}
+              onChange={setConfirmNewPassword}
+              show={showConfirmNewPassword}
+              onToggleShow={() => setShowConfirmNewPassword((v) => !v)}
+              showPasswordLabel={t('showPassword')}
+              hidePasswordLabel={t('hidePassword')}
+              autoComplete="new-password"
+            />
 
             <div className="pt-2">
               <button

@@ -235,9 +235,11 @@ export const BanksPage: React.FC = () => {
       ) : banks.length === 0 ? (
         <div className="p-12 text-center bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
           <CreditCard className="w-8 h-8 text-slate-400 mx-auto" />
+          <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
+            {t("noBanksYet")}
+          </p>
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            У вас ще немає доданих банків. Додайте свій перший рахунок, щоб
-            відстежувати ліміти та оборот.
+            {t("noBanksYetHint")}
           </p>
           <button
             onClick={handleOpenAddModal}

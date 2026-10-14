@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { User, ThemePreference, LanguagePreference } from '../schemas/auth.schema.js';
-import type { UserBank } from '../schemas/banks.schema.js';
 import { hashPassword, verifyPassword, generateToken } from '../lib/crypto.js';
 import { parseJsonBody, getClientIp, getBearerToken } from '../middlewares/helpers.js';
 import {
@@ -8,7 +7,6 @@ import {
   deleteFailedAttempt,
   deleteSession,
   findUserByNickname,
-  getActiveGlobalBanks,
   getActiveExchanges,
   getFailedAttempt,
   getSiteSettings,
@@ -68,8 +66,6 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
 
   const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const now = new Date().toISOString();
-  const globalBanks = await getActiveGlobalBanks();
-
   const newUser: User = {
     id: userId,
     nickname: cleanNickname,
@@ -84,28 +80,10 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
     languagePreference: siteSettings.defaultLanguage || 'uk',
   };
 
-  const initialBanks: UserBank[] = globalBanks.slice(0, 4).map((gb) => ({
-    id: `ub_${userId}_${gb.code}`,
-    userId,
-    globalBankId: gb.id,
-    name: gb.name,
-    turnoverLimitUah: gb.defaultLimitUah,
-    initialTurnoverUah: 0,
-    buyTurnoverUah: 0,
-    sellTurnoverUah: 0,
-    netProfitUah: 0,
-    tradesCount: 0,
-    color: gb.color,
-    logoSvg: gb.logoSvg,
-    isArchived: false,
-    createdAt: now,
-    updatedAt: now,
-  }));
-
   const token = generateToken();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  await registerUserWithBanks(newUser, initialBanks, {
+  await registerUserWithBanks(newUser, [], {
     token,
     createdAt: now,
     expiresAt,
