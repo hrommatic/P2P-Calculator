@@ -79,7 +79,7 @@ function AppContent() {
         id="app-main"
         className={`flex-1 min-h-0 min-w-0 w-full overflow-x-hidden overflow-y-auto overscroll-y-contain ${
           currentTab === 'calculator'
-            ? 'pt-3 pb-6 sm:pt-4 sm:pb-8'
+            ? 'pt-2 pb-4 sm:pt-3 sm:pb-6 lg:pt-2 lg:pb-4'
             : currentTab === 'admin'
               ? 'pt-3 pb-6 sm:pt-4 sm:pb-8'
               : 'py-6 sm:py-8'

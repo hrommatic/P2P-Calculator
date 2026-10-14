@@ -5,23 +5,18 @@ import {
   Settings as SettingsIcon,
   User,
   Lock,
-  Palette,
-  Globe,
   Send,
   Check,
   AlertCircle,
   Copy,
   ExternalLink,
   LogOut,
-  Moon,
-  Sun,
 } from 'lucide-react';
 import { ButtonLoader } from '../components/ui/Loader';
-import { Language, ThemeMode } from '../types';
 import { resolveCuratorTelegram } from '../lib/site-defaults';
 
 export const SettingsPage: React.FC = () => {
-  const { user, siteSettings, theme, setTheme, language, setLanguage, logout, t } = useAuth();
+  const { user, siteSettings, logout, t } = useAuth();
 
   const [telegram, setTelegram] = useState(user?.telegram || '');
   const [profileSuccess, setProfileSuccess] = useState(false);
@@ -97,12 +92,6 @@ export const SettingsPage: React.FC = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const languages: { code: Language; title: string; desc: string }[] = [
-    { code: 'uk', title: 'Українська', desc: 'Основна мова платформи' },
-    { code: 'ru', title: 'Русский', desc: 'Интерфейс на русском языке' },
-    { code: 'en', title: 'English', desc: 'English interface & tools' },
-  ];
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
@@ -264,87 +253,6 @@ export const SettingsPage: React.FC = () => {
           </form>
         </div>
 
-
-        <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-            <Palette className="w-4 h-4 text-blue-600 dark:text-sky-400" />
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              {t('themeSection')}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-
-            <button
-              type="button"
-              onClick={() => setTheme('light')}
-              className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                theme === 'light'
-                  ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
-                  : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <Sun className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{t('themeLight')}</p>
-                <p className="text-xs text-slate-500">Світлий фон, контрастні картки</p>
-              </div>
-            </button>
-
-
-            <button
-              type="button"
-              onClick={() => setTheme('navy')}
-              className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                theme === 'navy'
-                  ? 'border-sky-500 bg-sky-950/40 ring-2 ring-sky-500/20'
-                  : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <Moon className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{t('themeNavy')}</p>
-                <p className="text-xs text-slate-500">Глибокий темно-синій колір</p>
-              </div>
-            </button>
-          </div>
-        </div>
-
-
-        <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-            <Globe className="w-4 h-4 text-blue-600 dark:text-sky-400" />
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              {t('languageSection')}
-            </h2>
-          </div>
-
-          <div className="space-y-2">
-            {languages.map(l => (
-              <button
-                key={l.code}
-                onClick={() => setLanguage(l.code)}
-                className={`w-full p-3 rounded-xl border text-left flex items-center justify-between transition-colors ${
-                  language === l.code
-                    ? 'border-blue-600 bg-blue-50/60 dark:bg-sky-950/30 dark:border-sky-500'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                }`}
-              >
-                <div>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white block">
-                    {l.title}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    {l.desc}
-                  </span>
-                </div>
-                {language === l.code && <Check className="w-4 h-4 text-blue-600 dark:text-sky-400" />}
-              </button>
-            ))}
-          </div>
-        </div>
-
-
         <div className="md:col-span-2 bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Send className="w-4 h-4 text-blue-600 dark:text-sky-400" />
@@ -358,15 +266,20 @@ export const SettingsPage: React.FC = () => {
               {t('supportText')}
             </p>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-sm font-bold text-blue-600 dark:text-sky-400 flex items-center gap-2">
-                <span>{curatorHandle}</span>
+            <div className="grid w-full grid-cols-2 gap-2 sm:w-[min(100%,22rem)] sm:shrink-0">
+              <div className="flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-2 font-mono text-sm font-bold text-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-sky-400">
+                <span className="truncate">{curatorHandle}</span>
                 <button
+                  type="button"
                   onClick={handleCopyCurator}
-                  className="p-1 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  className="shrink-0 p-1 transition-colors hover:text-slate-900 dark:hover:text-white"
                   title={t('copyTelegram')}
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </button>
               </div>
 
@@ -374,10 +287,10 @@ export const SettingsPage: React.FC = () => {
                 href={`https://t.me/${curatorHandle.replace('@', '')}`}
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
+                className="flex h-10 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
               >
-                <span>{t('openInTelegram')}</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Telegram</span>
+                <ExternalLink className="h-4 w-4 shrink-0" />
               </a>
             </div>
           </div>

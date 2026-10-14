@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CalendarDays } from "lucide-react";
 import { KyivRangeCalendar } from "./KyivRangeCalendar";
 import {
   periodLabelUk,
@@ -75,21 +74,11 @@ export const PeriodFilterBar: React.FC<Props> = ({
 
   const rangeGroupActive = rangeActive || open;
 
-  const filterItemClass = (active: boolean, iconOnly?: boolean) =>
-    `inline-flex min-w-0 items-center justify-center rounded-md py-2 text-[13px] font-bold leading-none whitespace-nowrap transition-colors sm:py-1.5 sm:text-[15px] sm:font-semibold ${
-      iconOnly
-        ? "shrink-0 px-1.5 sm:flex-none sm:px-2"
-        : "flex-1 basis-0 px-1 sm:flex-none sm:basis-auto sm:px-3"
-    } ${
+  const filterItemClass = (active: boolean) =>
+    `inline-flex min-w-0 flex-1 basis-0 items-center justify-center rounded-md px-1 py-2 text-[12px] font-bold leading-none whitespace-nowrap transition-colors sm:basis-auto sm:px-3 sm:py-1.5 sm:text-[14px] sm:font-semibold ${
       active
         ? "bg-white text-slate-900 shadow-xs dark:bg-[#0f1829] dark:text-white dark:shadow-none max-sm:font-extrabold"
         : "text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white dark:hover:bg-slate-700/40"
-    } ${
-      active && iconOnly
-        ? "text-sky-500 dark:text-sky-400"
-        : iconOnly
-          ? "text-slate-600 hover:text-sky-500 dark:text-slate-300 dark:hover:text-sky-400"
-          : ""
     }`;
 
   return (
@@ -110,30 +99,15 @@ export const PeriodFilterBar: React.FC<Props> = ({
         ))}
 
         <button
-          type="button"
-          onClick={() => (open ? closeCalendar() : openCalendar())}
-          title={customRangeLabel}
-          className={filterItemClass(rangeGroupActive)}
-        >
-          {t("filterRange")}
-        </button>
-        <span
-          className="my-1 w-px shrink-0 self-stretch bg-slate-300 dark:bg-slate-600"
-          aria-hidden
-        />
-        <button
           ref={calendarBtnRef}
           type="button"
           onClick={() => (open ? closeCalendar() : openCalendar())}
           title={customRangeLabel}
           aria-label={customRangeLabel}
           aria-expanded={open}
-          className={filterItemClass(rangeGroupActive, true)}
+          className={filterItemClass(rangeGroupActive)}
         >
-          <CalendarDays
-            className="h-4 w-4 shrink-0 stroke-[2.5] sm:h-4 sm:w-4"
-            aria-hidden
-          />
+          {value.kind !== "preset" ? customRangeLabel : t("filterRange")}
         </button>
       </div>
 
