@@ -274,12 +274,12 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     <div className="space-y-3 lg:space-y-3.5">
 
 
-      <div className="pb-1 border-b border-slate-200 dark:border-slate-800">
-        <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <CalcIcon className="w-4 h-4 text-blue-600 dark:text-sky-400 shrink-0" />
+      <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+          <CalcIcon className="w-6 h-6 text-blue-600 dark:text-sky-400 shrink-0" />
           <span>{t('calcTitle')}</span>
         </h1>
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 leading-snug">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {t('calcSubtitle')}
         </p>
       </div>
