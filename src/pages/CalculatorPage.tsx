@@ -27,7 +27,7 @@ const fieldNumberSmClass =
 const fieldLabelClass =
   'block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-0.5';
 const fieldSuffixClass =
-  'absolute right-2.5 top-2 text-xs text-slate-400 pointer-events-none';
+  'absolute right-2.5 top-1/2 -translate-y-1/2 text-xs leading-none text-slate-400 pointer-events-none';
 
 export const CalculatorPage: React.FC = () => {
   const { t } = useAuth();

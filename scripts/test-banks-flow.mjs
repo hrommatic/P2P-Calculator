@@ -3,14 +3,15 @@
  * Full bank create/delete flow (admin global + user banks) for manual QA.
  * Usage: node scripts/test-banks-flow.mjs [baseUrl]
  */
+import { requireTestCredentials } from './load-env.mjs';
+
 const BASE = (
   process.argv[2] ||
   process.env.TEST_API_URL ||
   process.env.APP_URL ||
   'https://p2pcalculator-xi.vercel.app'
 ).replace(/\/$/, '');
-const LOGIN = process.env.TEST_LOGIN || 'qwe';
-const PASSWORD = process.env.TEST_PASSWORD || 'QWEqwe123';
+const { login: LOGIN, password: PASSWORD } = requireTestCredentials();
 
 let token = '';
 let userRole = '';

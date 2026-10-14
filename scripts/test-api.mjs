@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
+import { requireTestCredentials } from './load-env.mjs';
+
 const BASE = (
   process.argv[2] ||
   process.env.TEST_API_URL ||
   process.env.APP_URL ||
   "https://p2pcalculator-xi.vercel.app"
 ).replace(/\/$/, "");
-const TEST_LOGIN = process.env.TEST_LOGIN || "qwe";
-const TEST_PASSWORD = process.env.TEST_PASSWORD || "QWEqwe123";
+const { login: TEST_LOGIN, password: TEST_PASSWORD } = requireTestCredentials();
 
 let userRole = "";
 
@@ -109,7 +110,11 @@ await test("Auth: catalog", async () => {
 
 await test("Auth: me", async () => {
   const r = await req("GET", "/auth/me");
-  assert("me 200", r.status === 200 && r.data?.user?.nickname === TEST_LOGIN);
+  assert(
+    "me 200",
+    r.status === 200 &&
+      r.data?.user?.nickname?.toLowerCase() === TEST_LOGIN.toLowerCase(),
+  );
 });
 
 await test("Auth: update profile", async () => {
