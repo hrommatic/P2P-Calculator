@@ -17,7 +17,6 @@ import {
   Search,
   Lock,
   Unlock,
-  KeyRound,
   Trash2,
   Edit,
   Plus,
@@ -81,10 +80,6 @@ export const AdminPage: React.FC = () => {
   const [editNick, setEditNick] = useState("");
   const [editTg, setEditTg] = useState("");
   const [editRole, setEditRole] = useState("student");
-  const [tempPasswordModal, setTempPasswordModal] = useState<{
-    username: string;
-    tempPass: string;
-  } | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<any | null>(null);
 
   const [studentsStats, setStudentsStats] = useState<StudentStatsItem[]>([]);
@@ -245,24 +240,6 @@ export const AdminPage: React.FC = () => {
       showMsg(err.message, "error");
     } finally {
       setIsSavingUserEdit(false);
-    }
-  };
-
-  const handleResetPassword = async (userItem: any) => {
-    if (userRowActionId) return;
-    const actionId = `reset-${userItem.id}`;
-    setUserRowActionId(actionId);
-    try {
-      const res = await api.resetUserPassword(userItem.id);
-      setTempPasswordModal({
-        username: userItem.nickname,
-        tempPass: res.temporaryPassword,
-      });
-      showMsg("Пароль безпечно скинуто");
-    } catch (err: any) {
-      showMsg(err.message, "error");
-    } finally {
-      setUserRowActionId(null);
     }
   };
 
@@ -919,15 +896,6 @@ export const AdminPage: React.FC = () => {
                         <button
                           type="button"
                           disabled={userRowActionId !== null}
-                          onClick={() => handleResetPassword(u)}
-                          className={`p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
-                          title={t("resetPasswordSafe")}
-                        >
-                          <KeyRound className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={userRowActionId !== null}
                           onClick={() => handleOpenEditUser(u)}
                           className={`p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                           title={t("editAccount")}
@@ -1157,43 +1125,6 @@ export const AdminPage: React.FC = () => {
                 </button>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {tempPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
-            <div className="flex items-center gap-3">
-              <KeyRound className="w-8 h-8 text-blue-600" />
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Новий тимчасовий пароль
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Для учня: <strong>{tempPasswordModal.username}</strong>
-                </p>
-              </div>
-            </div>
-
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Попередній пароль учня ніколи не зберігається у відкритому
-              вигляді. Згенеровано новий надійний тимчасовий пароль. Передайте
-              його учневі особисто:
-            </p>
-
-            <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-base font-bold text-center select-all text-blue-600 dark:text-sky-400">
-              {tempPasswordModal.tempPass}
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setTempPasswordModal(null)}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white"
-              >
-                Зрозуміло, скопійовано
-              </button>
-            </div>
           </div>
         </div>
       )}

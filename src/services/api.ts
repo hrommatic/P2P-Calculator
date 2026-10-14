@@ -258,21 +258,24 @@ export const api = {
     return request<{ users: any[] }>(`/admin/users${queryString}`);
   },
   setUserStatus: (id: string, status: 'active' | 'blocked') =>
-    request<{ success: boolean; user: any }>(`/admin/users/${id}/status`, {
+    request<{ success: boolean; user: any }>(`/admin/users/${encodeURIComponent(id)}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     }),
   updateUserProfile: (id: string, body: { nickname?: string; telegram?: string; role?: string }) =>
-    request<{ success: boolean; user: any }>(`/admin/users/${id}/profile`, {
+    request<{ success: boolean; user: any }>(`/admin/users/${encodeURIComponent(id)}/profile`, {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
   resetUserPassword: (id: string) =>
-    request<{ success: boolean; temporaryPassword: string; message: string }>(`/admin/users/${id}/reset-password`, {
-      method: 'POST',
-    }),
+    request<{ success: boolean; temporaryPassword: string; message: string }>(
+      `/admin/users/${encodeURIComponent(id)}/reset-password`,
+      {
+        method: 'POST',
+      },
+    ),
   deleteUser: (id: string) =>
-    request<{ success: boolean; message: string }>(`/admin/users/${id}`, {
+    request<{ success: boolean; message: string }>(`/admin/users/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     }),
   getStudentsStats: () => request<{ results: StudentStatsItem[] }>('/admin/students-stats'),

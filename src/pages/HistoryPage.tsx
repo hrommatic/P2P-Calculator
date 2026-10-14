@@ -10,7 +10,6 @@ import { tradesListKey } from '../lib/trades-query-keys';
 import { Trade } from '../types';
 import {
   History as HistoryIcon,
-  Download,
   Trash2,
   Edit,
   Eye,
@@ -172,25 +171,14 @@ export const HistoryPage: React.FC = () => {
     <div className="space-y-6">
 
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-            <HistoryIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
-            <span>{t('historyTitle')}</span>
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {t('historySubtitle')}
-          </p>
-        </div>
-
-        <a
-          href={api.exportCsvUrl()}
-          download
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 shadow-2xs transition-colors shrink-0"
-        >
-          <Download className="w-4 h-4 text-blue-600 dark:text-sky-400" />
-          <span>{t('exportCsv')}</span>
-        </a>
+      <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+          <HistoryIcon className="w-6 h-6 text-blue-600 dark:text-sky-400" />
+          <span>{t('historyTitle')}</span>
+        </h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {t('historySubtitle')}
+        </p>
       </div>
 
 

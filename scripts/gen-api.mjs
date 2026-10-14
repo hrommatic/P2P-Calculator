@@ -3,6 +3,7 @@ import fs from 'fs';
 const routes = [
   { path: 'auth/register', module: 'auth.routes', method: 'POST', export: 'registerHandler' },
   { path: 'auth/login', module: 'auth.routes', method: 'POST', export: 'loginHandler' },
+  { path: 'auth/reset-password', module: 'auth.routes', method: 'POST', export: 'resetPasswordHandler' },
   { path: 'auth/logout', module: 'auth.routes', method: 'POST', export: 'logoutHandler' },
   { path: 'auth/me', module: 'auth.routes', method: 'GET', export: 'meHandler' },
   { path: 'auth/change-password', module: 'auth.routes', method: 'POST', export: 'changePasswordHandler' },
@@ -268,18 +269,21 @@ for (const { name, file, depth } of groupFiles) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(file, buildGroupRouter(groups[name], depth, name));
   functionCount += 1;
-  if (groupNeedsIndex(groups[name])) {
-    fs.writeFileSync(`${dir}/index.ts`, buildGroupIndex());
-    functionCount += 1;
-  }
+  // Root POST/GET (e.g. /api/trades) is handled by optional catch-all [[...path]], not a separate index function.
 }
 
 const adminRoot = [];
 const adminGlobalBankById = [];
+const adminUsersById = [];
+const adminExchangesById = [];
 
 for (const route of groups.admin) {
   if (route.path === 'global-banks/:id') {
     adminGlobalBankById.push({ ...route, path: ':id' });
+  } else if (route.path.startsWith('users/')) {
+    adminUsersById.push({ ...route, path: route.path.slice('users/'.length) });
+  } else if (route.path === 'exchanges/:id') {
+    adminExchangesById.push({ ...route, path: ':id' });
   } else {
     adminRoot.push(route);
   }
@@ -289,13 +293,18 @@ fs.mkdirSync('api/admin', { recursive: true });
 fs.writeFileSync('api/admin/[[...path]].ts', buildGroupRouter(adminRoot, 2, 'admin'));
 functionCount += 1;
 
-if (adminGlobalBankById.length > 0) {
-  fs.mkdirSync('api/admin/global-banks', { recursive: true });
+function writeAdminNested(subdir, nestedRoutes, pathPrefixAfterGroup) {
+  if (nestedRoutes.length === 0) return;
+  fs.mkdirSync(`api/admin/${subdir}`, { recursive: true });
   fs.writeFileSync(
-    'api/admin/global-banks/[[...path]].ts',
-    buildGroupRouter(adminGlobalBankById, 3, 'admin', ['global-banks']),
+    `api/admin/${subdir}/[[...path]].ts`,
+    buildGroupRouter(nestedRoutes, 3, 'admin', pathPrefixAfterGroup),
   );
   functionCount += 1;
 }
+
+writeAdminNested('global-banks', adminGlobalBankById, ['global-banks']);
+writeAdminNested('users', adminUsersById, ['users']);
+writeAdminNested('exchanges', adminExchangesById, ['exchanges']);
 
 console.log('Generated', functionCount, 'api functions (Hobby plan: max 12)');

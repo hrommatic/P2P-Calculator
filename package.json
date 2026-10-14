@@ -16,7 +16,7 @@
     "test:banks": "node scripts/test-banks-flow.mjs",
     "test:trade-filters": "tsx server/utils/db/trade-filters.test.ts",
     "test:bank-stats": "tsx shared/bank-stats-delta.test.ts",
-    "test:path-segments": "tsx api/_lib/pathSegments.test.ts",
+    "test:path-segments": "tsx scripts/pathSegments.test.ts",
     "test:calculation": "tsx shared/calculation.test.ts",
     "test:kyiv-dates": "tsx server/lib/kyiv-dates.test.ts",
     "test:unit": "npm run test:bank-stats && npm run test:path-segments && npm run test:trade-filters && npm run test:calculation && npm run test:kyiv-dates",

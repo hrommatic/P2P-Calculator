@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import type { VercelRequest } from '@vercel/node';
-import { getGroupPathSegments } from './pathSegments.js';
+import { getGroupPathSegments } from '../api/_lib/pathSegments.js';
 
 function mockReq(partial: {
   url?: string;
@@ -31,6 +31,19 @@ function mockReq(partial: {
   const req = mockReq({ path: 'gb_template_1' });
   assert.deepEqual(getGroupPathSegments(req, 'admin', ['global-banks']), [
     'gb_template_1',
+  ]);
+}
+
+{
+  const req = mockReq({ url: '/api/admin/users/user_123_abcd' });
+  assert.deepEqual(getGroupPathSegments(req, 'admin', ['users']), ['user_123_abcd']);
+}
+
+{
+  const req = mockReq({ path: ['users', 'user_123_abcd', 'status'] });
+  assert.deepEqual(getGroupPathSegments(req, 'admin', ['users']), [
+    'user_123_abcd',
+    'status',
   ]);
 }
 
