@@ -423,6 +423,31 @@ export const AdminPage: React.FC = () => {
 
   const turnoverUnitLabel = turnoverInUsdt && nbuRate ? "USDT" : "UAH";
 
+  /** На sm+ картки в два стовпці — згортання однієї синхронно з іншою. */
+  const toggleBuySideOpen = useCallback(() => {
+    if (window.matchMedia("(min-width: 640px)").matches) {
+      setBuySideOpen((open) => {
+        const next = !open;
+        setSellSideOpen(next);
+        return next;
+      });
+      return;
+    }
+    setBuySideOpen((open) => !open);
+  }, []);
+
+  const toggleSellSideOpen = useCallback(() => {
+    if (window.matchMedia("(min-width: 640px)").matches) {
+      setBuySideOpen((open) => {
+        const next = !open;
+        setSellSideOpen(next);
+        return next;
+      });
+      return;
+    }
+    setSellSideOpen((open) => !open);
+  }, []);
+
   const overviewStatCardClass = (theme: StatTheme) =>
     `${statCardShell(theme)} h-full min-h-[4.75rem] sm:min-h-[5rem]`;
 
@@ -598,7 +623,7 @@ export const AdminPage: React.FC = () => {
                 <div className={overviewStatCardClass("profit")}>
                   <button
                     type="button"
-                    onClick={() => setBuySideOpen((open) => !open)}
+                    onClick={toggleBuySideOpen}
                     aria-expanded={buySideOpen}
                     className="flex w-full items-center justify-between gap-2 text-left rounded-lg -m-1 p-1 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10 transition-colors"
                   >
@@ -664,7 +689,7 @@ export const AdminPage: React.FC = () => {
                 <div className={overviewStatCardClass("turnover")}>
                   <button
                     type="button"
-                    onClick={() => setSellSideOpen((open) => !open)}
+                    onClick={toggleSellSideOpen}
                     aria-expanded={sellSideOpen}
                     className="flex w-full items-center justify-between gap-2 text-left rounded-lg -m-1 p-1 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 transition-colors"
                   >
