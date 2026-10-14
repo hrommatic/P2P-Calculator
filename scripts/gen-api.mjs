@@ -8,7 +8,6 @@ const routes = [
   { path: 'auth/me', module: 'auth.routes', method: 'GET', export: 'meHandler' },
   { path: 'auth/change-password', module: 'auth.routes', method: 'POST', export: 'changePasswordHandler' },
   { path: 'auth/update-profile', module: 'auth.routes', method: 'POST', export: 'updateProfileHandler' },
-  { path: 'exchanges', module: 'auth.routes', method: 'GET', export: 'exchangesHandler' },
   { path: 'settings/public', module: 'auth.routes', method: 'GET', export: 'settingsPublicHandler' },
   { path: 'trades', module: 'trades.routes', method: 'GET', export: 'tradesIndexHandler' },
   { path: 'trades', module: 'trades.routes', method: 'POST', export: 'tradesCreateHandler' },
@@ -246,11 +245,6 @@ fs.mkdirSync('api', { recursive: true });
 fs.mkdirSync('api/_lib', { recursive: true });
 fs.writeFileSync('api/_lib/pathSegments.ts', buildPathSegmentsLib());
 
-fs.writeFileSync('api/health.ts', buildHealthRoute());
-
-const exchangesRoute = routes.find((r) => r.path === 'exchanges');
-fs.writeFileSync('api/exchanges.ts', buildSingleRoute(exchangesRoute));
-
 const catalogRoute = routes.find((r) => r.path === 'catalog');
 fs.writeFileSync('api/catalog.ts', buildSingleRoute(catalogRoute));
 
@@ -262,14 +256,17 @@ const groupFiles = [
   { name: 'settings', file: 'api/settings/[[...path]].ts', depth: 2 },
 ];
 
-let functionCount = 3;
+let functionCount = 1;
 
 for (const { name, file, depth } of groupFiles) {
   const dir = file.slice(0, file.lastIndexOf('/'));
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(file, buildGroupRouter(groups[name], depth, name));
   functionCount += 1;
-  // Root POST/GET (e.g. /api/trades) is handled by optional catch-all [[...path]], not a separate index function.
+  if (groupNeedsIndex(groups[name])) {
+    fs.writeFileSync(`${dir}/index.ts`, buildGroupIndex());
+    functionCount += 1;
+  }
 }
 
 const adminRoot = [];

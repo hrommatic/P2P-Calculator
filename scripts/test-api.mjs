@@ -66,29 +66,11 @@ async function test(name, fn) {
 
 console.log(`Testing ${BASE}\n`);
 
-await test("Public: health", async () => {
-  const r = await req("GET", "/health", null, false);
-  assert(
-    "health 200",
-    r.status === 200 && r.data?.ok === true,
-    JSON.stringify(r.data),
-  );
-});
-
 await test("Public: settings", async () => {
   const r = await req("GET", "/settings/public", null, false);
   assert(
     "settings 200",
     r.status === 200 && r.data?.siteName,
-    JSON.stringify(r.data),
-  );
-});
-
-await test("Public: exchanges", async () => {
-  const r = await req("GET", "/exchanges", null, false);
-  assert(
-    "exchanges 200",
-    r.status === 200 && Array.isArray(r.data?.exchanges),
     JSON.stringify(r.data),
   );
 });
@@ -118,7 +100,9 @@ await test("Auth: catalog", async () => {
   const r = await req("GET", "/catalog");
   assert(
     "catalog 200",
-    r.status === 200 && Array.isArray(r.data?.banks),
+    r.status === 200 &&
+      Array.isArray(r.data?.banks) &&
+      Array.isArray(r.data?.exchanges),
     `status=${r.status} ${JSON.stringify(r.data)?.slice(0, 80)}`,
   );
 });

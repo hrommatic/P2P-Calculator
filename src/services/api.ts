@@ -234,7 +234,6 @@ export const api = {
     });
   },
 
-  getExchanges: () => request<{ exchanges: Exchange[] }>('/exchanges'),
   getPublicSettings: () => request<SiteSettings>('/settings/public'),
 
   getAdminOverview: (

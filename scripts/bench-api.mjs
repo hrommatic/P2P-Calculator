@@ -27,7 +27,7 @@ async function req(method, path, body, token) {
 
 console.log(`Benchmark ${BASE}\n`);
 
-await timed('GET /health', () => req('GET', '/health', null));
+await timed('GET /settings/public', () => req('GET', '/settings/public', null));
 await timed('GET /settings/public', () => req('GET', '/settings/public', null));
 await timed('GET /exchanges', () => req('GET', '/exchanges', null));
 
