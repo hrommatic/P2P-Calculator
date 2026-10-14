@@ -16,7 +16,16 @@ import {
   updateUserPassword,
   updateUserProfile,
   upsertFailedAttempt,
+  deleteSessionsForUser,
 } from '../utils/db/store.js';
+
+function normalizeTelegramHandle(value: string): string | null {
+  let clean = value.trim();
+  if (!clean) return null;
+  if (!clean.startsWith('@')) clean = `@${clean}`;
+  if (!/^@[a-zA-Z0-9_]{3,32}$/.test(clean)) return null;
+  return clean.toLowerCase();
+}
 
 export async function handleAuthRegister(req: VercelRequest, res: VercelResponse) {
   const body = parseJsonBody(req);
@@ -164,6 +173,74 @@ export async function handleAuthMe(req: VercelRequest, res: VercelResponse, user
   return res.json({
     user: toPublicUser(user),
     siteSettings,
+  });
+}
+
+export async function handleAuthResetPassword(req: VercelRequest, res: VercelResponse) {
+  const body = parseJsonBody(req);
+  const nickname = body.nickname;
+  const telegram = body.telegram;
+  const newPassword = body.newPassword;
+  const confirmNewPassword = body.confirmNewPassword;
+  const ip = getClientIp(req);
+  const rateLimitKey = `reset_${ip}`;
+
+  const attemptInfo = await getFailedAttempt(rateLimitKey);
+  if (attemptInfo?.lockedUntil && attemptInfo.lockedUntil > Date.now()) {
+    const remainingSeconds = Math.ceil((attemptInfo.lockedUntil - Date.now()) / 1000);
+    return res.status(429).json({
+      error: `Забагато спроб. Спробуйте знову через ${remainingSeconds} сек.`,
+    });
+  }
+
+  const genericError =
+    'Не вдалося відновити пароль. Перевірте нікнейм і Telegram, як при реєстрації.';
+
+  if (!nickname || typeof nickname !== 'string' || !telegram || typeof telegram !== 'string') {
+    return res.status(400).json({ error: 'Заповніть усі поля' });
+  }
+
+  const cleanNickname = nickname.trim().toLowerCase();
+  if (!/^[a-zA-Z0-9_]{3,24}$/.test(cleanNickname)) {
+    return res.status(400).json({ error: genericError });
+  }
+
+  const cleanTelegram = normalizeTelegramHandle(telegram);
+  if (!cleanTelegram) {
+    return res.status(400).json({ error: 'Некоректний Telegram у форматі @username' });
+  }
+
+  if (typeof newPassword !== 'string' || newPassword.length < 6) {
+    return res.status(400).json({ error: 'Новий пароль має бути не менше 6 символів' });
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    return res.status(400).json({ error: 'Паролі не співпадають' });
+  }
+
+  const user = await findUserByNickname(cleanNickname);
+  const siteSettings = await getSiteSettings();
+
+  if (!user || normalizeTelegramHandle(user.telegram) !== cleanTelegram) {
+    const count = (attemptInfo?.count || 0) + 1;
+    const lockedUntil = count >= 5 ? Date.now() + 5 * 60 * 1000 : undefined;
+    await upsertFailedAttempt(rateLimitKey, count, lockedUntil);
+    return res.status(400).json({ error: genericError });
+  }
+
+  if (user.status === 'blocked') {
+    return res.status(403).json({
+      error: `Ваш акаунт заблоковано. Напишіть у Telegram куратору ${siteSettings.curatorTelegram} для відновлення доступу.`,
+    });
+  }
+
+  await deleteFailedAttempt(rateLimitKey);
+  await updateUserPassword(user.id, hashPassword(newPassword));
+  await deleteSessionsForUser(user.id);
+
+  return res.json({
+    success: true,
+    message: 'Пароль змінено. Увійдіть з новим паролем.',
   });
 }
 

@@ -53,9 +53,12 @@ export const translations: Record<Language, Record<string, string>> = {
     haveAccount: "Вже маєте акаунт?",
     noAccount: "Ще немає акаунта?",
     forgotPassword: "Забули пароль?",
-    forgotPasswordModalTitle: "Відновлення доступу",
+    forgotPasswordModalTitle: "Відновлення пароля",
     forgotPasswordModalText:
-      "Виникли проблеми зі входом? Напишіть у Telegram куратору {curator}, щоб відновити доступ до акаунта.",
+      "Вкажіть нікнейм і Telegram, як при реєстрації, та оберіть новий пароль.",
+    resetPasswordBtn: "Змінити пароль",
+    resetPasswordSuccess: "Пароль змінено. Увійдіть з новим паролем.",
+    resetPasswordTelegramHint: "Той самий @username, що вказували при реєстрації",
     contactCuratorBtn: "Написати Куратору в Telegram",
     close: "Закрити",
     loginRateLimitError:
@@ -281,9 +284,12 @@ export const translations: Record<Language, Record<string, string>> = {
     haveAccount: "Уже есть аккаунт?",
     noAccount: "Ещё нет аккаунта?",
     forgotPassword: "Забыли пароль?",
-    forgotPasswordModalTitle: "Восстановление доступа",
+    forgotPasswordModalTitle: "Восстановление пароля",
     forgotPasswordModalText:
-      "Возникли проблемы со входом? Напишите в Telegram куратору {curator}, чтобы восстановить доступ к аккаунту.",
+      "Укажите никнейм и Telegram, как при регистрации, и задайте новый пароль.",
+    resetPasswordBtn: "Сменить пароль",
+    resetPasswordSuccess: "Пароль изменён. Войдите с новым паролем.",
+    resetPasswordTelegramHint: "Тот же @username, что указывали при регистрации",
     contactCuratorBtn: "Написать Куратору в Telegram",
     close: "Закрыть",
     loginRateLimitError:
@@ -509,9 +515,12 @@ export const translations: Record<Language, Record<string, string>> = {
     haveAccount: "Already have an account?",
     noAccount: "Don't have an account?",
     forgotPassword: "Forgot password?",
-    forgotPasswordModalTitle: "Account Recovery",
+    forgotPasswordModalTitle: "Reset password",
     forgotPasswordModalText:
-      "Having trouble logging in? Message curator {curator} on Telegram to safely restore access.",
+      "Enter your nickname and Telegram from registration, then choose a new password.",
+    resetPasswordBtn: "Update password",
+    resetPasswordSuccess: "Password updated. Sign in with your new password.",
+    resetPasswordTelegramHint: "The same @username you used when signing up",
     contactCuratorBtn: "Contact Curator on Telegram",
     close: "Close",
     loginRateLimitError:

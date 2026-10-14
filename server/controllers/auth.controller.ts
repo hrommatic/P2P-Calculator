@@ -18,6 +18,10 @@ export async function handleAuthMe(req: VercelRequest, res: VercelResponse, user
   return service.handleAuthMe(req, res, user);
 }
 
+export async function handleAuthResetPassword(req: VercelRequest, res: VercelResponse) {
+  return service.handleAuthResetPassword(req, res);
+}
+
 export async function handleAuthChangePassword(req: VercelRequest, res: VercelResponse, user: User) {
   return service.handleAuthChangePassword(req, res, user);
 }

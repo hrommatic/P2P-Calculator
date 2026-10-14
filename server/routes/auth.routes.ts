@@ -12,6 +12,11 @@ export const loginHandler = withPublic(async (req, res) => {
   return methodNotAllowed(res, ['POST']);
 });
 
+export const resetPasswordHandler = withPublic(async (req, res) => {
+  if (req.method === 'POST') return controller.handleAuthResetPassword(req, res);
+  return methodNotAllowed(res, ['POST']);
+});
+
 export const logoutHandler = withAuth(async (req, res, user) => {
   if (req.method === 'POST') return controller.handleAuthLogout(req, res, user);
   return methodNotAllowed(res, ['POST']);

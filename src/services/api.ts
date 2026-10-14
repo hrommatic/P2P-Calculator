@@ -78,6 +78,17 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  resetPassword: (body: {
+    nickname: string;
+    telegram: string;
+    newPassword: string;
+    confirmNewPassword: string;
+  }) =>
+    request<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   logout: () =>
     request<{ success: boolean }>('/auth/logout', {
       method: 'POST',

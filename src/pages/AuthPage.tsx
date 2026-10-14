@@ -15,10 +15,10 @@ import {
 import { ButtonLoader } from '../components/ui/Loader';
 import { Language } from '../types';
 import { layoutShellClass } from '../lib/layout-shell';
-import { resolveCuratorTelegram } from '../lib/site-defaults';
+import { api } from '../services/api';
 
 export const AuthPage: React.FC = () => {
-  const { login, register, siteSettings, theme, setTheme, language, setLanguage, t } = useAuth();
+  const { login, register, theme, setTheme, language, setLanguage, t } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [nickname, setNickname] = useState('');
@@ -29,10 +29,88 @@ export const AuthPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [resetNickname, setResetNickname] = useState('');
+  const [resetTelegram, setResetTelegram] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
 
-  const curator = resolveCuratorTelegram(siteSettings?.curatorTelegram);
+  const openForgotModal = () => {
+    setResetNickname(nickname.trim());
+    setResetTelegram('');
+    setResetPassword('');
+    setResetConfirmPassword('');
+    setResetError(null);
+    setResetSuccess(null);
+    setShowResetPassword(false);
+    setShowResetConfirmPassword(false);
+    setForgotModalOpen(true);
+  };
+
+  const closeForgotModal = () => {
+    if (isResetting) return;
+    setForgotModalOpen(false);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError(null);
+    setResetSuccess(null);
+
+    if (!resetNickname.trim() || !resetTelegram.trim() || !resetPassword || !resetConfirmPassword) {
+      setResetError(
+        language === 'en'
+          ? 'Please fill in all fields'
+          : language === 'ru'
+            ? 'Заполните все поля'
+            : 'Заповніть усі поля',
+      );
+      return;
+    }
+    if (resetPassword.length < 6) {
+      setResetError(
+        language === 'en'
+          ? 'Password must be at least 6 characters'
+          : language === 'ru'
+            ? 'Пароль должен быть не менее 6 символов'
+            : 'Пароль має містити щонайменше 6 символів',
+      );
+      return;
+    }
+    if (resetPassword !== resetConfirmPassword) {
+      setResetError(
+        language === 'en'
+          ? 'Passwords do not match'
+          : language === 'ru'
+            ? 'Пароли не совпадают'
+            : 'Паролі не співпадають',
+      );
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const result = await api.resetPassword({
+        nickname: resetNickname.trim(),
+        telegram: resetTelegram.trim(),
+        newPassword: resetPassword,
+        confirmNewPassword: resetConfirmPassword,
+      });
+      setResetSuccess(result.message || t('resetPasswordSuccess'));
+      setPassword('');
+      setNickname(resetNickname.trim());
+    } catch (err: unknown) {
+      setResetError(err instanceof Error ? err.message : 'Помилка відновлення пароля');
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   useEffect(() => {
     setShowPassword(false);
@@ -314,7 +392,7 @@ export const AuthPage: React.FC = () => {
               <div className="flex justify-end pt-1">
                 <button
                   type="button"
-                  onClick={() => setForgotModalOpen(true)}
+                  onClick={openForgotModal}
                   className="text-sm text-blue-600 dark:text-sky-400 hover:underline font-medium"
                 >
                   {t('forgotPassword')}
@@ -344,8 +422,17 @@ export const AuthPage: React.FC = () => {
 
 
       {forgotModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          onClick={closeForgotModal}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-sky-950/40 text-blue-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-5 h-5" />
@@ -361,34 +448,143 @@ export const AuthPage: React.FC = () => {
             </div>
 
             <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {t('forgotPasswordModalText', { curator })}
+              {t('forgotPasswordModalText')}
             </p>
 
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-sm">
-              <span className="text-slate-500 dark:text-slate-400 block mb-0.5">Telegram куратора:</span>
-              <span className="font-mono font-bold text-blue-600 dark:text-sky-400 text-sm select-all">
-                {curator}
-              </span>
-            </div>
+            {resetSuccess ? (
+              <div className="p-3 rounded-lg text-sm bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50">
+                {resetSuccess}
+              </div>
+            ) : (
+              <form onSubmit={handleResetPassword} className="space-y-3 text-sm">
+                {resetError && (
+                  <div className="p-3 rounded-lg flex items-start gap-2 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setForgotModalOpen(false)}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
-              >
-                {t('close')}
-              </button>
-              <a
-                href={`https://t.me/${curator.replace('@', '')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>{t('contactCuratorBtn')}</span>
-              </a>
-            </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {t('nickname')}
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      value={resetNickname}
+                      onChange={(e) => setResetNickname(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {t('telegram')}
+                  </label>
+                  <div className="relative">
+                    <Send className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      value={resetTelegram}
+                      onChange={(e) => setResetTelegram(e.target.value)}
+                      placeholder={t('telegramPlaceholder')}
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {t('resetPasswordTelegramHint')}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {t('password')}
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      autoComplete="new-password"
+                      className={`auth-password-field w-full pl-9 pr-10 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white${showResetPassword ? '' : ' auth-password-mask'}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      aria-label={showResetPassword ? t('hidePassword') : t('showPassword')}
+                    >
+                      {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {t('confirmPassword')}
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      className={`auth-password-field w-full pl-9 pr-10 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-900 dark:text-white${showResetConfirmPassword ? '' : ' auth-password-mask'}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirmPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      aria-label={showResetConfirmPassword ? t('hidePassword') : t('showPassword')}
+                    >
+                      {showResetConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeForgotModal}
+                    disabled={isResetting}
+                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  >
+                    {t('close')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isResetting}
+                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {isResetting ? (
+                      <ButtonLoader label={language === 'en' ? 'Saving...' : language === 'ru' ? 'Сохранение...' : 'Збереження...'} />
+                    ) : (
+                      t('resetPasswordBtn')
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {resetSuccess && (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={closeForgotModal}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {t('signInBtn')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGroupPathSegments } from '../_lib/pathSegments.js';
-import { registerHandler, loginHandler, logoutHandler, meHandler, changePasswordHandler, updateProfileHandler } from '../../server/routes/auth.routes.js';
+import { registerHandler, loginHandler, resetPasswordHandler, logoutHandler, meHandler, changePasswordHandler, updateProfileHandler } from '../../server/routes/auth.routes.js';
 
 type RouteEntry = {
   segments: string[];
@@ -11,6 +11,7 @@ type RouteEntry = {
 const routes: RouteEntry[] = [
   { segments: ["register"], method: 'POST', handler: registerHandler },
   { segments: ["login"], method: 'POST', handler: loginHandler },
+  { segments: ["reset-password"], method: 'POST', handler: resetPasswordHandler },
   { segments: ["logout"], method: 'POST', handler: logoutHandler },
   { segments: ["me"], method: 'GET', handler: meHandler },
   { segments: ["change-password"], method: 'POST', handler: changePasswordHandler },
