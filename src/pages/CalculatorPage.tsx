@@ -14,6 +14,7 @@ import {
   ArrowUp,
 } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
+import { calculateTrade } from '@/shared/calculation';
 
 const fieldSelectClass =
   'select-field w-full px-2.5 py-2 text-xs sm:text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-0';
@@ -73,66 +74,64 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
     const numBuyRate = parseFloat(buyRate) || 0;
     const numBuyAmountUah = parseFloat(buyAmountUah) || 0;
     const numBuyComm = parseFloat(buyCommission) || 0;
-
-    const calcBuyUsdt = numBuyRate > 0 ? numBuyAmountUah / numBuyRate : 0;
-
-    let calcBuyCommUah = 0;
-    if (buyCommissionType === 'percent') {
-      calcBuyCommUah = (numBuyAmountUah * numBuyComm) / 100;
-    } else if (buyCommissionType === 'fixed_uah') {
-      calcBuyCommUah = numBuyComm;
-    } else if (buyCommissionType === 'fixed_usdt') {
-      calcBuyCommUah = numBuyComm * numBuyRate;
-    }
-
     const numSellRate = parseFloat(sellRate) || 0;
-    const numCustomSellUsdt = parseFloat(sellUsdtAmount) || 0;
-    const effectiveSellUsdt =
-      numCustomSellUsdt > 0 ? numCustomSellUsdt : calcBuyUsdt;
-    const calcGrossRevenueUah = effectiveSellUsdt * numSellRate;
-
     const numSellComm = parseFloat(sellCommission) || 0;
-    let calcSellCommUah = 0;
-    if (sellCommissionType === 'percent') {
-      calcSellCommUah = (calcGrossRevenueUah * numSellComm) / 100;
-    } else if (sellCommissionType === 'fixed_uah') {
-      calcSellCommUah = numSellComm;
-    } else if (sellCommissionType === 'fixed_usdt') {
-      calcSellCommUah = numSellComm * numSellRate;
-    }
-
     const numExtraExpenses = parseFloat(extraExpensesUah) || 0;
+    const numCustomSellUsdt = parseFloat(sellUsdtAmount) || 0;
 
-    const totalCostUah = numBuyAmountUah + calcBuyCommUah;
-    const totalRevenueUah = calcGrossRevenueUah;
-    const totalFeesUah = calcBuyCommUah + calcSellCommUah + numExtraExpenses;
-    const grossProfitUah = totalRevenueUah - numBuyAmountUah;
-    const netProfitUah =
-      totalRevenueUah - totalCostUah - calcSellCommUah - numExtraExpenses;
-    const roiPercent =
-      totalCostUah > 0 ? (netProfitUah / totalCostUah) * 100 : 0;
-    const spreadPerUnit = numSellRate - numBuyRate;
-    const spreadPercent =
-      numBuyRate > 0 ? (spreadPerUnit / numBuyRate) * 100 : 0;
-
-    return {
+    const empty = {
       numBuyRate,
       numBuyAmountUah,
       numBuyComm,
       numSellRate,
       numSellComm,
       numExtraExpenses,
-      effectiveSellUsdt,
-      calcBuyUsdt,
-      calcGrossRevenueUah,
-      totalCostUah,
-      totalRevenueUah,
-      totalFeesUah,
-      grossProfitUah,
-      netProfitUah,
-      roiPercent,
-      spreadPerUnit,
-      spreadPercent,
+      effectiveSellUsdt: 0,
+      calcBuyUsdt: 0,
+      totalCostUah: 0,
+      totalRevenueUah: 0,
+      totalFeesUah: 0,
+      grossProfitUah: 0,
+      netProfitUah: 0,
+      roiPercent: 0,
+      spreadPerUnit: 0,
+      spreadPercent: 0,
+    };
+
+    if (numBuyRate <= 0 || numSellRate <= 0) {
+      return empty;
+    }
+
+    const calc = calculateTrade({
+      buyRate: numBuyRate,
+      buyAmountUah: numBuyAmountUah,
+      buyCommission: numBuyComm,
+      buyCommissionType,
+      sellRate: numSellRate,
+      sellUsdtAmount: numCustomSellUsdt > 0 ? numCustomSellUsdt : undefined,
+      sellCommission: numSellComm,
+      sellCommissionType,
+      extraExpensesUah: numExtraExpenses,
+      defaultBuyWhenEmpty: false,
+    });
+
+    return {
+      numBuyRate: calc.buyRate,
+      numBuyAmountUah: calc.buyAmountUah,
+      numBuyComm,
+      numSellRate: calc.sellRate,
+      numSellComm,
+      numExtraExpenses: calc.extraExpensesUah,
+      effectiveSellUsdt: calc.sellUsdtAmount,
+      calcBuyUsdt: calc.buyUsdtAmount,
+      totalCostUah: calc.totalCostUah,
+      totalRevenueUah: calc.grossRevenueUah,
+      totalFeesUah: calc.totalCommissionsUah,
+      grossProfitUah: calc.grossProfitUah,
+      netProfitUah: calc.netProfitUah,
+      roiPercent: calc.roiPercent,
+      spreadPerUnit: calc.spreadPerUnit,
+      spreadPercent: calc.spreadPercent,
     };
   }, [
     buyRate,

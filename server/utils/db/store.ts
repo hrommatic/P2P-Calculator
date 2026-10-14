@@ -34,6 +34,12 @@ import {
   buildTradeListQuery,
   type TradeListFilters,
 } from "./trade-filters.js";
+import {
+  bankStatsDeltaForTrade,
+  mergeBankStatsDeltaMaps,
+  roundMoney,
+  type TradeForBankStats,
+} from "../../../shared/bank-stats-delta.js";
 
 const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
 
@@ -334,6 +340,76 @@ export async function deleteUserBankRecord(id: string) {
   await prisma.userBank.delete({ where: { id } });
 }
 
+async function applyUserBankStatsDeltas(
+  deltas: Map<
+    string,
+    {
+      buyTurnoverUah: number;
+      sellTurnoverUah: number;
+      netProfitUah: number;
+      tradesCount: number;
+    }
+  >,
+): Promise<void> {
+  if (deltas.size === 0) return;
+
+  await withDbRetry(async () => {
+    const now = new Date();
+    await prisma.$transaction(async (tx) => {
+      for (const [bankId, delta] of deltas) {
+        if (
+          delta.buyTurnoverUah === 0 &&
+          delta.sellTurnoverUah === 0 &&
+          delta.netProfitUah === 0 &&
+          delta.tradesCount === 0
+        ) {
+          continue;
+        }
+
+        const bank = await tx.userBank.findUnique({ where: { id: bankId } });
+        if (!bank || bank.isArchived) continue;
+
+        await tx.userBank.update({
+          where: { id: bankId },
+          data: {
+            buyTurnoverUah: roundMoney(bank.buyTurnoverUah + delta.buyTurnoverUah),
+            sellTurnoverUah: roundMoney(
+              bank.sellTurnoverUah + delta.sellTurnoverUah,
+            ),
+            netProfitUah: roundMoney(bank.netProfitUah + delta.netProfitUah),
+            tradesCount: Math.max(0, bank.tradesCount + delta.tradesCount),
+            updatedAt: now,
+          },
+        });
+      }
+    }, TX_OPTIONS);
+  });
+}
+
+export async function incrementUserBankStatsFromTrade(
+  trade: TradeForBankStats,
+): Promise<void> {
+  await applyUserBankStatsDeltas(bankStatsDeltaForTrade(trade, 1));
+}
+
+export async function decrementUserBankStatsFromTrade(
+  trade: TradeForBankStats,
+): Promise<void> {
+  await applyUserBankStatsDeltas(bankStatsDeltaForTrade(trade, -1));
+}
+
+export async function replaceUserBankStatsForTradeUpdate(
+  before: TradeForBankStats,
+  after: TradeForBankStats,
+): Promise<void> {
+  const deltas = mergeBankStatsDeltaMaps(
+    bankStatsDeltaForTrade(before, -1),
+    bankStatsDeltaForTrade(after, 1),
+  );
+  await applyUserBankStatsDeltas(deltas);
+}
+
+/** Full recompute — use for ?sync=1 repair or legacy data fixes. */
 export async function syncUserBankStats(userId: string) {
   await withDbRetry(async () => {
     const [banks, trades] = await Promise.all([

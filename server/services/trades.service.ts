@@ -9,7 +9,9 @@ import {
   findTradeById,
   findUserBankById,
   getTradesForUser,
-  syncUserBankStats,
+  decrementUserBankStatsFromTrade,
+  incrementUserBankStatsFromTrade,
+  replaceUserBankStatsForTradeUpdate,
   updateTradeRecord,
 } from '../utils/db/store.js';
 
@@ -119,7 +121,7 @@ export async function handlePostTrade(req: VercelRequest, res: VercelResponse, u
   };
 
   await createTradeRecord(newTrade);
-  await syncUserBankStats(user.id);
+  await incrementUserBankStatsFromTrade(newTrade);
   return res.json({ success: true, trade: newTrade });
 }
 
@@ -185,7 +187,7 @@ export async function handlePutTrade(req: VercelRequest, res: VercelResponse, us
   };
 
   await updateTradeRecord(updatedTrade);
-  await syncUserBankStats(existingTrade.userId);
+  await replaceUserBankStatsForTradeUpdate(existingTrade, updatedTrade);
   return res.json({ success: true, trade: updatedTrade });
 }
 
@@ -196,7 +198,7 @@ export async function handleDeleteTrade(req: VercelRequest, res: VercelResponse,
   }
 
   await deleteTradeRecord(existingTrade.id);
-  await syncUserBankStats(existingTrade.userId);
+  await decrementUserBankStatsFromTrade(existingTrade);
   return res.json({ success: true, message: 'Сделка видалена' });
 }
 
