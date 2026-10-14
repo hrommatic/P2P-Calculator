@@ -348,7 +348,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   disabled={banks.length === 0}
                 >
                   {banks.length === 0 && (
-                    <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
+                    <option value="">{t('noBanksYet')}</option>
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
@@ -487,7 +487,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
                   disabled={banks.length === 0}
                 >
                   {banks.length === 0 && (
-                    <option value="">{t('noBanks') || 'Немає банків — додайте в розділі «Мої банки»'}</option>
+                    <option value="">{t('noBanksYet')}</option>
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
