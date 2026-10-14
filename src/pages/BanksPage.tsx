@@ -47,6 +47,7 @@ export const BanksPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<UserBank | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedGlobalBankId, setSelectedGlobalBankId] = useState("");
 
   const addableGlobalBanks = useMemo(
@@ -54,14 +55,31 @@ export const BanksPage: React.FC = () => {
     [banks, globalBanks],
   );
 
-  const fetchBanks = async (sync?: boolean) => {
-    setIsRefreshing(true);
+  const fetchBanks = async (sync?: boolean, quiet = false) => {
+    if (!quiet) setIsRefreshing(true);
     try {
       await refreshCatalog(sync);
     } catch (err) {
       console.error("Error fetching banks:", err);
     } finally {
-      setIsRefreshing(false);
+      if (!quiet) setIsRefreshing(false);
+    }
+  };
+
+  const prefillAddModalFromCatalog = (
+    catalogBanks: UserBank[],
+    catalogGlobalBanks: GlobalBank[],
+  ) => {
+    const addable = getAddableGlobalBanks(catalogBanks, catalogGlobalBanks);
+    const first = addable[0];
+    if (first) {
+      setSelectedGlobalBankId(first.id);
+      setName(first.name);
+      setTurnoverLimit(String(first.defaultLimitUah));
+    } else {
+      setSelectedGlobalBankId("");
+      setName("");
+      setTurnoverLimit("100000");
     }
   };
 
@@ -74,31 +92,12 @@ export const BanksPage: React.FC = () => {
     }
   };
 
-  const handleOpenAddModal = async () => {
+  const handleOpenAddModal = () => {
     setEditingBank(null);
     setNotes("");
     setFormError(null);
     setIsSaving(false);
-    let catalogBanks = banks;
-    let catalogGlobalBanks = globalBanks;
-    try {
-      const catalog = await refreshCatalog();
-      catalogBanks = catalog.banks;
-      catalogGlobalBanks = catalog.globalBanks;
-    } catch (err) {
-      console.error("Failed to refresh bank catalog:", err);
-    }
-    const addable = getAddableGlobalBanks(catalogBanks, catalogGlobalBanks);
-    const first = addable[0];
-    if (first) {
-      setSelectedGlobalBankId(first.id);
-      setName(first.name);
-      setTurnoverLimit(String(first.defaultLimitUah));
-    } else {
-      setSelectedGlobalBankId("");
-      setName("");
-      setTurnoverLimit("100000");
-    }
+    prefillAddModalFromCatalog(banks, globalBanks);
     setIsModalOpen(true);
   };
 
@@ -178,7 +177,7 @@ export const BanksPage: React.FC = () => {
       }
 
       setIsModalOpen(false);
-      fetchBanks();
+      void fetchBanks(undefined, true);
     } catch (err: any) {
       setFormError(err.message || "Помилка збереження банку");
     } finally {
@@ -187,13 +186,16 @@ export const BanksPage: React.FC = () => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
     try {
       await api.deleteBank(deleteTarget.id);
       setDeleteTarget(null);
-      fetchBanks();
+      void fetchBanks(undefined, true);
     } catch (err) {
       console.error("Failed to delete bank:", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -549,7 +551,9 @@ export const BanksPage: React.FC = () => {
       {deleteTarget && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-          onClick={() => setDeleteTarget(null)}
+          onClick={() => {
+            if (!isDeleting) setDeleteTarget(null);
+          }}
           role="presentation"
         >
           <div
@@ -567,16 +571,24 @@ export const BanksPage: React.FC = () => {
             </p>
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
+                type="button"
+                disabled={isDeleting}
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+                className="px-4 py-2.5 text-sm font-semibold rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {t("cancel")}
               </button>
               <button
+                type="button"
+                disabled={isDeleting}
                 onClick={handleDeleteConfirm}
-                className="px-4 py-2.5 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
+                className="inline-flex items-center justify-center min-w-[8rem] px-4 py-2.5 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-70 disabled:pointer-events-none"
               >
-                {t("deleteBank")}
+                {isDeleting ? (
+                  <ButtonLoader label="Видалення..." />
+                ) : (
+                  t("deleteBank")
+                )}
               </button>
             </div>
           </div>

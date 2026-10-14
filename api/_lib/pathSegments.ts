@@ -6,7 +6,7 @@ export function getGroupPathSegments(
   groupName: string,
 ): string[] {
   const queryPath = req.query.path;
-  if (queryPath) {
+  if (queryPath !== undefined && queryPath !== null) {
     const parts = Array.isArray(queryPath) ? queryPath : [queryPath];
     return parts.flatMap((p) => String(p).split('/').filter(Boolean));
   }

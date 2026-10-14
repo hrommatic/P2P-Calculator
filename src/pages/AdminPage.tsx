@@ -27,6 +27,9 @@ import {
   Eye,
   RefreshCw,
   ArrowLeftRight,
+  ArrowDownLeft,
+  ArrowUpRight,
+  FileText,
   ImagePlus,
   ImageOff,
 } from "lucide-react";
@@ -418,7 +421,7 @@ export const AdminPage: React.FC = () => {
   const turnoverUnitLabel = turnoverInUsdt && nbuRate ? "USDT" : "UAH";
 
   const overviewStatCardClass = (theme: StatTheme) =>
-    `${statCardShell(theme)} h-full min-h-[5.25rem] sm:min-h-[5.5rem]`;
+    `${statCardShell(theme)} h-full min-h-[4.75rem] sm:min-h-[5rem]`;
 
   const turnoverCardClass =
     overviewStatCardClass("turnover") +
@@ -434,52 +437,6 @@ export const AdminPage: React.FC = () => {
     week: t("filterWeek"),
     month: t("filterMonth"),
   };
-
-  const overviewMiniStats: {
-    key: string;
-    theme: StatTheme;
-    label: string;
-    value: string;
-  }[] = overview
-    ? [
-        {
-          key: "avgBuy",
-          theme: "profit",
-          label: t("adminAvgBuy"),
-          value: formatRate(rateExtras.avgBuyRate),
-        },
-        {
-          key: "avgSell",
-          theme: "roi",
-          label: t("adminAvgSell"),
-          value: formatRate(rateExtras.avgSellRate),
-        },
-        {
-          key: "minBuy",
-          theme: "turnover",
-          label: t("adminMinBuy"),
-          value: formatRate(rateExtras.minBuyRate),
-        },
-        {
-          key: "maxSell",
-          theme: "trades",
-          label: t("adminMaxSell"),
-          value: formatRate(rateExtras.maxSellRate),
-        },
-        {
-          key: "activeStudents",
-          theme: "roi",
-          label: t("activeStudents"),
-          value: String(overview.activeStudents),
-        },
-        {
-          key: "totalStudents",
-          theme: "banks",
-          label: t("totalStudents"),
-          value: String(overview.totalStudents),
-        },
-      ]
-    : [];
 
   const navTabs = [
     { id: "overview", label: t("adminOverview"), icon: BarChart3 },
@@ -556,7 +513,10 @@ export const AdminPage: React.FC = () => {
                     <p className={statLabelClass("profit")}>
                       {t("periodProfit")}
                     </p>
-                    <span className={statHeaderIconSlotClass} aria-hidden />
+                    <TrendingUp
+                      className={`${statHeaderIconSlotClass} ${statThemeClass.profit.label}`}
+                      aria-hidden
+                    />
                   </div>
                   <p className={statValueClass("profit")}>
                     {periodStats.profit < 0 ? "-" : ""}
@@ -572,7 +532,10 @@ export const AdminPage: React.FC = () => {
                     <p className={statLabelClass("roi")}>
                       {t("periodRoiSpread")}
                     </p>
-                    <span className={statHeaderIconSlotClass} aria-hidden />
+                    <BarChart3
+                      className={`${statHeaderIconSlotClass} ${statThemeClass.roi.label}`}
+                      aria-hidden
+                    />
                   </div>
                   <p className={statValueClass("roi")}>
                     {periodStats.roiPercent < 0 ? "-" : ""}
@@ -611,7 +574,10 @@ export const AdminPage: React.FC = () => {
                     <p className={statLabelClass("trades")}>
                       {t("periodTradesCount")}
                     </p>
-                    <span className={statHeaderIconSlotClass} aria-hidden />
+                    <FileText
+                      className={`${statHeaderIconSlotClass} ${statThemeClass.trades.label}`}
+                      aria-hidden
+                    />
                   </div>
                   <p className={statValueClass("trades")}>
                     {periodStats.tradesCount}
@@ -619,21 +585,132 @@ export const AdminPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
-                {overviewMiniStats.map((item) => (
-                  <div
-                    key={item.key}
-                    className={overviewStatCardClass(item.theme)}
-                  >
-                    <div className={statHeaderClass}>
-                      <p className={statLabelCompactClass(item.theme)}>
-                        {item.label}
-                      </p>
-                      <span className={statHeaderIconSlotClass} aria-hidden />
-                    </div>
-                    <p className={statValueClass(item.theme)}>{item.value}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 min-w-0">
+                <div className={overviewStatCardClass("profit")}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ArrowDownLeft
+                      className={`w-4 h-4 shrink-0 ${statThemeClass.profit.label}`}
+                      aria-hidden
+                    />
+                    <p className={`${statLabelClass("profit")} mb-0`}>
+                      {t("adminBuySide")}
+                    </p>
                   </div>
-                ))}
+                  <dl className="space-y-0 divide-y divide-emerald-500/15 dark:divide-emerald-400/20">
+                    {[
+                      {
+                        label: t("adminAvgPrice"),
+                        value: formatRate(rateExtras.avgBuyRate),
+                      },
+                      {
+                        label: t("adminMinPrice"),
+                        value: formatRate(rateExtras.minBuyRate),
+                      },
+                      {
+                        label: t("adminMaxPrice"),
+                        value: formatRate(rateExtras.maxBuyRate),
+                      },
+                    ].map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                      >
+                        <dt className={statLabelCompactClass("profit")}>
+                          {row.label}
+                        </dt>
+                        <dd
+                          className={`${statValueClass("profit")} text-base sm:text-lg`}
+                        >
+                          {row.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+
+                <div className={overviewStatCardClass("turnover")}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ArrowUpRight
+                      className={`w-4 h-4 shrink-0 ${statThemeClass.turnover.label}`}
+                      aria-hidden
+                    />
+                    <p className={`${statLabelClass("turnover")} mb-0`}>
+                      {t("adminSellSide")}
+                    </p>
+                  </div>
+                  <dl className="space-y-0 divide-y divide-violet-500/15 dark:divide-violet-400/20">
+                    {[
+                      {
+                        label: t("adminAvgPrice"),
+                        value: formatRate(rateExtras.avgSellRate),
+                      },
+                      {
+                        label: t("adminMinPrice"),
+                        value: formatRate(rateExtras.minSellRate),
+                      },
+                      {
+                        label: t("adminMaxPrice"),
+                        value: formatRate(rateExtras.maxSellRate),
+                      },
+                    ].map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                      >
+                        <dt className={statLabelCompactClass("turnover")}>
+                          {row.label}
+                        </dt>
+                        <dd
+                          className={`${statValueClass("turnover")} text-base sm:text-lg`}
+                        >
+                          {row.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+
+              <div className={overviewStatCardClass("roi")}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Users
+                    className={`w-4 h-4 shrink-0 ${statThemeClass.roi.label}`}
+                    aria-hidden
+                  />
+                  <p className={`${statLabelClass("roi")} mb-0`}>
+                    {t("adminStudentStatsTitle")}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 divide-x divide-slate-200/80 dark:divide-slate-700/80">
+                  <div className="pr-3 sm:pr-4">
+                    <p className={statLabelCompactClass("profit")}>
+                      {t("activeStudents")}
+                    </p>
+                    <p className="mt-1 flex items-center gap-2">
+                      <span className={statValueClass("profit")}>
+                        {overview.activeStudents}
+                      </span>
+                      <span
+                        className="w-2.5 h-2.5 shrink-0 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.65)]"
+                        aria-hidden
+                      />
+                    </p>
+                  </div>
+                  <div className="pl-3 sm:pl-4">
+                    <p className={statLabelCompactClass("roi")}>
+                      {t("totalStudents")}
+                    </p>
+                    <p className="mt-1 flex items-center gap-2">
+                      <span className={statValueClass("roi")}>
+                        {overview.totalStudents}
+                      </span>
+                      <span
+                        className="w-2.5 h-2.5 shrink-0 rounded-full bg-sky-500 dark:bg-sky-400 shadow-[0_0_8px_rgba(14,165,233,0.55)]"
+                        aria-hidden
+                      />
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
