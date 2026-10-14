@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCatalog } from '../context/CatalogContext';
-import { useTradesRefresh } from '../context/TradesRefreshContext';
+import { useMarkTradesStale } from '../hooks/useInvalidateTrades';
 import { api } from '../services/api';
 import type { UserBank } from '../types';
 import {
@@ -32,7 +32,7 @@ const fieldSuffixClass =
 export const CalculatorPage: React.FC = () => {
   const { t } = useAuth();
   const { banks, exchanges, catalogReady, refreshCatalog } = useCatalog();
-  const { bumpTradesRefresh } = useTradesRefresh();
+  const markTradesStale = useMarkTradesStale();
   const [buyExchange, setBuyExchange] = useState('Binance');
   const [buyBankId, setBuyBankId] = useState('');
   const [buyRate, setBuyRate] = useState<string>('');
@@ -259,8 +259,8 @@ export const CalculatorPage: React.FC = () => {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
 
-      await refreshCatalog(true);
-      bumpTradesRefresh();
+      void refreshCatalog(false);
+      markTradesStale();
       resetFormFields();
     } catch (err: any) {
       setErrorMessage(err.message || 'Не вдалося зберегти сделку');

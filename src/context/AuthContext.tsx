@@ -128,6 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeStoredToken();
     setTokenState(null);
     setUser(null);
+    const { queryClient } = await import('../lib/query-client');
+    queryClient.clear();
   };
 
   const setLanguage = async (newLang: Language) => {

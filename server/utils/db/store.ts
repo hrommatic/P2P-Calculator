@@ -28,7 +28,6 @@ import { buildBootstrapDatabase, needsSeed } from "./seed.js";
 import {
   accumulateKyivProfitBuckets,
   isKyivToday,
-  tradeMatchesKyivMonthDays,
 } from "../../lib/kyiv-dates.js";
 import {
   buildTradeListQuery,
@@ -504,22 +503,10 @@ export async function getTradesForPlatform(
 ): Promise<Trade[]> {
   await ensureBootstrapped();
 
-  const { where, orderBy, monthDayFilter } = buildTradeListQuery(
-    undefined,
-    filters,
-  );
+  const { where, orderBy } = buildTradeListQuery(undefined, filters);
 
   const rows = await prisma.trade.findMany({ where, orderBy });
-  let trades = rows.map(mapTrade);
-
-  if (monthDayFilter) {
-    const { monthKey, dayFrom, dayTo } = monthDayFilter;
-    trades = trades.filter((t) =>
-      tradeMatchesKyivMonthDays(t.createdAt, monthKey, dayFrom, dayTo),
-    );
-  }
-
-  return trades;
+  return rows.map(mapTrade);
 }
 
 export async function findTradeById(id: string): Promise<Trade | null> {

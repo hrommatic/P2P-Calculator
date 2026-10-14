@@ -88,15 +88,16 @@ export interface Trade {
   notes?: string;
 }
 
+export interface TradePeriodStats {
+  profit: number;
+  spreadPercent: number;
+  roiPercent: number;
+  totalTurnover: number;
+  tradesCount: number;
+}
+
 export interface DashboardStats {
-  profitToday: number;
-  profitMonth: number;
-  spreadTodayPercent: number;
-  roiTodayPercent: number;
-  buyTurnoverToday: number;
-  sellTurnoverToday: number;
-  totalTurnoverToday: number;
-  tradesCountToday: number;
+  periodStats: TradePeriodStats;
   banksCount: number;
   usdUahRate: number | null;
   recentTrades: Trade[];

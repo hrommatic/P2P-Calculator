@@ -1,7 +1,11 @@
 import React, { Suspense, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { CatalogProvider } from './context/CatalogContext';
-import { TradesRefreshProvider } from './context/TradesRefreshContext';
+import { CatalogProvider, useCatalog } from './context/CatalogContext';
+import { TabProvider, type AppTab } from './context/TabContext';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/query-client';
+import { prefetchDashboardAndHistory } from './lib/prefetch-app-queries';
 import { Navbar } from './components/layout/Navbar';
 import { AuthPage } from './pages/AuthPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -18,17 +22,10 @@ const AdminPage = React.lazy(() =>
   import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })),
 );
 
-type AppTab =
-  | 'dashboard'
-  | 'calculator'
-  | 'banks'
-  | 'history'
-  | 'settings'
-  | 'support'
-  | 'admin';
-
-function AppContent() {
+function AppContentInner() {
   const { user, isLoading, siteSettings } = useAuth();
+  const { catalogReady } = useCatalog();
+  const queryClient = useQueryClient();
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
   const [mountedTabs, setMountedTabs] = useState<Record<AppTab, boolean>>({
     dashboard: true,
@@ -50,6 +47,18 @@ function AppContent() {
     document.getElementById('app-main')?.scrollTo(0, 0);
   }, [currentTab]);
 
+  useEffect(() => {
+    if (!user || !catalogReady) return;
+    prefetchDashboardAndHistory(queryClient);
+  }, [user?.id, catalogReady, queryClient]);
+
+  const selectTab = (tab: AppTab) => {
+    if (tab === 'history' || tab === 'dashboard') {
+      prefetchDashboardAndHistory(queryClient);
+    }
+    setCurrentTab(tab);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0a0f1d]">
@@ -66,14 +75,13 @@ function AppContent() {
     currentTab === tab ? 'block' : 'hidden';
 
   return (
-    <CatalogProvider>
-    <TradesRefreshProvider>
+    <TabProvider tab={currentTab}>
     <div className="flex h-dvh max-h-dvh max-w-[100vw] flex-col overflow-hidden bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100 transition-colors">
 
 
       <Navbar
         currentTab={currentTab}
-        onSelectTab={(tab) => setCurrentTab(tab as AppTab)}
+        onSelectTab={(tab) => selectTab(tab as AppTab)}
       />
 
 
@@ -89,7 +97,7 @@ function AppContent() {
       >
         {mountedTabs.dashboard && (
           <div className={`${panelClass('dashboard')} ${pageContentClass}`}>
-            <DashboardPage onNavigateToCalculator={() => setCurrentTab('calculator')} />
+            <DashboardPage onNavigateToCalculator={() => selectTab('calculator')} />
           </div>
         )}
         {mountedTabs.calculator && (
@@ -137,15 +145,24 @@ function AppContent() {
       </footer>
 
     </div>
-    </TradesRefreshProvider>
+    </TabProvider>
+  );
+}
+
+function AppContent() {
+  return (
+    <CatalogProvider>
+      <AppContentInner />
     </CatalogProvider>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

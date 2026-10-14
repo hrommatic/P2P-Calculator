@@ -23,13 +23,14 @@ const userId = 'user_test';
 }
 
 {
-  const { orderBy, monthDayFilter } = buildTradeListQuery(userId, {
+  const { where, orderBy } = buildTradeListQuery(userId, {
     monthKey: '2026-03',
     monthDayFrom: '5',
     monthDayTo: '10',
   });
-  assert.ok(monthDayFilter);
-  assert.equal(monthDayFilter!.monthKey, '2026-03');
+  const and = (where as { AND: { createdAt?: { gte: Date; lt: Date } }[] }).AND;
+  const createdAtClause = and.find((c) => c.createdAt)?.createdAt;
+  assert.ok(createdAtClause?.gte && createdAtClause?.lt);
   assert.equal(orderBy[0]?.createdAt, 'desc');
 }
 

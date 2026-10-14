@@ -27,7 +27,6 @@ function asCommissionType(value: unknown, fallback: CommissionType = 'percent'):
 }
 
 export async function handleGetTrades(req: VercelRequest, res: VercelResponse, user: User) {
-  await ensureBootstrapped();
   let targetUserId = user.id;
   if (user.role === 'admin' && req.query.targetUserId) {
     targetUserId = String(req.query.targetUserId);

@@ -1,5 +1,6 @@
 export const TRADES_PAGE_SIZE = 30;
 export const TRADES_PAGE_SIZE_MAX = 100;
+export const DASHBOARD_RECENT_TRADES_LIMIT = 20;
 
 export function clampTradesPageSize(raw: unknown): number | null {
   if (raw === undefined || raw === null || raw === '') return null;

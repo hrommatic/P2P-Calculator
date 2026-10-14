@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useCallback } from "react";
+import { DASHBOARD_RECENT_TRADES_LIMIT } from "@/shared/trades-pagination";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardTradeRow } from "../components/dashboard/DashboardTradeRow";
 import { useAuth } from "../context/AuthContext";
-import { useTradesRefresh } from "../context/TradesRefreshContext";
+import { useCurrentTab } from "../context/TabContext";
 import { api } from "../services/api";
-import { DashboardStats, Trade } from "../types";
+import { dashboardStatsKey } from "../lib/trades-query-keys";
 import { PlusCircle, ArrowRight, ArrowLeftRight } from "lucide-react";
 import { PageLoader } from "../components/ui/Loader";
 import { PeriodFilterBar } from "../components/filters/PeriodFilterBar";
@@ -12,7 +14,6 @@ import {
   periodToQuery,
   type PeriodPreset,
 } from "../lib/period-filter";
-import { aggregateTradePeriodStats } from "../lib/trade-period-stats";
 import {
   statCardShell,
   statHeaderClass,
@@ -31,49 +32,34 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onNavigateToCalculator,
 }) => {
   const { user, language, t } = useAuth();
-  const { tradesRevision } = useTradesRefresh();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const currentTab = useCurrentTab();
   const [period, setPeriod] = useState(defaultPeriodFilter);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [turnoverInUsdt, setTurnoverInUsdt] = useState(false);
   const [activityView, setActivityView] = useState<"trades" | "banks">(
     "trades",
   );
 
-  useEffect(() => {
-    const ac = new AbortController();
-    let cancelled = false;
+  const { data, isPending } = useQuery({
+    queryKey: dashboardStatsKey(period),
+    queryFn: ({ signal }) =>
+      api.getDashboardStats(periodToQuery(period), signal),
+    enabled: currentTab === "dashboard",
+    staleTime: 60_000,
+  });
 
-    (async () => {
-      setIsLoading(true);
-      try {
-        const data = await api.getDashboardStats(
-          periodToQuery(period),
-          ac.signal,
-        );
-        if (cancelled) return;
-        setStats(data);
-        setTrades(data.trades ?? []);
-      } catch (err) {
-        if (cancelled) return;
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        console.error("Error loading dashboard data:", err);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      ac.abort();
-    };
-  }, [period, tradesRevision]);
-
-  const periodStats = useMemo(
-    () => aggregateTradePeriodStats(trades),
-    [trades],
-  );
+  const stats = data ?? null;
+  const showLoader = isPending && !data;
+  const periodStats = stats?.periodStats ?? {
+    profit: 0,
+    spreadPercent: 0,
+    roiPercent: 0,
+    totalTurnover: 0,
+    tradesCount: 0,
+  };
+  const recentTrades = stats?.recentTrades ?? [];
+  const tradesPreviewTruncated =
+    periodStats.tradesCount > recentTrades.length &&
+    recentTrades.length >= DASHBOARD_RECENT_TRADES_LIMIT;
 
   const displayName = user?.nickname
     ? user.nickname.charAt(0).toUpperCase() + user.nickname.slice(1)
@@ -242,14 +228,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {t("recentTrades")}
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {trades.length}{" "}
-            {language === "en" ? "trades recorded" : "угод знайдено"}
+            {tradesPreviewTruncated
+              ? t("dashboardTradesPreview")
+                  .replace("{shown}", String(recentTrades.length))
+                  .replace("{total}", String(periodStats.tradesCount))
+              : language === "en"
+                ? `${periodStats.tradesCount} trades in period`
+                : `${periodStats.tradesCount} угод за період`}
           </p>
         </div>
 
-        {isLoading ? (
+        {showLoader ? (
           <PageLoader label="Завантаження даних..." className="p-8" />
-        ) : trades.length === 0 ? (
+        ) : periodStats.tradesCount === 0 ? (
           <div className="p-12 text-center space-y-3">
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
               {t("noTradesYet")}
@@ -282,7 +273,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                {trades.map((trade) => (
+                {recentTrades.map((trade) => (
                   <DashboardTradeRow
                     key={trade.id}
                     trade={trade}

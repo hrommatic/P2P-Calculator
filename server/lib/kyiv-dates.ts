@@ -71,12 +71,33 @@ function kyivDayUtcRange(ymd: string): { gte: Date; lt: Date } {
   };
 }
 
+export function kyivMonthDaysToCreatedAtRange(
+  monthKey: string,
+  dayFrom: number,
+  dayTo: number,
+): { gte: Date; lt: Date } | null {
+  if (!/^\d{4}-\d{2}$/.test(monthKey)) return null;
+  if (!Number.isFinite(dayFrom) || !Number.isFinite(dayTo)) return null;
+  const lo = Math.min(dayFrom, dayTo);
+  const hi = Math.max(dayFrom, dayTo);
+  if (lo < 1 || hi > 31) return null;
+  const pad = (d: number) => String(d).padStart(2, '0');
+  const startYmd = `${monthKey}-${pad(lo)}`;
+  const endYmd = `${monthKey}-${pad(hi)}`;
+  return {
+    gte: new Date(getKyivDayStartMs(startYmd)),
+    lt: new Date(getKyivDayStartMs(addKyivDays(endYmd, 1))),
+  };
+}
+
 /** Narrow Prisma `createdAt` for common period filters (Kyiv calendar). */
 export function tradeFiltersToCreatedAtRange(filters: {
   dateRange?: string;
   dateFrom?: string;
   dateTo?: string;
   monthKey?: string;
+  monthDayFrom?: number;
+  monthDayTo?: number;
 }): { gte: Date; lt: Date } | null {
   const dateFrom = filters.dateFrom?.trim();
   const dateTo = filters.dateTo?.trim();
@@ -112,6 +133,16 @@ export function tradeFiltersToCreatedAtRange(filters: {
 
   const monthKey = filters.monthKey?.trim();
   if (monthKey && /^\d{4}-\d{2}$/.test(monthKey)) {
+    if (
+      Number.isFinite(filters.monthDayFrom) &&
+      Number.isFinite(filters.monthDayTo)
+    ) {
+      return kyivMonthDaysToCreatedAtRange(
+        monthKey,
+        filters.monthDayFrom!,
+        filters.monthDayTo!,
+      );
+    }
     const startYmd = `${monthKey}-01`;
     const [y, m] = monthKey.split('-').map(Number);
     const nextMonth =

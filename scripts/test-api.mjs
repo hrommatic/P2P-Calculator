@@ -177,6 +177,16 @@ await test("Banks: update", async () => {
 await test("Dashboard: stats", async () => {
   const r = await req("GET", "/dashboard/stats");
   assert("stats 200", r.status === 200, JSON.stringify(r.data)?.slice(0, 120));
+  assert(
+    "periodStats",
+    r.data?.periodStats && typeof r.data.periodStats.tradesCount === "number",
+    JSON.stringify(r.data?.periodStats),
+  );
+  assert(
+    "recentTrades array",
+    Array.isArray(r.data?.recentTrades),
+    typeof r.data?.recentTrades,
+  );
 });
 
 let tradeId = "";

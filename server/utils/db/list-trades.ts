@@ -1,7 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import type { Trade } from '../../schemas/trades.schema.js';
-import { tradeMatchesKyivMonthDays } from '../../lib/kyiv-dates.js';
 import {
   clampTradesPageSize,
   encodeTradeCursor,
@@ -47,27 +46,13 @@ function mergeWhereWithCursor(
   return cursorClause;
 }
 
-function applyMonthDayFilter(
-  trades: Trade[],
-  monthDayFilter: { monthKey: string; dayFrom: number; dayTo: number } | null,
-): Trade[] {
-  if (!monthDayFilter) return trades;
-  const { monthKey, dayFrom, dayTo } = monthDayFilter;
-  return trades.filter((t) =>
-    tradeMatchesKyivMonthDays(t.createdAt, monthKey, dayFrom, dayTo),
-  );
-}
-
 async function fetchAllTrades(
   userId: string,
   filters: TradeListFilters,
 ): Promise<Trade[]> {
-  const { where, orderBy, monthDayFilter } = buildTradeListQuery(
-    userId,
-    filters,
-  );
+  const { where, orderBy } = buildTradeListQuery(userId, filters);
   const rows = await prisma.trade.findMany({ where, orderBy });
-  return applyMonthDayFilter(rows.map(mapTrade), monthDayFilter);
+  return rows.map(mapTrade);
 }
 
 async function fetchTradesPage(
@@ -90,51 +75,22 @@ async function fetchTradesPage(
     };
   }
 
-  const { where, orderBy, monthDayFilter } = buildTradeListQuery(
-    userId,
-    filters,
-  );
+  const { where, orderBy } = buildTradeListQuery(userId, filters);
   const parsedCursor = normalized.cursor
     ? parseTradeCursor(normalized.cursor)
     : null;
+  const wherePage = parsedCursor
+    ? mergeWhereWithCursor(where, parsedCursor)
+    : where;
 
-  const collected: Trade[] = [];
-  let dbCursor = parsedCursor;
-  let hasMoreDb = true;
-  const dbBatch = Math.max(limit * 3, 60);
-  const maxRounds = 25;
+  const rows = await prisma.trade.findMany({
+    where: wherePage,
+    orderBy,
+    take: limit + 1,
+  });
 
-  for (let round = 0; round < maxRounds && collected.length < limit + 1; round++) {
-    const wherePage = dbCursor
-      ? mergeWhereWithCursor(where, dbCursor)
-      : where;
-    const rows = await prisma.trade.findMany({
-      where: wherePage,
-      orderBy,
-      take: dbBatch,
-    });
-    if (rows.length === 0) {
-      hasMoreDb = false;
-      break;
-    }
-
-    let batch = applyMonthDayFilter(rows.map(mapTrade), monthDayFilter);
-    for (const trade of batch) {
-      collected.push(trade);
-      if (collected.length >= limit + 1) break;
-    }
-
-    const lastRow = rows[rows.length - 1]!;
-    dbCursor = { createdAt: lastRow.createdAt, id: lastRow.id };
-    if (rows.length < dbBatch) {
-      hasMoreDb = false;
-    }
-  }
-
-  const hasMore =
-    collected.length > limit ||
-    (hasMoreDb && collected.length >= limit);
-  const trades = collected.slice(0, limit);
+  const hasMore = rows.length > limit;
+  const trades = rows.slice(0, limit).map(mapTrade);
   const nextCursor =
     hasMore && trades.length > 0
       ? encodeTradeCursor(trades[trades.length - 1]!)

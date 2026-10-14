@@ -123,7 +123,7 @@ export const api = {
     targetUserId?: string;
     limit?: number;
     cursor?: string;
-  }) => {
+  }, signal?: AbortSignal) => {
     const q = new URLSearchParams();
     if (params?.dateRange) q.set('dateRange', params.dateRange);
     if (params?.dateFrom) q.set('dateFrom', params.dateFrom);
@@ -143,7 +143,7 @@ export const api = {
       trades: Trade[];
       nextCursor?: string | null;
       hasMore?: boolean;
-    }>(`/trades${queryString}`);
+    }>(`/trades${queryString}`, { signal });
   },
 
   createTrade: (body: any) =>
@@ -229,7 +229,7 @@ export const api = {
       }
     }
     const queryString = q.toString() ? `?${q.toString()}` : '';
-    return request<DashboardStats & { trades: Trade[] }>(`/dashboard/stats${queryString}`, {
+    return request<DashboardStats>(`/dashboard/stats${queryString}`, {
       signal,
     });
   },

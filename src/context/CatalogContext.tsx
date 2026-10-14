@@ -33,24 +33,44 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({
   const [catalogReady, setCatalogReady] = useState(false);
   const refreshGenRef = useRef(0);
   const catalogAbortRef = useRef<AbortController | null>(null);
+  const catalogInflightRef = useRef<{
+    sync: boolean;
+    promise: Promise<void>;
+  } | null>(null);
 
   const refreshCatalog = useCallback(async (sync?: boolean) => {
+    const wantSync = sync === true;
+    const inflight = catalogInflightRef.current;
+    if (inflight && inflight.sync === wantSync) {
+      return inflight.promise;
+    }
+
     catalogAbortRef.current?.abort();
     const controller = new AbortController();
     catalogAbortRef.current = controller;
     const generation = ++refreshGenRef.current;
 
-    try {
-      const catalog = await api.getCatalog(sync, controller.signal);
-      if (generation !== refreshGenRef.current) return;
-      setBanks(catalog.banks);
-      setGlobalBanks(catalog.globalBanks);
-      setExchanges(catalog.exchanges);
-      setCatalogReady(true);
-    } catch (err) {
-      if (controller.signal.aborted) return;
-      throw err;
-    }
+    let promise!: Promise<void>;
+    promise = (async () => {
+      try {
+        const catalog = await api.getCatalog(wantSync, controller.signal);
+        if (generation !== refreshGenRef.current) return;
+        setBanks(catalog.banks);
+        setGlobalBanks(catalog.globalBanks);
+        setExchanges(catalog.exchanges);
+        setCatalogReady(true);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        throw err;
+      } finally {
+        if (catalogInflightRef.current?.promise === promise) {
+          catalogInflightRef.current = null;
+        }
+      }
+    })();
+
+    catalogInflightRef.current = { sync: wantSync, promise };
+    return promise;
   }, []);
 
   useEffect(() => {

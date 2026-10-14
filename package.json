@@ -18,13 +18,15 @@
     "test:bank-stats": "tsx shared/bank-stats-delta.test.ts",
     "test:path-segments": "tsx api/_lib/pathSegments.test.ts",
     "test:calculation": "tsx shared/calculation.test.ts",
-    "test:unit": "npm run test:bank-stats && npm run test:path-segments && npm run test:trade-filters && npm run test:calculation",
+    "test:kyiv-dates": "tsx server/lib/kyiv-dates.test.ts",
+    "test:unit": "npm run test:bank-stats && npm run test:path-segments && npm run test:trade-filters && npm run test:calculation && npm run test:kyiv-dates",
     "test:all": "npm run lint && npm run test:unit && npm run test:api && npm run test:banks"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",
-    "@vercel/node": "^5.3.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/react-query": "^5.104.2",
+    "@vercel/node": "^5.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.546.0",

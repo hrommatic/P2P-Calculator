@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { TRADES_PAGE_SIZE } from '@/shared/trades-pagination';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { useCatalog } from '../context/CatalogContext';
-import { useTradesRefresh } from '../context/TradesRefreshContext';
+import { useCurrentTab } from '../context/TabContext';
+import { useInvalidateTrades } from '../hooks/useInvalidateTrades';
+import { tradesListKey } from '../lib/trades-query-keys';
 import { Trade } from '../types';
 import {
   History as HistoryIcon,
@@ -24,18 +27,44 @@ import {
 
 export const HistoryPage: React.FC = () => {
   const { t, language } = useAuth();
+  const currentTab = useCurrentTab();
 
   const { banks, exchanges, refreshCatalog } = useCatalog();
-  const { tradesRevision, bumpTradesRefresh } = useTradesRefresh();
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const invalidateTrades = useInvalidateTrades();
 
   const [period, setPeriod] = useState(defaultPeriodFilter);
+
+  const {
+    data,
+    isPending,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: tradesListKey(period),
+    enabled: currentTab === 'history',
+    staleTime: 60_000,
+    queryFn: ({ pageParam, signal }) =>
+      api.getTrades(
+        {
+          ...periodToQuery(period),
+          limit: TRADES_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam as string } : {}),
+        },
+        signal,
+      ),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore && lastPage.nextCursor
+        ? lastPage.nextCursor
+        : undefined,
+  });
+
+  const trades = data?.pages.flatMap((p) => p.trades) ?? [];
+  const isLoading = isPending && trades.length === 0;
+
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
@@ -57,47 +86,10 @@ export const HistoryPage: React.FC = () => {
 
   const tradeActionsBusy = isSavingEdit || isDeleting;
 
-  const fetchHistory = useCallback(async () => {
-    setIsLoading(true);
-    setNextCursor(null);
-    setHasMore(false);
-    try {
-      const tRes = await api.getTrades({
-        ...periodToQuery(period),
-        limit: TRADES_PAGE_SIZE,
-      });
-      setTrades(tRes.trades);
-      setNextCursor(tRes.nextCursor ?? null);
-      setHasMore(Boolean(tRes.hasMore));
-    } catch (err) {
-      console.error('Error fetching trade history:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [period]);
-
-  const loadMoreTrades = async () => {
-    if (!hasMore || !nextCursor || isLoadingMore || isLoading) return;
-    setIsLoadingMore(true);
-    try {
-      const tRes = await api.getTrades({
-        ...periodToQuery(period),
-        limit: TRADES_PAGE_SIZE,
-        cursor: nextCursor,
-      });
-      setTrades((prev) => [...prev, ...tRes.trades]);
-      setNextCursor(tRes.nextCursor ?? null);
-      setHasMore(Boolean(tRes.hasMore));
-    } catch (err) {
-      console.error('Error loading more trades:', err);
-    } finally {
-      setIsLoadingMore(false);
-    }
+  const loadMoreTrades = () => {
+    if (!hasNextPage || isFetchingNextPage || isLoading) return;
+    void fetchNextPage();
   };
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory, tradesRevision]);
 
   const handleOpenEdit = (trade: Trade) => {
     setEditingTrade(trade);
@@ -137,8 +129,8 @@ export const HistoryPage: React.FC = () => {
         notes: editNotes.trim(),
       });
       setEditingTrade(null);
-      await refreshCatalog(true);
-      bumpTradesRefresh();
+      void refreshCatalog(false);
+      invalidateTrades();
     } catch (err: any) {
       setEditError(err.message || 'Помилка оновлення угоди');
     } finally {
@@ -152,8 +144,8 @@ export const HistoryPage: React.FC = () => {
     try {
       await api.deleteTrade(deleteTarget.id);
       setDeleteTarget(null);
-      await refreshCatalog(true);
-      bumpTradesRefresh();
+      void refreshCatalog(false);
+      invalidateTrades();
     } catch (err) {
       console.error('Failed to delete trade:', err);
     } finally {
@@ -339,15 +331,15 @@ export const HistoryPage: React.FC = () => {
                 })}
               </tbody>
             </table>
-            {hasMore && (
+            {hasNextPage && (
               <div className="flex justify-center border-t border-slate-200 dark:border-slate-800 p-4">
                 <button
                   type="button"
-                  disabled={isLoadingMore || tradeActionsBusy}
+                  disabled={isFetchingNextPage || tradeActionsBusy}
                   onClick={loadMoreTrades}
                   className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-blue-700 dark:text-sky-300 bg-blue-50 dark:bg-sky-950/40 border border-blue-200 dark:border-sky-800 hover:bg-blue-100 dark:hover:bg-sky-900/50 transition-colors ${disabledControlClass}`}
                 >
-                  {isLoadingMore ? (
+                  {isFetchingNextPage ? (
                     <ButtonLoader label="..." />
                   ) : null}
                   <span>{t('loadMoreTrades')}</span>
@@ -394,34 +386,25 @@ export const HistoryPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-sm space-y-1.5">
-              <p><strong>Всі комісії:</strong> {selectedTrade.totalCommissionsUah.toFixed(2)} ₴</p>
-              <p><strong>Чистий прибуток:</strong> <span className="font-bold text-emerald-600">+{formatUah(selectedTrade.netProfitUah)} ₴</span></p>
-              <p><strong>Рентабельність (ROI):</strong> +{selectedTrade.roiPercent.toFixed(2)}%</p>
-              <p><strong>Спред:</strong> +{selectedTrade.spreadPercent.toFixed(2)}% (+{selectedTrade.spreadPerUnit.toFixed(2)} ₴/$)</p>
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-sm space-y-1">
+              <p><strong>Комісії:</strong> {formatUah(selectedTrade.totalCommissionsUah)} ₴</p>
+              <p><strong>Дод. витрати:</strong> {formatUah(selectedTrade.extraExpensesUah)} ₴</p>
+              <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                Чистий прибуток: {formatUah(selectedTrade.netProfitUah)} ₴
+              </p>
               {selectedTrade.notes && (
-                <p className="pt-1 text-slate-500"><strong>Коментар:</strong> {selectedTrade.notes}</p>
+                <p className="text-slate-500 italic mt-2">&quot;{selectedTrade.notes}&quot;</p>
               )}
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setSelectedTrade(null)}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-              >
-                {t('close')}
-              </button>
             </div>
           </div>
         </div>
       )}
 
-
       {editingTrade && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 {t('editTrade')}
               </h3>
               <button
@@ -432,112 +415,135 @@ export const HistoryPage: React.FC = () => {
               </button>
             </div>
 
-            {editError && (
-              <div className="p-2.5 rounded-lg text-sm bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200">
-                {editError}
-              </div>
-            )}
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              {editError && (
+                <div className="p-3 text-sm text-rose-700 bg-rose-50 dark:bg-rose-950/30 dark:text-rose-300 rounded-lg border border-rose-200 dark:border-rose-900">
+                  {editError}
+                </div>
+              )}
 
-            <form onSubmit={handleSaveEdit} className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">Банк покупки</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30">
+                  <h4 className="font-bold text-blue-600 dark:text-sky-400 text-sm">Покупка</h4>
+                  <select
+                    value={editBuyExchange}
+                    onChange={(e) => setEditBuyExchange(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                  >
+                    {exchanges.map((ex) => (
+                      <option key={ex.id} value={ex.name}>{ex.name}</option>
+                    ))}
+                  </select>
                   <select
                     value={editBuyBankId}
-                    onChange={e => setEditBuyBankId(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    onChange={(e) => setEditBuyBankId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   >
-                    {banks.map(b => (
+                    {banks.map((b) => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editBuyRate}
+                    onChange={(e) => setEditBuyRate(e.target.value)}
+                    placeholder="Курс"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editBuyAmountUah}
+                    onChange={(e) => setEditBuyAmountUah(e.target.value)}
+                    placeholder="Сума UAH"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editBuyCommission}
+                    onChange={(e) => setEditBuyCommission(e.target.value)}
+                    placeholder="Комісія"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                  />
                 </div>
-                <div>
-                  <label className="block font-semibold mb-1">Банк продажу</label>
+
+                <div className="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30">
+                  <h4 className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">Продаж</h4>
+                  <select
+                    value={editSellExchange}
+                    onChange={(e) => setEditSellExchange(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                  >
+                    {exchanges.map((ex) => (
+                      <option key={ex.id} value={ex.name}>{ex.name}</option>
+                    ))}
+                  </select>
                   <select
                     value={editSellBankId}
-                    onChange={e => setEditSellBankId(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    onChange={(e) => setEditSellBankId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   >
-                    {banks.map(b => (
+                    {banks.map((b) => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">Курс покупки (UAH)</label>
                   <input
                     type="number"
                     step="0.01"
-                    required
-                    value={editBuyRate}
-                    onChange={e => setEditBuyRate(e.target.value)}
-                    className="w-full px-2.5 py-1.5 font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Курс продажу (UAH)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
                     value={editSellRate}
-                    onChange={e => setEditSellRate(e.target.value)}
-                    className="w-full px-2.5 py-1.5 font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    onChange={(e) => setEditSellRate(e.target.value)}
+                    placeholder="Курс"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">Сума покупки (UAH)</label>
                   <input
                     type="number"
-                    step="10"
-                    required
-                    value={editBuyAmountUah}
-                    onChange={e => setEditBuyAmountUah(e.target.value)}
-                    className="w-full px-2.5 py-1.5 font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Сума продажу (UAH)</label>
-                  <input
-                    type="number"
-                    step="10"
+                    step="0.01"
                     value={editSellAmountUah}
-                    onChange={e => setEditSellAmountUah(e.target.value)}
-                    className="w-full px-2.5 py-1.5 font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    onChange={(e) => setEditSellAmountUah(e.target.value)}
+                    placeholder="Сума UAH"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editSellCommission}
+                    onChange={(e) => setEditSellCommission(e.target.value)}
+                    placeholder="Комісія"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold mb-1">Коментар</label>
-                <input
-                  type="text"
-                  value={editNotes}
-                  onChange={e => setEditNotes(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
+              <input
+                type="number"
+                step="0.01"
+                value={editExtraExpenses}
+                onChange={(e) => setEditExtraExpenses(e.target.value)}
+                placeholder="Додаткові витрати"
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+              />
+              <textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Коментар"
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+              />
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  disabled={isSavingEdit}
                   onClick={() => setEditingTrade(null)}
-                  className={`px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ${disabledControlClass}`}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingEdit}
-                  className={`px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white ${disabledControlClass}`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 ${disabledControlClass}`}
                 >
                   {isSavingEdit ? <ButtonLoader label="Збереження..." /> : 'Зберегти зміни'}
                 </button>
@@ -547,31 +553,28 @@ export const HistoryPage: React.FC = () => {
         </div>
       )}
 
-
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
-            <Trash2 className="w-10 h-10 text-rose-500 mx-auto" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
               {t('deleteTrade')}?
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
               {t('deleteTradeConfirm')}
             </p>
-            <div className="flex items-center justify-center gap-2 pt-2">
+            <div className="flex justify-end gap-2">
               <button
                 type="button"
-                disabled={isDeleting}
                 onClick={() => setDeleteTarget(null)}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 ${disabledControlClass}`}
+                className="px-4 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 {t('cancel')}
               </button>
               <button
                 type="button"
-                onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white ${disabledControlClass}`}
+                onClick={handleDeleteConfirm}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-60 ${disabledControlClass}`}
               >
                 {isDeleting ? <ButtonLoader label="Видалення..." /> : t('deleteTrade')}
               </button>
@@ -579,7 +582,6 @@ export const HistoryPage: React.FC = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
