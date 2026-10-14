@@ -114,6 +114,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Горизонтальний скрол пальцем/колесом без видимої смуги */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

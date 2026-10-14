@@ -94,7 +94,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
 
   return (
     <div className="min-w-0 max-w-full w-full" ref={wrapRef}>
-      <div className="flex w-full min-w-0 flex-nowrap items-stretch gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800 sm:inline-flex sm:w-auto">
+      <div className="hide-scrollbar flex w-full min-w-0 flex-nowrap items-stretch gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800 sm:inline-flex sm:w-auto">
         {PRESETS.map((p) => (
           <button
             key={p}

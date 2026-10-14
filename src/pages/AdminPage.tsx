@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
 import {
   AdminOverview,
   StudentStatsItem,
   GlobalBank,
   Exchange,
   Trade,
-} from '../types';
+} from "../types";
 import {
   Users,
   BarChart3,
@@ -26,16 +26,16 @@ import {
   Eye,
   RefreshCw,
   ArrowLeftRight,
-} from 'lucide-react';
-import { PageLoader } from '../components/ui/Loader';
-import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
+} from "lucide-react";
+import { PageLoader } from "../components/ui/Loader";
+import { PeriodFilterBar } from "../components/filters/PeriodFilterBar";
 import {
   defaultPeriodFilter,
   periodToQuery,
   type PeriodPreset,
-} from '../lib/period-filter';
-import { aggregateTradePeriodStats } from '../lib/trade-period-stats';
-import { aggregateTradeRateExtras } from '../lib/trade-rate-extras';
+} from "../lib/period-filter";
+import { aggregateTradePeriodStats } from "../lib/trade-period-stats";
+import { aggregateTradeRateExtras } from "../lib/trade-rate-extras";
 import {
   statCardShell,
   statHeaderClass,
@@ -46,12 +46,14 @@ import {
   statValueClass,
   statLabelCompactClass,
   type StatTheme,
-} from '../lib/stat-card-theme';
+} from "../lib/stat-card-theme";
 
 export const AdminPage: React.FC = () => {
   const { user, t } = useAuth();
 
-  const [activeSection, setActiveSection] = useState<'overview' | 'accounts' | 'students' | 'banks' | 'exchanges'>('overview');
+  const [activeSection, setActiveSection] = useState<
+    "overview" | "accounts" | "students" | "banks" | "exchanges"
+  >("overview");
   const [isLoading, setIsLoading] = useState(false);
 
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -59,45 +61,58 @@ export const AdminPage: React.FC = () => {
   const [turnoverInUsdt, setTurnoverInUsdt] = useState(false);
 
   const [usersList, setUsersList] = useState<any[]>([]);
-  const [accountSearch, setAccountSearch] = useState('');
-  const [selectedUserToEdit, setSelectedUserToEdit] = useState<any | null>(null);
-  const [editNick, setEditNick] = useState('');
-  const [editTg, setEditTg] = useState('');
-  const [editRole, setEditRole] = useState('student');
-  const [tempPasswordModal, setTempPasswordModal] = useState<{ username: string; tempPass: string } | null>(null);
+  const [accountSearch, setAccountSearch] = useState("");
+  const [selectedUserToEdit, setSelectedUserToEdit] = useState<any | null>(
+    null,
+  );
+  const [editNick, setEditNick] = useState("");
+  const [editTg, setEditTg] = useState("");
+  const [editRole, setEditRole] = useState("student");
+  const [tempPasswordModal, setTempPasswordModal] = useState<{
+    username: string;
+    tempPass: string;
+  } | null>(null);
   const [deleteUserTarget, setDeleteUserTarget] = useState<any | null>(null);
 
   const [studentsStats, setStudentsStats] = useState<StudentStatsItem[]>([]);
-  const [inspectedStudent, setInspectedStudent] = useState<StudentStatsItem | null>(null);
-  const [inspectedStudentTrades, setInspectedStudentTrades] = useState<Trade[]>([]);
+  const [inspectedStudent, setInspectedStudent] =
+    useState<StudentStatsItem | null>(null);
+  const [inspectedStudentTrades, setInspectedStudentTrades] = useState<Trade[]>(
+    [],
+  );
   const [loadingInspection, setLoadingInspection] = useState(false);
 
   const [globalBanks, setGlobalBanks] = useState<GlobalBank[]>([]);
-  const [editingGlobalBank, setEditingGlobalBank] = useState<GlobalBank | null>(null);
+  const [editingGlobalBank, setEditingGlobalBank] = useState<GlobalBank | null>(
+    null,
+  );
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
-  const [bankName, setBankName] = useState('');
-  const [bankCode, setBankCode] = useState('');
-  const [bankLimit, setBankLimit] = useState('100000');
-  const [bankColor, setBankColor] = useState('#2563EB');
+  const [bankName, setBankName] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [bankLimit, setBankLimit] = useState("100000");
+  const [bankColor, setBankColor] = useState("#2563EB");
 
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
-  const [newExName, setNewExName] = useState('');
-  const [newExCode, setNewExCode] = useState('');
+  const [newExName, setNewExName] = useState("");
+  const [newExCode, setNewExCode] = useState("");
 
-  const [adminMessage, setAdminMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [adminMessage, setAdminMessage] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
 
-  const showMsg = (text: string, type: 'success' | 'error' = 'success') => {
+  const showMsg = (text: string, type: "success" | "error" = "success") => {
     setAdminMessage({ text, type });
     setTimeout(() => setAdminMessage(null), 4000);
   };
 
   useEffect(() => {
-    if (activeSection === 'overview') return;
+    if (activeSection === "overview") return;
     loadSectionData(activeSection);
   }, [activeSection]);
 
   useEffect(() => {
-    if (activeSection !== 'overview') return;
+    if (activeSection !== "overview") return;
 
     const ac = new AbortController();
     let cancelled = false;
@@ -105,14 +120,17 @@ export const AdminPage: React.FC = () => {
     (async () => {
       setIsLoading(true);
       try {
-        const data = await api.getAdminOverview(periodToQuery(period), ac.signal);
+        const data = await api.getAdminOverview(
+          periodToQuery(period),
+          ac.signal,
+        );
         if (!cancelled) setOverview(data);
       } catch (err: unknown) {
         if (cancelled) return;
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
         showMsg(
-          err instanceof Error ? err.message : 'Помилка завантаження огляду',
-          'error',
+          err instanceof Error ? err.message : "Помилка завантаження огляду",
+          "error",
         );
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -128,43 +146,48 @@ export const AdminPage: React.FC = () => {
   const loadSectionData = async (section: string) => {
     setIsLoading(true);
     try {
-      if (section === 'accounts') {
+      if (section === "accounts") {
         const data = await api.getAdminUsers({ search: accountSearch });
         setUsersList(data.users);
-      } else if (section === 'students') {
+      } else if (section === "students") {
         const data = await api.getStudentsStats();
         setStudentsStats(data.results);
-      } else if (section === 'banks') {
+      } else if (section === "banks") {
         const data = await api.getGlobalBanks();
         setGlobalBanks(data.banks);
-      } else if (section === 'exchanges') {
+      } else if (section === "exchanges") {
         const data = await api.getAdminExchanges();
         setExchanges(data.exchanges);
       }
     } catch (err: any) {
-      showMsg(err.message || 'Помилка завантаження даних адмін-панелі', 'error');
+      showMsg(
+        err.message || "Помилка завантаження даних адмін-панелі",
+        "error",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (activeSection === 'accounts') {
+    if (activeSection === "accounts") {
       const h = setTimeout(() => {
-        api.getAdminUsers({ search: accountSearch }).then(d => setUsersList(d.users));
+        api
+          .getAdminUsers({ search: accountSearch })
+          .then((d) => setUsersList(d.users));
       }, 300);
       return () => clearTimeout(h);
     }
   }, [accountSearch]);
 
   const handleToggleUserStatus = async (userItem: any) => {
-    const newStatus = userItem.status === 'active' ? 'blocked' : 'active';
+    const newStatus = userItem.status === "active" ? "blocked" : "active";
     try {
       await api.setUserStatus(userItem.id, newStatus);
       showMsg(`Статус ${userItem.nickname} змінено на ${newStatus}`);
-      loadSectionData('accounts');
+      loadSectionData("accounts");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
@@ -184,11 +207,11 @@ export const AdminPage: React.FC = () => {
         telegram: editTg,
         role: editRole,
       });
-      showMsg('Дані акаунта оновлено');
+      showMsg("Дані акаунта оновлено");
       setSelectedUserToEdit(null);
-      loadSectionData('accounts');
+      loadSectionData("accounts");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
@@ -199,9 +222,9 @@ export const AdminPage: React.FC = () => {
         username: userItem.nickname,
         tempPass: res.temporaryPassword,
       });
-      showMsg('Пароль безпечно скинуто');
+      showMsg("Пароль безпечно скинуто");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
@@ -211,9 +234,9 @@ export const AdminPage: React.FC = () => {
       await api.deleteUser(deleteUserTarget.id);
       showMsg(`Користувача ${deleteUserTarget.nickname} видалено`);
       setDeleteUserTarget(null);
-      loadSectionData('accounts');
+      loadSectionData("accounts");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
@@ -224,7 +247,7 @@ export const AdminPage: React.FC = () => {
       const res = await api.getTrades({ targetUserId: student.userId });
       setInspectedStudentTrades(res.trades);
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     } finally {
       setLoadingInspection(false);
     }
@@ -232,10 +255,10 @@ export const AdminPage: React.FC = () => {
 
   const handleOpenAddGlobalBank = () => {
     setEditingGlobalBank(null);
-    setBankName('');
-    setBankCode('');
-    setBankLimit('100000');
-    setBankColor('#2563EB');
+    setBankName("");
+    setBankCode("");
+    setBankLimit("100000");
+    setBankColor("#2563EB");
     setIsBankModalOpen(true);
   };
 
@@ -266,19 +289,19 @@ export const AdminPage: React.FC = () => {
         });
       }
       setIsBankModalOpen(false);
-      showMsg('Довідник банків оновлено');
-      loadSectionData('banks');
+      showMsg("Довідник банків оновлено");
+      loadSectionData("banks");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
   const handleToggleBankActive = async (gb: GlobalBank) => {
     try {
       await api.updateGlobalBank(gb.id, { isActive: !gb.isActive });
-      loadSectionData('banks');
+      loadSectionData("banks");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
@@ -287,40 +310,40 @@ export const AdminPage: React.FC = () => {
     if (!newExName || !newExCode) return;
     try {
       await api.createAdminExchange({ name: newExName, code: newExCode });
-      setNewExName('');
-      setNewExCode('');
-      showMsg('Біржу додано');
-      loadSectionData('exchanges');
+      setNewExName("");
+      setNewExCode("");
+      showMsg("Біржу додано");
+      loadSectionData("exchanges");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
   const handleToggleExchangeActive = async (ex: Exchange) => {
     try {
       await api.updateAdminExchange(ex.id, { isActive: !ex.isActive });
-      loadSectionData('exchanges');
+      loadSectionData("exchanges");
     } catch (err: any) {
-      showMsg(err.message, 'error');
+      showMsg(err.message, "error");
     }
   };
 
   const formatUah = useCallback((val: number) => {
-    return new Intl.NumberFormat('uk-UA', {
+    return new Intl.NumberFormat("uk-UA", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(val || 0);
   }, []);
 
   const formatUsdt = (val: number) => {
-    return new Intl.NumberFormat('uk-UA', {
+    return new Intl.NumberFormat("uk-UA", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(val || 0);
   };
 
   const formatRate = (val: number) => {
-    return new Intl.NumberFormat('uk-UA', {
+    return new Intl.NumberFormat("uk-UA", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(val || 0);
@@ -345,92 +368,101 @@ export const AdminPage: React.FC = () => {
     return formatUah(uah);
   };
 
-  const turnoverUnitLabel = turnoverInUsdt && nbuRate ? 'USDT' : 'UAH';
+  const turnoverUnitLabel = turnoverInUsdt && nbuRate ? "USDT" : "UAH";
 
   const overviewStatCardClass = (theme: StatTheme) =>
     `${statCardShell(theme)} h-full min-h-[5.25rem] sm:min-h-[5.5rem]`;
 
   const turnoverCardClass =
-    overviewStatCardClass('turnover') +
-    ' col-span-2 md:col-span-1 order-2 md:order-3 text-left w-full transition-colors' +
+    overviewStatCardClass("turnover") +
+    " col-span-2 md:col-span-1 order-2 md:order-3 text-left w-full transition-colors" +
     (nbuRate
-      ? ' cursor-pointer hover:brightness-105 dark:hover:brightness-110'
-      : '');
+      ? " cursor-pointer hover:brightness-105 dark:hover:brightness-110"
+      : "");
 
   const presetLabels: Record<PeriodPreset, string> = {
-    all: t('filterAll'),
-    today: t('filterToday'),
-    yesterday: t('filterYesterday'),
-    week: t('filterWeek'),
-    month: t('filterMonth'),
+    all: t("filterAll"),
+    today: t("filterToday"),
+    yesterday: t("filterYesterday"),
+    week: t("filterWeek"),
+    month: t("filterMonth"),
   };
 
-  const overviewMiniStats: { key: string; theme: StatTheme; label: string; value: string }[] =
-    overview
-      ? [
-          {
-            key: 'avgBuy',
-            theme: 'profit',
-            label: t('adminAvgBuy'),
-            value: formatRate(rateExtras.avgBuyRate),
-          },
-          {
-            key: 'avgSell',
-            theme: 'roi',
-            label: t('adminAvgSell'),
-            value: formatRate(rateExtras.avgSellRate),
-          },
-          {
-            key: 'minBuy',
-            theme: 'turnover',
-            label: t('adminMinBuy'),
-            value: formatRate(rateExtras.minBuyRate),
-          },
-          {
-            key: 'maxSell',
-            theme: 'trades',
-            label: t('adminMaxSell'),
-            value: formatRate(rateExtras.maxSellRate),
-          },
-          {
-            key: 'activeStudents',
-            theme: 'roi',
-            label: t('activeStudents'),
-            value: String(overview.activeStudents),
-          },
-          {
-            key: 'totalStudents',
-            theme: 'banks',
-            label: t('totalStudents'),
-            value: String(overview.totalStudents),
-          },
-        ]
-      : [];
+  const overviewMiniStats: {
+    key: string;
+    theme: StatTheme;
+    label: string;
+    value: string;
+  }[] = overview
+    ? [
+        {
+          key: "avgBuy",
+          theme: "profit",
+          label: t("adminAvgBuy"),
+          value: formatRate(rateExtras.avgBuyRate),
+        },
+        {
+          key: "avgSell",
+          theme: "roi",
+          label: t("adminAvgSell"),
+          value: formatRate(rateExtras.avgSellRate),
+        },
+        {
+          key: "minBuy",
+          theme: "turnover",
+          label: t("adminMinBuy"),
+          value: formatRate(rateExtras.minBuyRate),
+        },
+        {
+          key: "maxSell",
+          theme: "trades",
+          label: t("adminMaxSell"),
+          value: formatRate(rateExtras.maxSellRate),
+        },
+        {
+          key: "activeStudents",
+          theme: "roi",
+          label: t("activeStudents"),
+          value: String(overview.activeStudents),
+        },
+        {
+          key: "totalStudents",
+          theme: "banks",
+          label: t("totalStudents"),
+          value: String(overview.totalStudents),
+        },
+      ]
+    : [];
 
   const navTabs = [
-    { id: 'overview', label: t('adminOverview'), icon: BarChart3 },
-    { id: 'accounts', label: t('adminAccounts'), icon: Users },
-    { id: 'students', label: t('adminStudentsStats'), icon: TrendingUp },
-    { id: 'banks', label: t('adminBanksCatalog'), icon: Building2 },
-    { id: 'exchanges', label: t('adminExchanges'), icon: RefreshCw },
+    { id: "overview", label: t("adminOverview"), icon: BarChart3 },
+    { id: "accounts", label: t("adminAccounts"), icon: Users },
+    { id: "students", label: t("adminStudentsStats"), icon: TrendingUp },
+    { id: "banks", label: t("adminBanksCatalog"), icon: Building2 },
+    { id: "exchanges", label: t("adminExchanges"), icon: RefreshCw },
   ];
 
   return (
     <div className="space-y-6 min-w-0 max-w-full">
       {adminMessage && (
-        <div className={`p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2.5 ${
-          adminMessage.type === 'success'
-            ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60'
-            : 'bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60'
-        }`}>
-          {adminMessage.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+        <div
+          className={`p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2.5 ${
+            adminMessage.type === "success"
+              ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60"
+              : "bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60"
+          }`}
+        >
+          {adminMessage.type === "success" ? (
+            <Check className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+          )}
           <span>{adminMessage.text}</span>
         </div>
       )}
 
-
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 text-sm">
-        {navTabs.map(tab => {
+      <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto pb-3 border-b border-slate-200 dark:border-slate-800 text-sm">
+        {navTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSection === tab.id;
           return (
@@ -439,8 +471,8 @@ export const AdminPage: React.FC = () => {
               onClick={() => setActiveSection(tab.id as any)}
               className={`flex items-center gap-2 px-3 py-2 font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -450,11 +482,11 @@ export const AdminPage: React.FC = () => {
         })}
       </div>
 
-      {isLoading && activeSection !== 'overview' && (
+      {isLoading && activeSection !== "overview" && (
         <PageLoader label="Завантаження..." className="py-16" />
       )}
 
-      {activeSection === 'overview' && (
+      {activeSection === "overview" && (
         <>
           <PeriodFilterBar
             value={period}
@@ -471,66 +503,85 @@ export const AdminPage: React.FC = () => {
             <div className="space-y-3 sm:space-y-4 min-w-0">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
                 <div
-                  className={`${overviewStatCardClass('profit')} col-span-2 md:col-span-1 order-1 md:order-1`}
+                  className={`${overviewStatCardClass("profit")} col-span-2 md:col-span-1 order-1 md:order-1`}
                 >
                   <div className={statHeaderClass}>
-                    <p className={statLabelClass('profit')}>{t('periodProfit')}</p>
+                    <p className={statLabelClass("profit")}>
+                      {t("periodProfit")}
+                    </p>
                     <span className={statHeaderIconSlotClass} aria-hidden />
                   </div>
-                  <p className={statValueClass('profit')}>
-                    {periodStats.profit < 0 ? '-' : ''}
-                    {formatUah(Math.abs(periodStats.profit))}{' '}
-                    <span className={statUnitClass('profit')}>UAH</span>
+                  <p className={statValueClass("profit")}>
+                    {periodStats.profit < 0 ? "-" : ""}
+                    {formatUah(Math.abs(periodStats.profit))}{" "}
+                    <span className={statUnitClass("profit")}>UAH</span>
                   </p>
                 </div>
 
-                <div className={`${overviewStatCardClass('roi')} order-3 md:order-2`}>
+                <div
+                  className={`${overviewStatCardClass("roi")} order-3 md:order-2`}
+                >
                   <div className={statHeaderClass}>
-                    <p className={statLabelClass('roi')}>{t('periodRoiSpread')}</p>
+                    <p className={statLabelClass("roi")}>
+                      {t("periodRoiSpread")}
+                    </p>
                     <span className={statHeaderIconSlotClass} aria-hidden />
                   </div>
-                  <p className={statValueClass('roi')}>
-                    {periodStats.roiPercent < 0 ? '-' : ''}
+                  <p className={statValueClass("roi")}>
+                    {periodStats.roiPercent < 0 ? "-" : ""}
                     {Math.abs(periodStats.roiPercent).toFixed(2)}%
                   </p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => nbuRate && setTurnoverInUsdt(v => !v)}
+                  onClick={() => nbuRate && setTurnoverInUsdt((v) => !v)}
                   disabled={!nbuRate}
                   className={turnoverCardClass}
-                  aria-label={t('switchTurnoverUnit')}
+                  aria-label={t("switchTurnoverUnit")}
                 >
                   <div className={statHeaderClass}>
-                    <p className={statLabelClass('turnover')}>
-                      {t('totalTurnoverPeriod')}
+                    <p className={statLabelClass("turnover")}>
+                      {t("totalTurnoverPeriod")}
                     </p>
                     <ArrowLeftRight
-                      className={`${statHeaderIconSlotClass} ${nbuRate ? 'opacity-80' : 'opacity-35'} ${statThemeClass.turnover.label}`}
+                      className={`${statHeaderIconSlotClass} ${nbuRate ? "opacity-80" : "opacity-35"} ${statThemeClass.turnover.label}`}
                       aria-hidden
                     />
                   </div>
-                  <p className={statValueClass('turnover')}>
-                    {formatTurnoverValue(periodStats.totalTurnover)}{' '}
-                    <span className={statUnitClass('turnover')}>{turnoverUnitLabel}</span>
+                  <p className={statValueClass("turnover")}>
+                    {formatTurnoverValue(periodStats.totalTurnover)}{" "}
+                    <span className={statUnitClass("turnover")}>
+                      {turnoverUnitLabel}
+                    </span>
                   </p>
                 </button>
 
-                <div className={`${overviewStatCardClass('trades')} order-4 md:order-4`}>
+                <div
+                  className={`${overviewStatCardClass("trades")} order-4 md:order-4`}
+                >
                   <div className={statHeaderClass}>
-                    <p className={statLabelClass('trades')}>{t('periodTradesCount')}</p>
+                    <p className={statLabelClass("trades")}>
+                      {t("periodTradesCount")}
+                    </p>
                     <span className={statHeaderIconSlotClass} aria-hidden />
                   </div>
-                  <p className={statValueClass('trades')}>{periodStats.tradesCount}</p>
+                  <p className={statValueClass("trades")}>
+                    {periodStats.tradesCount}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
                 {overviewMiniStats.map((item) => (
-                  <div key={item.key} className={overviewStatCardClass(item.theme)}>
+                  <div
+                    key={item.key}
+                    className={overviewStatCardClass(item.theme)}
+                  >
                     <div className={statHeaderClass}>
-                      <p className={statLabelCompactClass(item.theme)}>{item.label}</p>
+                      <p className={statLabelCompactClass(item.theme)}>
+                        {item.label}
+                      </p>
                       <span className={statHeaderIconSlotClass} aria-hidden />
                     </div>
                     <p className={statValueClass(item.theme)}>{item.value}</p>
@@ -542,8 +593,7 @@ export const AdminPage: React.FC = () => {
         </>
       )}
 
-
-      {!isLoading && activeSection === 'accounts' && (
+      {!isLoading && activeSection === "accounts" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="relative max-w-sm w-full">
@@ -551,7 +601,7 @@ export const AdminPage: React.FC = () => {
               <input
                 type="text"
                 value={accountSearch}
-                onChange={e => setAccountSearch(e.target.value)}
+                onChange={(e) => setAccountSearch(e.target.value)}
                 placeholder="Пошук за нікнеймом або Telegram..."
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
@@ -573,8 +623,11 @@ export const AdminPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                {usersList.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                {usersList.map((u) => (
+                  <tr
+                    key={u.id}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                  >
                     <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
                       {u.nickname}
                     </td>
@@ -587,12 +640,14 @@ export const AdminPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                        u.status === 'active'
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                          : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-                      }`}>
-                        {u.status === 'active' ? t('active') : t('blocked')}
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                          u.status === "active"
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                        }`}
+                      >
+                        {u.status === "active" ? t("active") : t("blocked")}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-500">
@@ -609,28 +664,36 @@ export const AdminPage: React.FC = () => {
                         <button
                           onClick={() => handleToggleUserStatus(u)}
                           className="p-1 text-slate-400 hover:text-amber-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
-                          title={u.status === 'active' ? t('blockAccount') : t('unblockAccount')}
+                          title={
+                            u.status === "active"
+                              ? t("blockAccount")
+                              : t("unblockAccount")
+                          }
                         >
-                          {u.status === 'active' ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                          {u.status === "active" ? (
+                            <Lock className="w-3.5 h-3.5" />
+                          ) : (
+                            <Unlock className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <button
                           onClick={() => handleResetPassword(u)}
                           className="p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
-                          title={t('resetPasswordSafe')}
+                          title={t("resetPasswordSafe")}
                         >
                           <KeyRound className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleOpenEditUser(u)}
                           className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
-                          title={t('editAccount')}
+                          title={t("editAccount")}
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setDeleteUserTarget(u)}
                           className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
-                          title={t('deleteAccount')}
+                          title={t("deleteAccount")}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -644,8 +707,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-
-      {!isLoading && activeSection === 'students' && (
+      {!isLoading && activeSection === "students" && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
@@ -664,8 +726,11 @@ export const AdminPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                {studentsStats.map(st => (
-                  <tr key={st.userId} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                {studentsStats.map((st) => (
+                  <tr
+                    key={st.userId}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                  >
                     <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
                       {st.nickname}
                     </td>
@@ -710,8 +775,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-
-      {!isLoading && activeSection === 'banks' && (
+      {!isLoading && activeSection === "banks" && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -727,7 +791,7 @@ export const AdminPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {globalBanks.map(gb => (
+            {globalBanks.map((gb) => (
               <div
                 key={gb.id}
                 className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-2xs space-y-3"
@@ -741,20 +805,31 @@ export const AdminPage: React.FC = () => {
                       {gb.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">{gb.name}</h4>
-                      <span className="text-xs text-slate-400 font-mono">{gb.code}</span>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                        {gb.name}
+                      </h4>
+                      <span className="text-xs text-slate-400 font-mono">
+                        {gb.code}
+                      </span>
                     </div>
                   </div>
 
-                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
-                    gb.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                  }`}>
-                    {gb.isActive ? 'Активний' : 'Вимкнено'}
+                  <span
+                    className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                      gb.isActive
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {gb.isActive ? "Активний" : "Вимкнено"}
                   </span>
                 </div>
 
                 <div className="text-sm text-slate-500 pt-1">
-                  Стандартний ліміт: <strong className="text-slate-900 dark:text-white font-mono">{formatUah(gb.defaultLimitUah)} ₴</strong>
+                  Стандартний ліміт:{" "}
+                  <strong className="text-slate-900 dark:text-white font-mono">
+                    {formatUah(gb.defaultLimitUah)} ₴
+                  </strong>
                 </div>
 
                 <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -763,7 +838,11 @@ export const AdminPage: React.FC = () => {
                     className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                     title="Увімкнути / Вимкнути"
                   >
-                    {gb.isActive ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                    {gb.isActive ? (
+                      <Lock className="w-3.5 h-3.5" />
+                    ) : (
+                      <Unlock className="w-3.5 h-3.5" />
+                    )}
                   </button>
                   <button
                     onClick={() => handleOpenEditGlobalBank(gb)}
@@ -779,17 +858,18 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-
-      {!isLoading && activeSection === 'exchanges' && (
+      {!isLoading && activeSection === "exchanges" && (
         <div className="space-y-6 max-w-2xl">
-
-          <form onSubmit={handleAddExchange} className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+          <form
+            onSubmit={handleAddExchange}
+            className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3"
+          >
             <input
               type="text"
               required
               placeholder="Назва біржі (наприклад: Bybit)"
               value={newExName}
-              onChange={e => setNewExName(e.target.value)}
+              onChange={(e) => setNewExName(e.target.value)}
               className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
             />
             <input
@@ -797,7 +877,7 @@ export const AdminPage: React.FC = () => {
               required
               placeholder="Код (bybit)"
               value={newExCode}
-              onChange={e => setNewExCode(e.target.value)}
+              onChange={(e) => setNewExCode(e.target.value)}
               className="w-28 px-3 py-2 text-sm font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
             />
             <button
@@ -808,30 +888,35 @@ export const AdminPage: React.FC = () => {
             </button>
           </form>
 
-
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-            {exchanges.map(ex => (
-              <div key={ex.id} className="p-3.5 flex items-center justify-between text-sm">
+            {exchanges.map((ex) => (
+              <div
+                key={ex.id}
+                className="p-3.5 flex items-center justify-between text-sm"
+              >
                 <div>
-                  <span className="font-bold text-slate-900 dark:text-white mr-2">{ex.name}</span>
-                  <span className="font-mono text-slate-400 text-xs">{ex.code}</span>
+                  <span className="font-bold text-slate-900 dark:text-white mr-2">
+                    {ex.name}
+                  </span>
+                  <span className="font-mono text-slate-400 text-xs">
+                    {ex.code}
+                  </span>
                 </div>
                 <button
                   onClick={() => handleToggleExchangeActive(ex)}
                   className={`px-2 py-1 rounded font-semibold text-xs transition-colors ${
                     ex.isActive
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                   }`}
                 >
-                  {ex.isActive ? 'Активна' : 'Деактивована'}
+                  {ex.isActive ? "Активна" : "Деактивована"}
                 </button>
               </div>
             ))}
           </div>
         </div>
       )}
-
 
       {tempPasswordModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
@@ -849,7 +934,9 @@ export const AdminPage: React.FC = () => {
             </div>
 
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Попередній пароль учня ніколи не зберігається у відкритому вигляді. Згенеровано новий надійний тимчасовий пароль. Передайте його учневі особисто:
+              Попередній пароль учня ніколи не зберігається у відкритому
+              вигляді. Згенеровано новий надійний тимчасовий пароль. Передайте
+              його учневі особисто:
             </p>
 
             <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-base font-bold text-center select-all text-blue-600 dark:text-sky-400">
@@ -867,7 +954,6 @@ export const AdminPage: React.FC = () => {
           </div>
         </div>
       )}
-
 
       {selectedUserToEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
@@ -888,7 +974,7 @@ export const AdminPage: React.FC = () => {
                   type="text"
                   required
                   value={editNick}
-                  onChange={e => setEditNick(e.target.value)}
+                  onChange={(e) => setEditNick(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
@@ -899,7 +985,7 @@ export const AdminPage: React.FC = () => {
                   type="text"
                   required
                   value={editTg}
-                  onChange={e => setEditTg(e.target.value)}
+                  onChange={(e) => setEditTg(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
@@ -908,7 +994,7 @@ export const AdminPage: React.FC = () => {
                 <label className="block font-semibold mb-1">Роль</label>
                 <select
                   value={editRole}
-                  onChange={e => setEditRole(e.target.value)}
+                  onChange={(e) => setEditRole(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 >
                   <option value="student">Учень (student)</option>
@@ -936,7 +1022,6 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-
       {deleteUserTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
@@ -945,7 +1030,7 @@ export const AdminPage: React.FC = () => {
               Видалити учня {deleteUserTarget.nickname}?
             </h3>
             <p className="text-sm text-slate-500">
-              {t('deleteAccountConfirm')}
+              {t("deleteAccountConfirm")}
             </p>
             <div className="flex justify-center gap-2 pt-2">
               <button
@@ -965,17 +1050,19 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-
       {inspectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-4xl max-h-[90vh] flex flex-col bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Особистий журнал учня: {inspectedStudent.nickname} ({inspectedStudent.telegram})
+                  Особистий журнал учня: {inspectedStudent.nickname} (
+                  {inspectedStudent.telegram})
                 </h3>
                 <p className="text-sm text-slate-500">
-                  Суммарний прибуток: +{formatUah(inspectedStudent.profitAllTime)} ₴ | Угод: {inspectedStudentTrades.length}
+                  Суммарний прибуток: +
+                  {formatUah(inspectedStudent.profitAllTime)} ₴ | Угод:{" "}
+                  {inspectedStudentTrades.length}
                 </p>
               </div>
               <button onClick={() => setInspectedStudent(null)}>
@@ -987,7 +1074,9 @@ export const AdminPage: React.FC = () => {
               {loadingInspection ? (
                 <PageLoader label="Завантаження операцій учня..." />
               ) : inspectedStudentTrades.length === 0 ? (
-                <div className="p-8 text-center text-sm text-slate-500">Учень ще не має збережених угод.</div>
+                <div className="p-8 text-center text-sm text-slate-500">
+                  Учень ще не має збережених угод.
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
@@ -998,12 +1087,14 @@ export const AdminPage: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Сума (UAH)</th>
                         <th className="py-2.5 px-3">Продаж</th>
                         <th className="py-2.5 px-3 text-right">Виторг (UAH)</th>
-                        <th className="py-2.5 px-3 text-right">Чистий прибуток</th>
+                        <th className="py-2.5 px-3 text-right">
+                          Чистий прибуток
+                        </th>
                         <th className="py-2.5 px-3 text-right">ROI %</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
-                      {inspectedStudentTrades.map(tr => (
+                      {inspectedStudentTrades.map((tr) => (
                         <tr key={tr.id}>
                           <td className="py-2 px-3 text-slate-500">
                             {new Date(tr.createdAt).toLocaleDateString()}
@@ -1046,13 +1137,14 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-
       {isBankModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {editingGlobalBank ? 'Редагувати глобальний банк' : 'Додати глобальний банк'}
+                {editingGlobalBank
+                  ? "Редагувати глобальний банк"
+                  : "Додати глобальний банк"}
               </h3>
               <button onClick={() => setIsBankModalOpen(false)}>
                 <X className="w-5 h-5 text-slate-400" />
@@ -1066,43 +1158,49 @@ export const AdminPage: React.FC = () => {
                   type="text"
                   required
                   value={bankName}
-                  onChange={e => setBankName(e.target.value)}
+                  onChange={(e) => setBankName(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
 
               {!editingGlobalBank && (
                 <div>
-                  <label className="block font-semibold mb-1">Код банку (латиниця, напр. ukrsib)</label>
+                  <label className="block font-semibold mb-1">
+                    Код банку (латиниця, напр. ukrsib)
+                  </label>
                   <input
                     type="text"
                     required
                     value={bankCode}
-                    onChange={e => setBankCode(e.target.value)}
+                    onChange={(e) => setBankCode(e.target.value)}
                     className="w-full px-3 py-2 font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block font-semibold mb-1">Стандартний ліміт обороту (UAH)</label>
+                <label className="block font-semibold mb-1">
+                  Стандартний ліміт обороту (UAH)
+                </label>
                 <input
                   type="number"
                   step="1000"
                   required
                   value={bankLimit}
-                  onChange={e => setBankLimit(e.target.value)}
+                  onChange={(e) => setBankLimit(e.target.value)}
                   className="w-full px-3 py-2 font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Фірмовий колір</label>
+                <label className="block font-semibold mb-1">
+                  Фірмовий колір
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={bankColor}
-                    onChange={e => setBankColor(e.target.value)}
+                    onChange={(e) => setBankColor(e.target.value)}
                     className="w-9 h-9 p-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent cursor-pointer"
                   />
                   <span className="font-mono">{bankColor}</span>
@@ -1128,7 +1226,6 @@ export const AdminPage: React.FC = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
