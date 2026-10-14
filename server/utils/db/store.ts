@@ -424,6 +424,29 @@ export async function getTradesForUser(
   return trades;
 }
 
+export async function getTradesForPlatform(
+  filters: TradeListFilters = {},
+): Promise<Trade[]> {
+  await ensureBootstrapped();
+
+  const { where, orderBy, monthDayFilter } = buildTradeListQuery(
+    undefined,
+    filters,
+  );
+
+  const rows = await prisma.trade.findMany({ where, orderBy });
+  let trades = rows.map(mapTrade);
+
+  if (monthDayFilter) {
+    const { monthKey, dayFrom, dayTo } = monthDayFilter;
+    trades = trades.filter((t) =>
+      tradeMatchesKyivMonthDays(t.createdAt, monthKey, dayFrom, dayTo),
+    );
+  }
+
+  return trades;
+}
+
 export async function findTradeById(id: string): Promise<Trade | null> {
   const row = await prisma.trade.findUnique({ where: { id } });
   return row ? mapTrade(row) : null;
@@ -607,40 +630,21 @@ export async function updateSiteSettings(settings: SiteSettings) {
   });
 }
 
-export async function getAdminOverviewStats() {
+export async function getAdminOverviewData(filters: TradeListFilters = {}) {
   const weekAgo = new Date(Date.now() - 7 * 86400000);
-  const dayStart = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    new Date().getDate(),
-  );
 
-  const [totalStudents, activeStudents, tradesTodayCount, tradeAgg] =
-    await Promise.all([
-      prisma.user.count({ where: { role: "student" } }),
-      prisma.user.count({
-        where: { role: "student", lastLoginAt: { gte: weekAgo } },
-      }),
-      prisma.trade.count({ where: { createdAt: { gte: dayStart } } }),
-      prisma.trade.aggregate({
-        _sum: { buyAmountUah: true, sellAmountUah: true, netProfitUah: true },
-        _count: true,
-      }),
-    ]);
-
-  const totalPlatformTurnover =
-    (tradeAgg._sum.buyAmountUah ?? 0) + (tradeAgg._sum.sellAmountUah ?? 0);
+  const [totalStudents, activeStudents, trades] = await Promise.all([
+    prisma.user.count({ where: { role: "student" } }),
+    prisma.user.count({
+      where: { role: "student", lastLoginAt: { gte: weekAgo } },
+    }),
+    getTradesForPlatform(filters),
+  ]);
 
   return {
     totalStudents,
     activeStudents,
-    tradesToday: tradesTodayCount,
-    totalPlatformTurnover:
-      Math.round((totalPlatformTurnover + Number.EPSILON) * 100) / 100,
-    totalStudentProfit:
-      Math.round(((tradeAgg._sum.netProfitUah ?? 0) + Number.EPSILON) * 100) /
-      100,
-    totalTradesCount: tradeAgg._count,
+    trades,
   };
 }
 

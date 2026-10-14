@@ -76,7 +76,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
   const rangeGroupActive = rangeActive || open;
 
   const filterItemClass = (active: boolean, iconOnly?: boolean) =>
-    `inline-flex min-w-0 items-center justify-center rounded-md py-2 text-[11px] font-bold leading-none whitespace-nowrap transition-colors sm:py-1.5 sm:text-sm sm:font-semibold ${
+    `inline-flex min-w-0 items-center justify-center rounded-md py-2 text-[13px] font-bold leading-none whitespace-nowrap transition-colors sm:py-1.5 sm:text-[15px] sm:font-semibold ${
       iconOnly
         ? "shrink-0 px-1.5 sm:flex-none sm:px-2"
         : "flex-1 basis-0 px-1 sm:flex-none sm:basis-auto sm:px-3"

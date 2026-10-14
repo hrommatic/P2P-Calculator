@@ -115,10 +115,8 @@ export interface SiteSettings {
 export interface AdminOverview {
   totalStudents: number;
   activeStudents: number;
-  tradesToday: number;
-  totalPlatformTurnover: number;
-  totalStudentProfit: number;
-  totalTradesCount: number;
+  trades: Trade[];
+  usdUahRate: number | null;
 }
 
 export interface StudentStatsItem {

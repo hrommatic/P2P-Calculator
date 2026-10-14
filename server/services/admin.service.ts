@@ -3,12 +3,14 @@ import type { User, UserStatus, UserRole } from '../schemas/auth.schema.js';
 import type { GlobalBank, Exchange } from '../schemas/banks.schema.js';
 import { hashPassword, generateTemporaryPassword } from '../lib/crypto.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
+import { getNbuUsdUahRate } from '../lib/nbu-rate.js';
+import type { TradeListFilters } from '../utils/db/trade-filters.js';
 import {
   createExchangeRecord,
   createGlobalBank,
   deleteUserAndData,
   findUserById,
-  getAdminOverviewStats,
+  getAdminOverviewData,
   getAdminUsers,
   getAllExchanges,
   getAllGlobalBanks,
@@ -35,8 +37,12 @@ export async function logAdminAction(admin: User, actionType: string, details: s
 }
 
 export async function handleAdminOverview(req: VercelRequest, res: VercelResponse, _user: User) {
-  const stats = await getAdminOverviewStats();
-  return res.json(stats);
+  const filters = req.query as TradeListFilters;
+  const [overview, usdUahRate] = await Promise.all([
+    getAdminOverviewData(filters),
+    getNbuUsdUahRate().catch(() => null),
+  ]);
+  return res.json({ ...overview, usdUahRate });
 }
 
 export async function handleAdminUsers(req: VercelRequest, res: VercelResponse, _user: User) {

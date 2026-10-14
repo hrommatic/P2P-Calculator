@@ -43,7 +43,7 @@ export function normalizeTradeListFilters(filters: TradeListFilters = {}) {
 }
 
 export function buildTradeListQuery(
-  userId: string,
+  userId: string | undefined,
   filters: TradeListFilters = {},
 ): {
   where: Prisma.TradeWhereInput;
@@ -60,7 +60,10 @@ export function buildTradeListQuery(
     monthKey: normalized.monthKey,
   });
 
-  const and: Prisma.TradeWhereInput[] = [{ userId }];
+  const and: Prisma.TradeWhereInput[] = [];
+  if (userId) {
+    and.push({ userId });
+  }
 
   if (createdAtRange) {
     and.push({
@@ -132,8 +135,17 @@ export function buildTradeListQuery(
     };
   }
 
+  let where: Prisma.TradeWhereInput;
+  if (and.length === 0) {
+    where = {};
+  } else if (and.length === 1) {
+    where = and[0]!;
+  } else {
+    where = { AND: and };
+  }
+
   return {
-    where: and.length === 1 ? and[0]! : { AND: and },
+    where,
     orderBy,
     monthDayFilter,
   };

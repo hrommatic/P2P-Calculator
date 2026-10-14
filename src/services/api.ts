@@ -212,7 +212,19 @@ export const api = {
   getExchanges: () => request<{ exchanges: Exchange[] }>('/exchanges'),
   getPublicSettings: () => request<SiteSettings>('/settings/public'),
 
-  getAdminOverview: () => request<AdminOverview>('/admin/overview'),
+  getAdminOverview: (
+    params?: Record<string, string | undefined>,
+    signal?: AbortSignal,
+  ) => {
+    const q = new URLSearchParams();
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value) q.set(key, value);
+      }
+    }
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request<AdminOverview>(`/admin/overview${queryString}`, { signal });
+  },
   getAdminUsers: (params?: { search?: string; status?: string }) => {
     const q = new URLSearchParams();
     if (params?.search) q.set('search', params.search);

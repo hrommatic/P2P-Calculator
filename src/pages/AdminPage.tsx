@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
@@ -9,7 +9,6 @@ import {
   Trade,
 } from '../types';
 import {
-  ShieldCheck,
   Users,
   BarChart3,
   Building2,
@@ -26,8 +25,28 @@ import {
   X,
   Eye,
   RefreshCw,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { PageLoader } from '../components/ui/Loader';
+import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
+import {
+  defaultPeriodFilter,
+  periodToQuery,
+  type PeriodPreset,
+} from '../lib/period-filter';
+import { aggregateTradePeriodStats } from '../lib/trade-period-stats';
+import { aggregateTradeRateExtras } from '../lib/trade-rate-extras';
+import {
+  statCardShell,
+  statHeaderClass,
+  statHeaderIconSlotClass,
+  statLabelClass,
+  statThemeClass,
+  statUnitClass,
+  statValueClass,
+  statLabelCompactClass,
+  type StatTheme,
+} from '../lib/stat-card-theme';
 
 export const AdminPage: React.FC = () => {
   const { user, t } = useAuth();
@@ -36,6 +55,8 @@ export const AdminPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [period, setPeriod] = useState(defaultPeriodFilter);
+  const [turnoverInUsdt, setTurnoverInUsdt] = useState(false);
 
   const [usersList, setUsersList] = useState<any[]>([]);
   const [accountSearch, setAccountSearch] = useState('');
@@ -71,16 +92,43 @@ export const AdminPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (activeSection === 'overview') return;
     loadSectionData(activeSection);
   }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== 'overview') return;
+
+    const ac = new AbortController();
+    let cancelled = false;
+
+    (async () => {
+      setIsLoading(true);
+      try {
+        const data = await api.getAdminOverview(periodToQuery(period), ac.signal);
+        if (!cancelled) setOverview(data);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        showMsg(
+          err instanceof Error ? err.message : 'Помилка завантаження огляду',
+          'error',
+        );
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [activeSection, period]);
 
   const loadSectionData = async (section: string) => {
     setIsLoading(true);
     try {
-      if (section === 'overview') {
-        const data = await api.getAdminOverview();
-        setOverview(data);
-      } else if (section === 'accounts') {
+      if (section === 'accounts') {
         const data = await api.getAdminUsers({ search: accountSearch });
         setUsersList(data.users);
       } else if (section === 'students') {
@@ -257,12 +305,107 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  const formatUah = (val: number) => {
+  const formatUah = useCallback((val: number) => {
+    return new Intl.NumberFormat('uk-UA', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(val || 0);
+  }, []);
+
+  const formatUsdt = (val: number) => {
     return new Intl.NumberFormat('uk-UA', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(val || 0);
   };
+
+  const formatRate = (val: number) => {
+    return new Intl.NumberFormat('uk-UA', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(val || 0);
+  };
+
+  const periodStats = useMemo(
+    () => aggregateTradePeriodStats(overview?.trades ?? []),
+    [overview?.trades],
+  );
+
+  const rateExtras = useMemo(
+    () => aggregateTradeRateExtras(overview?.trades ?? []),
+    [overview?.trades],
+  );
+
+  const nbuRate = overview?.usdUahRate ?? null;
+
+  const formatTurnoverValue = (uah: number) => {
+    if (turnoverInUsdt && nbuRate && nbuRate > 0) {
+      return formatUsdt(uah / nbuRate);
+    }
+    return formatUah(uah);
+  };
+
+  const turnoverUnitLabel = turnoverInUsdt && nbuRate ? 'USDT' : 'UAH';
+
+  const overviewStatCardClass = (theme: StatTheme) =>
+    `${statCardShell(theme)} h-full min-h-[5.25rem] sm:min-h-[5.5rem]`;
+
+  const turnoverCardClass =
+    overviewStatCardClass('turnover') +
+    ' col-span-2 md:col-span-1 order-2 md:order-3 text-left w-full transition-colors' +
+    (nbuRate
+      ? ' cursor-pointer hover:brightness-105 dark:hover:brightness-110'
+      : '');
+
+  const presetLabels: Record<PeriodPreset, string> = {
+    all: t('filterAll'),
+    today: t('filterToday'),
+    yesterday: t('filterYesterday'),
+    week: t('filterWeek'),
+    month: t('filterMonth'),
+  };
+
+  const overviewMiniStats: { key: string; theme: StatTheme; label: string; value: string }[] =
+    overview
+      ? [
+          {
+            key: 'avgBuy',
+            theme: 'profit',
+            label: t('adminAvgBuy'),
+            value: formatRate(rateExtras.avgBuyRate),
+          },
+          {
+            key: 'avgSell',
+            theme: 'roi',
+            label: t('adminAvgSell'),
+            value: formatRate(rateExtras.avgSellRate),
+          },
+          {
+            key: 'minBuy',
+            theme: 'turnover',
+            label: t('adminMinBuy'),
+            value: formatRate(rateExtras.minBuyRate),
+          },
+          {
+            key: 'maxSell',
+            theme: 'trades',
+            label: t('adminMaxSell'),
+            value: formatRate(rateExtras.maxSellRate),
+          },
+          {
+            key: 'activeStudents',
+            theme: 'roi',
+            label: t('activeStudents'),
+            value: String(overview.activeStudents),
+          },
+          {
+            key: 'totalStudents',
+            theme: 'banks',
+            label: t('totalStudents'),
+            value: String(overview.totalStudents),
+          },
+        ]
+      : [];
 
   const navTabs = [
     { id: 'overview', label: t('adminOverview'), icon: BarChart3 },
@@ -273,27 +416,7 @@ export const AdminPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
-
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold uppercase tracking-wider text-blue-600 dark:text-sky-400">
-              Адміністратор
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-            <ShieldCheck className="w-6 h-6 text-blue-600 dark:text-sky-400" />
-            <span>{t('adminTitle')}</span>
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Керування платформою, учнями, довідниками банків та безпекою
-          </p>
-        </div>
-      </div>
-
-
+    <div className="space-y-6 min-w-0 max-w-full">
       {adminMessage && (
         <div className={`p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2.5 ${
           adminMessage.type === 'success'
@@ -327,55 +450,96 @@ export const AdminPage: React.FC = () => {
         })}
       </div>
 
-      {isLoading && (
+      {isLoading && activeSection !== 'overview' && (
         <PageLoader label="Завантаження..." className="py-16" />
       )}
 
+      {activeSection === 'overview' && (
+        <>
+          <PeriodFilterBar
+            value={period}
+            onChange={setPeriod}
+            t={t}
+            presetLabels={presetLabels}
+          />
 
-      {!isLoading && activeSection === 'overview' && overview && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {isLoading && (
+            <PageLoader label="Завантаження..." className="py-16" />
+          )}
 
-            <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('totalStudents')}</span>
-              <span className="text-2xl font-bold font-mono text-slate-900 dark:text-white">{overview.totalStudents}</span>
+          {!isLoading && overview && (
+            <div className="space-y-3 sm:space-y-4 min-w-0">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
+                <div
+                  className={`${overviewStatCardClass('profit')} col-span-2 md:col-span-1 order-1 md:order-1`}
+                >
+                  <div className={statHeaderClass}>
+                    <p className={statLabelClass('profit')}>{t('periodProfit')}</p>
+                    <span className={statHeaderIconSlotClass} aria-hidden />
+                  </div>
+                  <p className={statValueClass('profit')}>
+                    {periodStats.profit < 0 ? '-' : ''}
+                    {formatUah(Math.abs(periodStats.profit))}{' '}
+                    <span className={statUnitClass('profit')}>UAH</span>
+                  </p>
+                </div>
+
+                <div className={`${overviewStatCardClass('roi')} order-3 md:order-2`}>
+                  <div className={statHeaderClass}>
+                    <p className={statLabelClass('roi')}>{t('periodRoiSpread')}</p>
+                    <span className={statHeaderIconSlotClass} aria-hidden />
+                  </div>
+                  <p className={statValueClass('roi')}>
+                    {periodStats.roiPercent < 0 ? '-' : ''}
+                    {Math.abs(periodStats.roiPercent).toFixed(2)}%
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => nbuRate && setTurnoverInUsdt(v => !v)}
+                  disabled={!nbuRate}
+                  className={turnoverCardClass}
+                  aria-label={t('switchTurnoverUnit')}
+                >
+                  <div className={statHeaderClass}>
+                    <p className={statLabelClass('turnover')}>
+                      {t('totalTurnoverPeriod')}
+                    </p>
+                    <ArrowLeftRight
+                      className={`${statHeaderIconSlotClass} ${nbuRate ? 'opacity-80' : 'opacity-35'} ${statThemeClass.turnover.label}`}
+                      aria-hidden
+                    />
+                  </div>
+                  <p className={statValueClass('turnover')}>
+                    {formatTurnoverValue(periodStats.totalTurnover)}{' '}
+                    <span className={statUnitClass('turnover')}>{turnoverUnitLabel}</span>
+                  </p>
+                </button>
+
+                <div className={`${overviewStatCardClass('trades')} order-4 md:order-4`}>
+                  <div className={statHeaderClass}>
+                    <p className={statLabelClass('trades')}>{t('periodTradesCount')}</p>
+                    <span className={statHeaderIconSlotClass} aria-hidden />
+                  </div>
+                  <p className={statValueClass('trades')}>{periodStats.tradesCount}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 items-stretch auto-rows-fr min-w-0">
+                {overviewMiniStats.map((item) => (
+                  <div key={item.key} className={overviewStatCardClass(item.theme)}>
+                    <div className={statHeaderClass}>
+                      <p className={statLabelCompactClass(item.theme)}>{item.label}</p>
+                      <span className={statHeaderIconSlotClass} aria-hidden />
+                    </div>
+                    <p className={statValueClass(item.theme)}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-
-            <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('activeStudents')}</span>
-              <span className="text-2xl font-bold font-mono text-blue-600 dark:text-sky-400">{overview.activeStudents}</span>
-            </div>
-
-            <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('tradesToday')}</span>
-              <span className="text-2xl font-bold font-mono text-slate-900 dark:text-white">{overview.tradesToday}</span>
-            </div>
-
-            <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('totalPlatformTurnover')}</span>
-              <span className="text-lg sm:text-xl font-bold font-mono text-slate-900 dark:text-white">
-                {formatUah(overview.totalPlatformTurnover)} ₴
-              </span>
-            </div>
-
-            <div className="bg-white dark:bg-[#111827] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-1">{t('totalStudentProfit')}</span>
-              <span className="text-lg sm:text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                +{formatUah(overview.totalStudentProfit)} ₴
-              </span>
-            </div>
-
-          </div>
-
-          <div className="p-5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 text-sm text-slate-700 dark:text-slate-300">
-            <h3 className="font-bold text-sm text-blue-900 dark:text-sky-300 mb-1">
-              Режим куратора активовано
-            </h3>
-            <p className="leading-relaxed">
-              Ви можете контролювати результати учнів, блокувати доступ у разі порушень, безпечно генерувати тимчасові паролі для відновлення доступу (паролі учнів зашифровані scrypt і не розкриваються) та налаштовувати ліміти банків.
-            </p>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
 
