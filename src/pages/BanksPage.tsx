@@ -14,6 +14,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { ButtonLoader, PageLoader } from "../components/ui/Loader";
+import { disabledControlClass } from "../lib/disabled-control-class";
 import { BankLogo } from "../components/banks/BankLogo";
 import { resolveBankLogoSvg } from "../lib/resolve-bank-logo";
 
@@ -193,6 +194,8 @@ export const BanksPage: React.FC = () => {
     }
   };
 
+  const bankActionsBusy = isSaving || isDeleting;
+
   const handleDeleteConfirm = async () => {
     if (!deleteTarget || isDeleting) return;
     setIsDeleting(true);
@@ -312,18 +315,22 @@ export const BanksPage: React.FC = () => {
 
                     <div className="flex items-center gap-1">
                       <button
+                        type="button"
+                        disabled={bankActionsBusy}
                         onClick={() => handleOpenEditModal(bank)}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        className={`p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${disabledControlClass}`}
                         title={t("editBank")}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
+                        disabled={bankActionsBusy}
                         onClick={() => {
                           setDeleteError(null);
                           setDeleteTarget(bank);
                         }}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                        className={`p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors ${disabledControlClass}`}
                         title={t("deleteBank")}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -552,7 +559,7 @@ export const BanksPage: React.FC = () => {
                     isSaving ||
                     (!editingBank && addableGlobalBanks.length === 0)
                   }
-                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  className={`px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white ${disabledControlClass}`}
                 >
                   {isSaving ? (
                     <ButtonLoader label="Збереження..." />

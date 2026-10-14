@@ -277,7 +277,21 @@ export async function getActiveGlobalBanks(): Promise<GlobalBank[]> {
 }
 
 export async function findUserBankById(id: string): Promise<UserBank | null> {
+  if (!id.trim()) return null;
+  await ensureBootstrapped();
   const row = await prisma.userBank.findUnique({ where: { id } });
+  return row ? mapUserBank(row) : null;
+}
+
+export async function findUserBankForUser(
+  userId: string,
+  bankId: string,
+): Promise<UserBank | null> {
+  if (!bankId.trim()) return null;
+  await ensureBootstrapped();
+  const row = await prisma.userBank.findFirst({
+    where: { id: bankId, userId, isArchived: false },
+  });
   return row ? mapUserBank(row) : null;
 }
 

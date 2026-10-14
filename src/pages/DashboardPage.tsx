@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { DashboardTradeRow } from "../components/dashboard/DashboardTradeRow";
 import { useAuth } from "../context/AuthContext";
+import { useTradesRefresh } from "../context/TradesRefreshContext";
 import { api } from "../services/api";
 import { DashboardStats, Trade } from "../types";
 import { PlusCircle, ArrowRight, ArrowLeftRight } from "lucide-react";
@@ -30,6 +31,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onNavigateToCalculator,
 }) => {
   const { user, language, t } = useAuth();
+  const { tradesRevision } = useTradesRefresh();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [period, setPeriod] = useState(defaultPeriodFilter);
@@ -66,7 +68,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       cancelled = true;
       ac.abort();
     };
-  }, [period]);
+  }, [period, tradesRevision]);
 
   const periodStats = useMemo(
     () => aggregateTradePeriodStats(trades),

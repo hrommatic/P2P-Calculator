@@ -13,6 +13,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { ButtonLoader } from '../components/ui/Loader';
+import { disabledControlClass } from '../lib/disabled-control-class';
 import { Language } from '../types';
 import { layoutShellClass } from '../lib/layout-shell';
 import { api } from '../services/api';
@@ -60,6 +61,7 @@ export const AuthPage: React.FC = () => {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isResetting) return;
     setResetError(null);
     setResetSuccess(null);
 
@@ -135,6 +137,7 @@ export const AuthPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setError(null);
     setIsLoading(true);
 
@@ -404,7 +407,7 @@ export const AuthPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+              className={`w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center justify-center gap-2 ${disabledControlClass}`}
             >
               {isLoading ? (
                 <ButtonLoader label={language === 'en' ? 'Processing...' : language === 'ru' ? 'Обработка...' : 'Обробка...'} />

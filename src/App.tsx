@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CatalogProvider } from './context/CatalogContext';
+import { TradesRefreshProvider } from './context/TradesRefreshContext';
 import { Navbar } from './components/layout/Navbar';
 import { AuthPage } from './pages/AuthPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -66,6 +67,7 @@ function AppContent() {
 
   return (
     <CatalogProvider>
+    <TradesRefreshProvider>
     <div className="flex h-dvh max-h-dvh max-w-[100vw] flex-col overflow-hidden bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100 transition-colors">
 
 
@@ -92,7 +94,7 @@ function AppContent() {
         )}
         {mountedTabs.calculator && (
           <div className={`${panelClass('calculator')} ${pageContentClass}`}>
-            <CalculatorPage onTradeSaved={() => {}} />
+            <CalculatorPage />
           </div>
         )}
         {mountedTabs.banks && (
@@ -135,6 +137,7 @@ function AppContent() {
       </footer>
 
     </div>
+    </TradesRefreshProvider>
     </CatalogProvider>
   );
 }

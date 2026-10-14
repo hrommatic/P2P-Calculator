@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { useCatalog } from '../context/CatalogContext';
+import { useTradesRefresh } from '../context/TradesRefreshContext';
 import { Trade } from '../types';
 import {
   History as HistoryIcon,
@@ -12,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
+import { disabledControlClass } from '../lib/disabled-control-class';
 import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
 import {
   defaultPeriodFilter,
@@ -22,7 +24,8 @@ import {
 export const HistoryPage: React.FC = () => {
   const { t, language } = useAuth();
 
-  const { banks, exchanges } = useCatalog();
+  const { banks, exchanges, refreshCatalog } = useCatalog();
+  const { tradesRevision, bumpTradesRefresh } = useTradesRefresh();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -48,6 +51,8 @@ export const HistoryPage: React.FC = () => {
   const [editNotes, setEditNotes] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
 
+  const tradeActionsBusy = isSavingEdit || isDeleting;
+
   const fetchHistory = async () => {
     setIsLoading(true);
     try {
@@ -62,7 +67,7 @@ export const HistoryPage: React.FC = () => {
 
   useEffect(() => {
     fetchHistory();
-  }, [period]);
+  }, [period, tradesRevision]);
 
   const handleOpenEdit = (trade: Trade) => {
     setEditingTrade(trade);
@@ -102,7 +107,8 @@ export const HistoryPage: React.FC = () => {
         notes: editNotes.trim(),
       });
       setEditingTrade(null);
-      fetchHistory();
+      await refreshCatalog(true);
+      bumpTradesRefresh();
     } catch (err: any) {
       setEditError(err.message || 'Помилка оновлення угоди');
     } finally {
@@ -111,12 +117,13 @@ export const HistoryPage: React.FC = () => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteTarget || isDeleting) return;
+    if (!deleteTarget || isDeleting || isSavingEdit) return;
     setIsDeleting(true);
     try {
       await api.deleteTrade(deleteTarget.id);
       setDeleteTarget(null);
-      fetchHistory();
+      await refreshCatalog(true);
+      bumpTradesRefresh();
     } catch (err) {
       console.error('Failed to delete trade:', err);
     } finally {
@@ -268,22 +275,28 @@ export const HistoryPage: React.FC = () => {
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <button
+                            type="button"
+                            disabled={tradeActionsBusy}
                             onClick={() => setSelectedTrade(trade)}
-                            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className={`p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                             title={t('tradeDetails')}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            type="button"
+                            disabled={tradeActionsBusy}
                             onClick={() => handleOpenEdit(trade)}
-                            className="p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className={`p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                             title={t('editTrade')}
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            type="button"
+                            disabled={tradeActionsBusy}
                             onClick={() => setDeleteTarget(trade)}
-                            className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className={`p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                             title={t('deleteTrade')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -470,15 +483,16 @@ export const HistoryPage: React.FC = () => {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
+                  disabled={isSavingEdit}
                   onClick={() => setEditingTrade(null)}
-                  className="px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  className={`px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ${disabledControlClass}`}
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingEdit}
-                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
+                  className={`px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white ${disabledControlClass}`}
                 >
                   {isSavingEdit ? <ButtonLoader label="Збереження..." /> : 'Зберегти зміни'}
                 </button>
@@ -501,15 +515,18 @@ export const HistoryPage: React.FC = () => {
             </p>
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
+                type="button"
+                disabled={isDeleting}
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 ${disabledControlClass}`}
               >
                 {t('cancel')}
               </button>
               <button
+                type="button"
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-60"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white ${disabledControlClass}`}
               >
                 {isDeleting ? <ButtonLoader label="Видалення..." /> : t('deleteTrade')}
               </button>

@@ -194,15 +194,21 @@ export const api = {
     notes?: string;
     color?: string;
   }) =>
-    request<{ success: boolean; bank: UserBank }>(`/banks/${id}`, {
+    request<{ success: boolean; bank: UserBank }>(
+      `/banks/${encodeURIComponent(id)}`,
+      {
       method: 'PUT',
       body: JSON.stringify(body),
-    }),
+    },
+    ),
 
   deleteBank: (id: string) =>
-    request<{ success: boolean; message: string }>(`/banks/${id}`, {
+    request<{ success: boolean; message: string }>(
+      `/banks/${encodeURIComponent(id)}`,
+      {
       method: 'DELETE',
-    }),
+    },
+    ),
 
   getDashboardStats: (
     params?: Record<string, string | undefined>,

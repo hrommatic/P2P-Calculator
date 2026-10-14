@@ -126,8 +126,21 @@ await test('User: create bank from global template', async () => {
   userBankId = r.data?.bank?.id || '';
 });
 
+await test('User: update bank', async () => {
+  const r = await req('PUT', `/banks/${encodeURIComponent(userBankId)}`, {
+    name: 'Flow Test Bank Renamed',
+    turnoverLimitUah: 120000,
+    notes: 'updated',
+  });
+  assert(
+    'update user bank 200',
+    r.status === 200 && r.data?.bank?.name === 'Flow Test Bank Renamed',
+    JSON.stringify(r.data)?.slice(0, 150),
+  );
+});
+
 await test('User: delete bank', async () => {
-  const r = await req('DELETE', `/banks/${userBankId}`);
+  const r = await req('DELETE', `/banks/${encodeURIComponent(userBankId)}`);
   assert('delete user bank 200', r.status === 200 && r.data?.success, JSON.stringify(r.data)?.slice(0, 120));
   assert('not NOT_FOUND', !isVercelNotFound(r.data));
 });

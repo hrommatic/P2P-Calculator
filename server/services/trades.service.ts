@@ -7,7 +7,7 @@ import {
   createTradeRecord,
   deleteTradeRecord,
   findTradeById,
-  findUserBankById,
+  findUserBankForUser,
   getTradesForUser,
   decrementUserBankStatsFromTrade,
   incrementUserBankStatsFromTrade,
@@ -61,11 +61,11 @@ export async function handlePostTrade(req: VercelRequest, res: VercelResponse, u
   }
 
   const [buyBank, sellBank] = await Promise.all([
-    findUserBankById(String(buyBankId)),
-    findUserBankById(String(sellBankId)),
+    findUserBankForUser(user.id, String(buyBankId)),
+    findUserBankForUser(user.id, String(sellBankId)),
   ]);
 
-  if (!buyBank || buyBank.userId !== user.id || !sellBank || sellBank.userId !== user.id) {
+  if (!buyBank || !sellBank) {
     return res.status(400).json({ error: 'Один із обраних банків не знайдено у вашому списку' });
   }
 
@@ -132,12 +132,13 @@ export async function handlePutTrade(req: VercelRequest, res: VercelResponse, us
   }
 
   const body = parseJsonBody(req);
+  const ownerId = existingTrade.userId;
   const [buyBank, sellBank] = await Promise.all([
-    findUserBankById(String(body.buyBankId)),
-    findUserBankById(String(body.sellBankId)),
+    findUserBankForUser(ownerId, String(body.buyBankId)),
+    findUserBankForUser(ownerId, String(body.sellBankId)),
   ]);
 
-  if (!buyBank || buyBank.userId !== existingTrade.userId || !sellBank || sellBank.userId !== existingTrade.userId) {
+  if (!buyBank || !sellBank) {
     return res.status(400).json({ error: 'Банк не знайдено' });
   }
 

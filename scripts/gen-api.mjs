@@ -143,13 +143,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 function buildPathSegmentsLib() {
   return `import type { VercelRequest } from '@vercel/node';
 
-function readPathSegments(req: VercelRequest): string[] {
+function segmentsFromQueryPath(req: VercelRequest): string[] | null {
   const queryPath = req.query.path;
-  if (queryPath !== undefined && queryPath !== null) {
-    const parts = Array.isArray(queryPath) ? queryPath : [queryPath];
-    return parts.flatMap((p) => String(p).split('/').filter(Boolean));
-  }
+  if (queryPath === undefined || queryPath === null) return null;
+  const parts = Array.isArray(queryPath) ? queryPath : [queryPath];
+  return parts.flatMap((p) => String(p).split('/').filter(Boolean));
+}
 
+function readPathnameSegments(req: VercelRequest): string[] {
   const pathname = (req.url ?? '').split('?')[0];
   const marker = '/api/';
   const idx = pathname.indexOf(marker);
@@ -164,13 +165,24 @@ export function getGroupPathSegments(
   groupName: string,
   pathPrefixAfterGroup: string[] = [],
 ): string[] {
-  const queryPath = req.query.path;
-  if (queryPath !== undefined && queryPath !== null && pathPrefixAfterGroup.length > 0) {
-    const parts = Array.isArray(queryPath) ? queryPath : [queryPath];
-    return parts.flatMap((p) => String(p).split('/').filter(Boolean));
+  const fromQuery = segmentsFromQueryPath(req);
+  if (fromQuery !== null) {
+    if (pathPrefixAfterGroup.length > 0) {
+      const prefixMatches = pathPrefixAfterGroup.every(
+        (seg, i) => fromQuery[i] === seg,
+      );
+      if (prefixMatches) {
+        return fromQuery.slice(pathPrefixAfterGroup.length);
+      }
+      return fromQuery;
+    }
+    if (fromQuery[0] === groupName) {
+      return fromQuery.slice(1);
+    }
+    return fromQuery;
   }
 
-  const afterApi = readPathSegments(req);
+  const afterApi = readPathnameSegments(req);
   if (afterApi[0] !== groupName) return [];
 
   let segments = afterApi.slice(1);

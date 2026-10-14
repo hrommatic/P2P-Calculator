@@ -83,8 +83,19 @@ export async function handlePostBank(req: VercelRequest, res: VercelResponse, us
   return res.json({ success: true, bank: newBank });
 }
 
+function resolveRouteId(req: VercelRequest): string {
+  const raw = req.query.id;
+  if (raw === undefined || raw === null) return '';
+  const id = Array.isArray(raw) ? raw[0] : raw;
+  try {
+    return decodeURIComponent(String(id));
+  } catch {
+    return String(id);
+  }
+}
+
 export async function handlePutBank(req: VercelRequest, res: VercelResponse, user: User) {
-  const bank = await findUserBankById(String(req.query.id));
+  const bank = await findUserBankById(resolveRouteId(req));
   if (!bank || (bank.userId !== user.id && user.role !== 'admin')) {
     return res.status(404).json({ error: 'Банк не знайдено' });
   }
@@ -122,7 +133,7 @@ export async function handlePutBank(req: VercelRequest, res: VercelResponse, use
 }
 
 export async function handleDeleteBank(req: VercelRequest, res: VercelResponse, user: User) {
-  const bank = await findUserBankById(String(req.query.id));
+  const bank = await findUserBankById(resolveRouteId(req));
   if (!bank || (bank.userId !== user.id && user.role !== 'admin')) {
     return res.status(404).json({ error: 'Банк не знайдено' });
   }

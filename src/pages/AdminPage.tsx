@@ -35,6 +35,7 @@ import {
   ImageOff,
 } from "lucide-react";
 import { ButtonLoader, PageLoader } from "../components/ui/Loader";
+import { disabledControlClass } from "../lib/disabled-control-class";
 import { PeriodFilterBar } from "../components/filters/PeriodFilterBar";
 import {
   defaultPeriodFilter,
@@ -112,6 +113,13 @@ export const AdminPage: React.FC = () => {
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [newExName, setNewExName] = useState("");
   const [newExCode, setNewExCode] = useState("");
+  const [isSavingUserEdit, setIsSavingUserEdit] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [isAddingExchange, setIsAddingExchange] = useState(false);
+  const [userRowActionId, setUserRowActionId] = useState<string | null>(null);
+  const [togglingExchangeId, setTogglingExchangeId] = useState<string | null>(
+    null,
+  );
 
   const [adminMessage, setAdminMessage] = useState<{
     text: string;
@@ -198,6 +206,9 @@ export const AdminPage: React.FC = () => {
   }, [accountSearch]);
 
   const handleToggleUserStatus = async (userItem: any) => {
+    if (userRowActionId) return;
+    const actionId = `status-${userItem.id}`;
+    setUserRowActionId(actionId);
     const newStatus = userItem.status === "active" ? "blocked" : "active";
     try {
       await api.setUserStatus(userItem.id, newStatus);
@@ -205,6 +216,8 @@ export const AdminPage: React.FC = () => {
       loadSectionData("accounts");
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setUserRowActionId(null);
     }
   };
 
@@ -217,7 +230,8 @@ export const AdminPage: React.FC = () => {
 
   const handleSaveUserEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedUserToEdit) return;
+    if (!selectedUserToEdit || isSavingUserEdit) return;
+    setIsSavingUserEdit(true);
     try {
       await api.updateUserProfile(selectedUserToEdit.id, {
         nickname: editNick,
@@ -229,10 +243,15 @@ export const AdminPage: React.FC = () => {
       loadSectionData("accounts");
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setIsSavingUserEdit(false);
     }
   };
 
   const handleResetPassword = async (userItem: any) => {
+    if (userRowActionId) return;
+    const actionId = `reset-${userItem.id}`;
+    setUserRowActionId(actionId);
     try {
       const res = await api.resetUserPassword(userItem.id);
       setTempPasswordModal({
@@ -242,11 +261,14 @@ export const AdminPage: React.FC = () => {
       showMsg("Пароль безпечно скинуто");
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setUserRowActionId(null);
     }
   };
 
   const handleDeleteUser = async () => {
-    if (!deleteUserTarget) return;
+    if (!deleteUserTarget || isDeletingUser) return;
+    setIsDeletingUser(true);
     try {
       await api.deleteUser(deleteUserTarget.id);
       showMsg(`Користувача ${deleteUserTarget.nickname} видалено`);
@@ -254,10 +276,13 @@ export const AdminPage: React.FC = () => {
       loadSectionData("accounts");
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
   const handleInspectStudent = async (student: StudentStatsItem) => {
+    if (loadingInspection) return;
     setInspectedStudent(student);
     setLoadingInspection(true);
     try {
@@ -360,7 +385,8 @@ export const AdminPage: React.FC = () => {
 
   const handleAddExchange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExName || !newExCode) return;
+    if (!newExName || !newExCode || isAddingExchange) return;
+    setIsAddingExchange(true);
     try {
       await api.createAdminExchange({ name: newExName, code: newExCode });
       setNewExName("");
@@ -369,15 +395,21 @@ export const AdminPage: React.FC = () => {
       loadSectionData("exchanges");
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setIsAddingExchange(false);
     }
   };
 
   const handleToggleExchangeActive = async (ex: Exchange) => {
+    if (togglingExchangeId) return;
+    setTogglingExchangeId(ex.id);
     try {
       await api.updateAdminExchange(ex.id, { isActive: !ex.isActive });
       loadSectionData("exchanges");
     } catch (err: any) {
       showMsg(err.message, "error");
+    } finally {
+      setTogglingExchangeId(null);
     }
   };
 
@@ -868,8 +900,10 @@ export const AdminPage: React.FC = () => {
                     <td className="py-3 px-4 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
+                          type="button"
+                          disabled={userRowActionId !== null}
                           onClick={() => handleToggleUserStatus(u)}
-                          className="p-1 text-slate-400 hover:text-amber-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                          className={`p-1 text-slate-400 hover:text-amber-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                           title={
                             u.status === "active"
                               ? t("blockAccount")
@@ -883,22 +917,28 @@ export const AdminPage: React.FC = () => {
                           )}
                         </button>
                         <button
+                          type="button"
+                          disabled={userRowActionId !== null}
                           onClick={() => handleResetPassword(u)}
-                          className="p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                          className={`p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                           title={t("resetPasswordSafe")}
                         >
                           <KeyRound className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
+                          disabled={userRowActionId !== null}
                           onClick={() => handleOpenEditUser(u)}
-                          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                          className={`p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                           title={t("editAccount")}
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
+                          disabled={userRowActionId !== null}
                           onClick={() => setDeleteUserTarget(u)}
-                          className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                          className={`p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${disabledControlClass}`}
                           title={t("deleteAccount")}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -966,8 +1006,10 @@ export const AdminPage: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
+                        type="button"
+                        disabled={loadingInspection}
                         onClick={() => handleInspectStudent(st)}
-                        className="px-2.5 py-1 text-sm font-semibold rounded bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-sky-400 hover:bg-blue-100 transition-colors inline-flex items-center gap-1"
+                        className={`px-2.5 py-1 text-sm font-semibold rounded bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-sky-400 hover:bg-blue-100 transition-colors inline-flex items-center gap-1 ${disabledControlClass}`}
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Деталі</span>
@@ -1076,9 +1118,14 @@ export const AdminPage: React.FC = () => {
             />
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shrink-0"
+              disabled={isAddingExchange}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shrink-0 inline-flex items-center justify-center min-w-[7rem] ${disabledControlClass}`}
             >
-              Додати біржу
+              {isAddingExchange ? (
+                <ButtonLoader label="Додавання..." />
+              ) : (
+                "Додати біржу"
+              )}
             </button>
           </form>
 
@@ -1097,8 +1144,10 @@ export const AdminPage: React.FC = () => {
                   </span>
                 </div>
                 <button
+                  type="button"
+                  disabled={togglingExchangeId !== null}
                   onClick={() => handleToggleExchangeActive(ex)}
-                  className={`px-2 py-1 rounded font-semibold text-xs transition-colors ${
+                  className={`px-2 py-1 rounded font-semibold text-xs transition-colors ${disabledControlClass} ${
                     ex.isActive
                       ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
@@ -1199,16 +1248,22 @@ export const AdminPage: React.FC = () => {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
+                  disabled={isSavingUserEdit}
                   onClick={() => setSelectedUserToEdit(null)}
-                  className="px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  className={`px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ${disabledControlClass}`}
                 >
                   Скасувати
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold rounded-lg bg-blue-600 text-white"
+                  disabled={isSavingUserEdit}
+                  className={`px-4 py-2 font-semibold rounded-lg bg-blue-600 text-white ${disabledControlClass}`}
                 >
-                  Зберегти
+                  {isSavingUserEdit ? (
+                    <ButtonLoader label="Збереження..." />
+                  ) : (
+                    "Зберегти"
+                  )}
                 </button>
               </div>
             </form>
@@ -1240,7 +1295,7 @@ export const AdminPage: React.FC = () => {
                 type="button"
                 disabled={isDeletingGlobalBank}
                 onClick={handleDeleteGlobalBank}
-                className="inline-flex items-center justify-center min-w-[8rem] px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white disabled:opacity-70"
+                className={`inline-flex items-center justify-center min-w-[8rem] px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white ${disabledControlClass}`}
               >
                 {isDeletingGlobalBank ? (
                   <ButtonLoader label="Видалення..." />
@@ -1265,16 +1320,24 @@ export const AdminPage: React.FC = () => {
             </p>
             <div className="flex justify-center gap-2 pt-2">
               <button
+                type="button"
+                disabled={isDeletingUser}
                 onClick={() => setDeleteUserTarget(null)}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ${disabledControlClass}`}
               >
                 Скасувати
               </button>
               <button
+                type="button"
+                disabled={isDeletingUser}
                 onClick={handleDeleteUser}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white inline-flex items-center justify-center min-w-[8rem] ${disabledControlClass}`}
               >
-                Видалити назавжди
+                {isDeletingUser ? (
+                  <ButtonLoader label="Видалення..." />
+                ) : (
+                  "Видалити назавжди"
+                )}
               </button>
             </div>
           </div>

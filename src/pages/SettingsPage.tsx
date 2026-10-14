@@ -15,6 +15,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { ButtonLoader } from '../components/ui/Loader';
+import { disabledControlClass } from '../lib/disabled-control-class';
 import { resolveCuratorTelegram } from '../lib/site-defaults';
 
 const settingsPasswordInputClass =
@@ -85,6 +86,7 @@ export const SettingsPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const curatorHandle = resolveCuratorTelegram(siteSettings?.curatorTelegram);
 
@@ -224,7 +226,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSavingProfile}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors ${disabledControlClass}`}
               >
                 {isSavingProfile ? <ButtonLoader label="Збереження..." /> : 'Зберегти Telegram'}
               </button>
@@ -293,7 +295,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSavingPassword}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors ${disabledControlClass}`}
               >
                 {isSavingPassword ? <ButtonLoader label="Збереження..." /> : t('updatePasswordBtn')}
               </button>
@@ -347,11 +349,21 @@ export const SettingsPage: React.FC = () => {
 
         <div className="md:col-span-2 pt-2 flex justify-end">
           <button
-            onClick={logout}
-            className="px-4 py-2 text-sm font-semibold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 dark:border-rose-900/60 rounded-lg transition-colors flex items-center gap-1.5"
+            type="button"
+            disabled={isLoggingOut || isSavingProfile || isSavingPassword}
+            onClick={async () => {
+              if (isLoggingOut) return;
+              setIsLoggingOut(true);
+              try {
+                await logout();
+              } finally {
+                setIsLoggingOut(false);
+              }
+            }}
+            className={`px-4 py-2 text-sm font-semibold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 dark:border-rose-900/60 rounded-lg transition-colors flex items-center gap-1.5 ${disabledControlClass}`}
           >
             <LogOut className="w-4 h-4" />
-            <span>{t('logout')}</span>
+            <span>{isLoggingOut ? '…' : t('logout')}</span>
           </button>
         </div>
 

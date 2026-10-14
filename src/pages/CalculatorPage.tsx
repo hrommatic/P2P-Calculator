@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCatalog } from '../context/CatalogContext';
+import { useTradesRefresh } from '../context/TradesRefreshContext';
 import { api } from '../services/api';
 import type { UserBank } from '../types';
 import {
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
 import { calculateTrade } from '@/shared/calculation';
+import { disabledControlClass } from '../lib/disabled-control-class';
 
 const fieldSelectClass =
   'select-field w-full px-2.5 py-2 text-xs sm:text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-0';
@@ -27,15 +29,10 @@ const fieldLabelClass =
 const fieldSuffixClass =
   'absolute right-2.5 top-2 text-xs text-slate-400 pointer-events-none';
 
-interface CalculatorPageProps {
-  onTradeSaved?: () => void;
-}
-
-export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) => {
+export const CalculatorPage: React.FC = () => {
   const { t } = useAuth();
   const { banks, exchanges, catalogReady, refreshCatalog } = useCatalog();
-  const [defaultsApplied, setDefaultsApplied] = useState(false);
-
+  const { bumpTradesRefresh } = useTradesRefresh();
   const [buyExchange, setBuyExchange] = useState('Binance');
   const [buyBankId, setBuyBankId] = useState('');
   const [buyRate, setBuyRate] = useState<string>('');
@@ -57,18 +54,31 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!catalogReady || defaultsApplied) return;
-    if (banks.length > 0) {
-      setBuyBankId(banks[0].id);
-      setSellBankId(banks[1]?.id ?? banks[0].id);
-    }
+    if (!catalogReady) return;
+
     if (exchanges.length > 0) {
-      const name = exchanges[0].name;
-      setBuyExchange(name);
-      setSellExchange(name);
+      setBuyExchange((prev) =>
+        exchanges.some((e) => e.name === prev) ? prev : exchanges[0].name,
+      );
+      setSellExchange((prev) =>
+        exchanges.some((e) => e.name === prev) ? prev : exchanges[0].name,
+      );
     }
-    setDefaultsApplied(true);
-  }, [catalogReady, defaultsApplied, banks, exchanges]);
+
+    if (banks.length === 0) {
+      setBuyBankId('');
+      setSellBankId('');
+      return;
+    }
+
+    setBuyBankId((prev) =>
+      prev && banks.some((b) => b.id === prev) ? prev : banks[0].id,
+    );
+    setSellBankId((prev) => {
+      if (prev && banks.some((b) => b.id === prev)) return prev;
+      return banks[1]?.id ?? banks[0].id;
+    });
+  }, [catalogReady, banks, exchanges]);
 
   const preview = useMemo(() => {
     const numBuyRate = parseFloat(buyRate) || 0;
@@ -197,8 +207,19 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
   };
 
   const handleSaveTrade = async () => {
+    if (isSaving) return;
+
     if (!buyBankId || !sellBankId) {
       setErrorMessage('Оберіть банки покупки та продажу');
+      return;
+    }
+
+    const buyInCatalog = banks.some((b) => b.id === buyBankId);
+    const sellInCatalog = banks.some((b) => b.id === sellBankId);
+    if (!buyInCatalog || !sellInCatalog) {
+      setErrorMessage(
+        'Обрані банки застаріли. Оновіть вибір у списку або додайте банк у розділі «Мої банки».',
+      );
       return;
     }
 
@@ -239,11 +260,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
       setTimeout(() => setSaveSuccess(false), 4000);
 
       await refreshCatalog(true);
+      bumpTradesRefresh();
       resetFormFields();
-
-      if (onTradeSaved) {
-        onTradeSaved();
-      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Не вдалося зберегти сделку');
     } finally {
@@ -702,7 +720,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               <button
                 onClick={handleSaveTrade}
                 disabled={isSaving}
-                className="w-full min-h-[2.5rem] py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                className={`w-full min-h-[2.5rem] py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center justify-center gap-2 ${disabledControlClass}`}
               >
                 {isSaving ? (
                   <ButtonLoader label={t('savingTrade')} />
@@ -717,7 +735,8 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ onTradeSaved }) 
               <button
                 type="button"
                 onClick={handleClear}
-                className="w-full min-h-[2.5rem] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                disabled={isSaving}
+                className={`w-full min-h-[2.5rem] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${disabledControlClass}`}
               >
                 <RefreshCw className="w-4 h-4 shrink-0" />
                 <span>{t('clearFormBtn')}</span>
