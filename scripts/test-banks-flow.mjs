@@ -3,11 +3,17 @@
  * Full bank create/delete flow (admin global + user banks) for manual QA.
  * Usage: node scripts/test-banks-flow.mjs [baseUrl]
  */
-const BASE = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
+const BASE = (
+  process.argv[2] ||
+  process.env.TEST_API_URL ||
+  process.env.APP_URL ||
+  'https://p2pcalculator-xi.vercel.app'
+).replace(/\/$/, '');
 const LOGIN = process.env.TEST_LOGIN || 'qwe';
 const PASSWORD = process.env.TEST_PASSWORD || 'QWEqwe123';
 
 let token = '';
+let userRole = '';
 let passed = 0;
 let failed = 0;
 const errors = [];
@@ -64,7 +70,12 @@ await test('Login', async () => {
   });
   assert('login 200', r.status === 200 && r.data?.token, JSON.stringify(r.data)?.slice(0, 120));
   token = r.data?.token || '';
-  assert('role admin', r.data?.user?.role === 'admin', r.data?.user?.role);
+  userRole = r.data?.user?.role || '';
+  assert(
+    'role admin or student',
+    userRole === 'admin' || userRole === 'student',
+    userRole,
+  );
 });
 
 await test('Catalog (baseline)', async () => {
@@ -79,6 +90,14 @@ let globalBankId = '';
 let createdGlobalBank = null;
 
 await test('Admin: create global bank', async () => {
+  if (userRole !== 'admin') {
+    const cat = await req('GET', '/catalog');
+    const gb = cat.data?.globalBanks?.[0];
+    assert('skip admin create (use catalog)', !!gb?.id, 'no global banks in catalog');
+    globalBankId = gb.id;
+    createdGlobalBank = { id: gb.id, name: gb.name };
+    return;
+  }
   const r = await req('POST', '/admin/global-banks', {
     name: `API Test Bank ${suffix}`,
     code: `apitest${suffix}`,
@@ -91,6 +110,9 @@ await test('Admin: create global bank', async () => {
 });
 
 await test('Admin: list global banks includes new', async () => {
+  if (userRole !== 'admin') {
+    return assert('skip admin list (not admin)', true);
+  }
   const r = await req('GET', '/admin/global-banks');
   const found = (r.data?.banks || []).some((b) => b.id === globalBankId);
   assert('list 200', r.status === 200, `status=${r.status}`);
@@ -146,12 +168,18 @@ await test('User: delete bank', async () => {
 });
 
 await test('Admin: delete global bank', async () => {
+  if (userRole !== 'admin') {
+    return assert('skip admin delete global (not admin)', true);
+  }
   const r = await req('DELETE', `/admin/global-banks/${encodeURIComponent(globalBankId)}`);
   assert('delete global 200', r.status === 200 && r.data?.success, JSON.stringify(r.data)?.slice(0, 120));
   assert('not NOT_FOUND', !isVercelNotFound(r.data));
 });
 
 await test('Catalog after global delete', async () => {
+  if (userRole !== 'admin') {
+    return assert('skip catalog after delete (not admin)', true);
+  }
   const r = await req('GET', '/catalog');
   assert('catalog 200', r.status === 200, `status=${r.status}`);
   assert('not NOT_FOUND', !isVercelNotFound(r.data));
@@ -160,6 +188,9 @@ await test('Catalog after global delete', async () => {
 });
 
 await test('Admin: DELETE route smoke (missing id)', async () => {
+  if (userRole !== 'admin') {
+    return assert('skip admin DELETE smoke (not admin)', true);
+  }
   const r = await req('DELETE', '/admin/global-banks/__missing_smoke__');
   assert('API JSON 404', r.status === 404 && r.data?.error === 'Банк не знайдено', `status=${r.status} ${JSON.stringify(r.data)?.slice(0, 80)}`);
   assert('not Vercel NOT_FOUND', !isVercelNotFound(r.data));

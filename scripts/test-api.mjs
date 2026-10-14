@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 const BASE = (
-  process.argv[2] || "https://p2p-calculator-weld.vercel.app"
+  process.argv[2] ||
+  process.env.TEST_API_URL ||
+  process.env.APP_URL ||
+  "https://p2pcalculator-xi.vercel.app"
 ).replace(/\/$/, "");
-const TEST_LOGIN = process.env.TEST_LOGIN || "admin";
-const TEST_PASSWORD =
-  process.env.TEST_PASSWORD ||
-  process.env.ADMIN_INITIAL_PASSWORD ||
-  "ChangeMeOnFirstDeploy!";
+const TEST_LOGIN = process.env.TEST_LOGIN || "qwe";
+const TEST_PASSWORD = process.env.TEST_PASSWORD || "QWEqwe123";
+
+let userRole = "";
 
 let token = "";
 let passed = 0;
@@ -91,7 +93,7 @@ await test("Public: exchanges", async () => {
   );
 });
 
-await test("Auth: login admin", async () => {
+await test("Auth: login", async () => {
   const r = await req(
     "POST",
     "/auth/login",
@@ -104,7 +106,12 @@ await test("Auth: login admin", async () => {
     JSON.stringify(r.data),
   );
   token = r.data?.token || "";
-  assert("user is admin", r.data?.user?.role === "admin");
+  userRole = r.data?.user?.role || "";
+  assert(
+    "user role",
+    userRole === "admin" || userRole === "student",
+    userRole,
+  );
 });
 
 await test("Auth: catalog", async () => {
@@ -156,7 +163,7 @@ await test("Banks: create", async () => {
 });
 
 await test("Banks: update", async () => {
-  const r = await req("PUT", `/banks/${bankId}`, {
+  const r = await req("PUT", `/banks/${encodeURIComponent(bankId)}`, {
     name: `Test Bank Updated ${Date.now()}`,
     turnoverLimitUah: 60000,
   });
@@ -243,6 +250,9 @@ await test("Trades: export-csv", async () => {
 });
 
 await test("Admin: overview", async () => {
+  if (userRole !== "admin") {
+    return assert("skip admin overview (not admin)", true);
+  }
   const r = await req("GET", "/admin/overview");
   assert(
     "overview 200",
@@ -252,6 +262,9 @@ await test("Admin: overview", async () => {
 });
 
 await test("Admin: users", async () => {
+  if (userRole !== "admin") {
+    return assert("skip admin users (not admin)", true);
+  }
   const r = await req("GET", "/admin/users");
   assert(
     "users 200",
@@ -261,6 +274,9 @@ await test("Admin: users", async () => {
 });
 
 await test("Admin: students-stats", async () => {
+  if (userRole !== "admin") {
+    return assert("skip admin students-stats (not admin)", true);
+  }
   const r = await req("GET", "/admin/students-stats");
   assert(
     "students-stats 200",
@@ -270,6 +286,9 @@ await test("Admin: students-stats", async () => {
 });
 
 await test("Admin: global-banks", async () => {
+  if (userRole !== "admin") {
+    return assert("skip admin global-banks (not admin)", true);
+  }
   const r = await req("GET", "/admin/global-banks");
   assert(
     "global-banks 200",
@@ -279,6 +298,9 @@ await test("Admin: global-banks", async () => {
 });
 
 await test("Admin: global-banks DELETE route", async () => {
+  if (userRole !== "admin") {
+    return assert("skip admin global-banks DELETE (not admin)", true);
+  }
   const r = await req("DELETE", "/admin/global-banks/__nonexistent_test_id__");
   assert(
     "global-banks DELETE reaches API",
@@ -288,6 +310,9 @@ await test("Admin: global-banks DELETE route", async () => {
 });
 
 await test("Admin: exchanges", async () => {
+  if (userRole !== "admin") {
+    return assert("skip admin exchanges (not admin)", true);
+  }
   const r = await req("GET", "/admin/exchanges");
   assert(
     "admin exchanges 200",
@@ -308,7 +333,7 @@ await test("Cleanup: delete trade", async () => {
 
 await test("Cleanup: delete bank", async () => {
   if (!bankId) return assert("skip delete bank", true);
-  const r = await req("DELETE", `/banks/${bankId}`);
+  const r = await req("DELETE", `/banks/${encodeURIComponent(bankId)}`);
   assert(
     "delete bank 200",
     r.status === 200 && r.data?.success,

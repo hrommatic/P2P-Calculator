@@ -16,7 +16,10 @@
     "test:banks": "node scripts/test-banks-flow.mjs",
     "test:trade-filters": "tsx server/utils/db/trade-filters.test.ts",
     "test:bank-stats": "tsx shared/bank-stats-delta.test.ts",
-    "test:path-segments": "tsx api/_lib/pathSegments.test.ts"
+    "test:path-segments": "tsx api/_lib/pathSegments.test.ts",
+    "test:calculation": "tsx shared/calculation.test.ts",
+    "test:unit": "npm run test:bank-stats && npm run test:path-segments && npm run test:trade-filters && npm run test:calculation",
+    "test:all": "npm run lint && npm run test:unit && npm run test:api && npm run test:banks"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",
