@@ -67,16 +67,20 @@ function parsePathPattern(pathPattern) {
 }
 
 function buildGroupRouter(groupRoutes, depth, groupName, pathPrefixAfterGroup = null) {
+  const sorted = [...groupRoutes].sort(
+    (a, b) => parsePathPattern(b.path).length - parsePathPattern(a.path).length,
+  );
+
   const prefix = '../'.repeat(depth) + 'server/';
-  const modules = [...new Set(groupRoutes.map((r) => r.module))];
+  const modules = [...new Set(sorted.map((r) => r.module))];
   const imports = modules
     .map((mod) => {
-      const names = [...new Set(groupRoutes.filter((r) => r.module === mod).map((r) => r.export))];
+      const names = [...new Set(sorted.filter((r) => r.module === mod).map((r) => r.export))];
       return `import { ${names.join(', ')} } from '${prefix}routes/${mod}.js';`;
     })
     .join('\n');
 
-  const routeEntries = groupRoutes
+  const routeEntries = sorted
     .map((r) => {
       const segments = parsePathPattern(r.path);
       return `  { segments: ${JSON.stringify(segments)}, method: '${r.method}', handler: ${r.export} },`;
@@ -206,6 +210,14 @@ function buildSingleRoute(route, depth = 1) {
   return `export { ${route.export} as default } from '${prefix}routes/${route.module}.js';\n`;
 }
 
+function buildGroupIndex() {
+  return `export { default } from './[[...path]].js';\n`;
+}
+
+function groupNeedsIndex(groupRoutes) {
+  return groupRoutes.some((r) => r.path === '');
+}
+
 function removeDir(dir) {
   if (!fs.existsSync(dir)) return;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -240,38 +252,37 @@ const groupFiles = [
 let functionCount = 3;
 
 for (const { name, file, depth } of groupFiles) {
-  fs.mkdirSync(file.slice(0, file.lastIndexOf('/')), { recursive: true });
+  const dir = file.slice(0, file.lastIndexOf('/'));
+  fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(file, buildGroupRouter(groups[name], depth, name));
   functionCount += 1;
+  if (groupNeedsIndex(groups[name])) {
+    fs.writeFileSync(`${dir}/index.ts`, buildGroupIndex());
+    functionCount += 1;
+  }
 }
 
 const adminRoot = [];
-const adminNested = new Map();
+const adminGlobalBankById = [];
 
 for (const route of groups.admin) {
-  const slashIdx = route.path.indexOf('/');
-  if (slashIdx === -1) {
+  if (route.path === 'global-banks/:id') {
+    adminGlobalBankById.push({ ...route, path: ':id' });
+  } else {
     adminRoot.push(route);
-    continue;
   }
-  const prefix = route.path.slice(0, slashIdx);
-  const rest = route.path.slice(slashIdx + 1);
-  if (!adminNested.has(prefix)) adminNested.set(prefix, []);
-  adminNested.get(prefix).push({ ...route, path: rest });
 }
 
 fs.mkdirSync('api/admin', { recursive: true });
-fs.writeFileSync(
-  'api/admin/[[...path]].ts',
-  buildGroupRouter(adminRoot, 2, 'admin'),
-);
+fs.writeFileSync('api/admin/[[...path]].ts', buildGroupRouter(adminRoot, 2, 'admin'));
 functionCount += 1;
 
-for (const [prefix, nestedRoutes] of adminNested) {
-  const file = `api/admin/${prefix}/[[...path]].ts`;
-  const depth = file.split('/').length - 1;
-  fs.mkdirSync(`api/admin/${prefix}`, { recursive: true });
-  fs.writeFileSync(file, buildGroupRouter(nestedRoutes, depth, 'admin', [prefix]));
+if (adminGlobalBankById.length > 0) {
+  fs.mkdirSync('api/admin/global-banks', { recursive: true });
+  fs.writeFileSync(
+    'api/admin/global-banks/[[...path]].ts',
+    buildGroupRouter(adminGlobalBankById, 3, 'admin', ['global-banks']),
+  );
   functionCount += 1;
 }
 

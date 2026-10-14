@@ -29,6 +29,7 @@ import {
   ArrowLeftRight,
   ArrowDownLeft,
   ArrowUpRight,
+  ChevronDown,
   FileText,
   ImagePlus,
   ImageOff,
@@ -68,6 +69,8 @@ export const AdminPage: React.FC = () => {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [period, setPeriod] = useState(defaultPeriodFilter);
   const [turnoverInUsdt, setTurnoverInUsdt] = useState(false);
+  const [buySideOpen, setBuySideOpen] = useState(true);
+  const [sellSideOpen, setSellSideOpen] = useState(true);
 
   const [usersList, setUsersList] = useState<any[]>([]);
   const [accountSearch, setAccountSearch] = useState("");
@@ -585,89 +588,143 @@ export const AdminPage: React.FC = () => {
                 </div>
               </div>
 
+              <div
+                className="h-px w-full shrink-0 bg-slate-300/90 dark:bg-white/30 my-2 sm:my-3"
+                role="separator"
+                aria-hidden
+              />
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 min-w-0">
                 <div className={overviewStatCardClass("profit")}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <ArrowDownLeft
-                      className={`w-4 h-4 shrink-0 ${statThemeClass.profit.label}`}
+                  <button
+                    type="button"
+                    onClick={() => setBuySideOpen((open) => !open)}
+                    aria-expanded={buySideOpen}
+                    className="flex w-full items-center justify-between gap-2 text-left rounded-lg -m-1 p-1 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10 transition-colors"
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <ArrowDownLeft
+                        className={`w-4 h-4 shrink-0 ${statThemeClass.profit.label}`}
+                        aria-hidden
+                      />
+                      <span className={`${statLabelClass("profit")} mb-0`}>
+                        {t("adminBuySide")}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 shrink-0 ${statThemeClass.profit.label} transition-transform duration-200 ${buySideOpen ? "" : "-rotate-90"}`}
                       aria-hidden
                     />
-                    <p className={`${statLabelClass("profit")} mb-0`}>
-                      {t("adminBuySide")}
-                    </p>
-                  </div>
-                  <dl className="space-y-0 divide-y divide-emerald-500/15 dark:divide-emerald-400/20">
-                    {[
-                      {
-                        label: t("adminAvgPrice"),
-                        value: formatRate(rateExtras.avgBuyRate),
-                      },
-                      {
-                        label: t("adminMinPrice"),
-                        value: formatRate(rateExtras.minBuyRate),
-                      },
-                      {
-                        label: t("adminMaxPrice"),
-                        value: formatRate(rateExtras.maxBuyRate),
-                      },
-                    ].map((row) => (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                      >
-                        <dt className={statLabelCompactClass("profit")}>
-                          {row.label}
-                        </dt>
-                        <dd
-                          className={`${statValueClass("profit")} text-base sm:text-lg`}
+                  </button>
+                  {buySideOpen ? (
+                    <dl className="mt-3 space-y-0 divide-y divide-emerald-500/15 dark:divide-emerald-400/20">
+                      {[
+                        {
+                          label: t("adminAvgPrice"),
+                          value: formatRate(rateExtras.avgBuyRate),
+                        },
+                        {
+                          label: t("adminMinPrice"),
+                          value: formatRate(rateExtras.minBuyRate),
+                        },
+                        {
+                          label: t("adminMaxPrice"),
+                          value: formatRate(rateExtras.maxBuyRate),
+                        },
+                      ].map((row) => (
+                        <div
+                          key={row.label}
+                          className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
                         >
-                          {row.value}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
+                          <dt className={statLabelCompactClass("profit")}>
+                            {row.label}
+                          </dt>
+                          <dd
+                            className={`${statValueClass("profit")} text-base sm:text-lg`}
+                          >
+                            {row.value}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : (
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className={statLabelCompactClass("profit")}>
+                        {t("adminAvgPrice")}
+                      </span>
+                      <span
+                        className={`${statValueClass("profit")} text-base sm:text-lg`}
+                      >
+                        {formatRate(rateExtras.avgBuyRate)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className={overviewStatCardClass("turnover")}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <ArrowUpRight
-                      className={`w-4 h-4 shrink-0 ${statThemeClass.turnover.label}`}
+                  <button
+                    type="button"
+                    onClick={() => setSellSideOpen((open) => !open)}
+                    aria-expanded={sellSideOpen}
+                    className="flex w-full items-center justify-between gap-2 text-left rounded-lg -m-1 p-1 hover:bg-violet-500/10 dark:hover:bg-violet-400/10 transition-colors"
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <ArrowUpRight
+                        className={`w-4 h-4 shrink-0 ${statThemeClass.turnover.label}`}
+                        aria-hidden
+                      />
+                      <span className={`${statLabelClass("turnover")} mb-0`}>
+                        {t("adminSellSide")}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 shrink-0 ${statThemeClass.turnover.label} transition-transform duration-200 ${sellSideOpen ? "" : "-rotate-90"}`}
                       aria-hidden
                     />
-                    <p className={`${statLabelClass("turnover")} mb-0`}>
-                      {t("adminSellSide")}
-                    </p>
-                  </div>
-                  <dl className="space-y-0 divide-y divide-violet-500/15 dark:divide-violet-400/20">
-                    {[
-                      {
-                        label: t("adminAvgPrice"),
-                        value: formatRate(rateExtras.avgSellRate),
-                      },
-                      {
-                        label: t("adminMinPrice"),
-                        value: formatRate(rateExtras.minSellRate),
-                      },
-                      {
-                        label: t("adminMaxPrice"),
-                        value: formatRate(rateExtras.maxSellRate),
-                      },
-                    ].map((row) => (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                      >
-                        <dt className={statLabelCompactClass("turnover")}>
-                          {row.label}
-                        </dt>
-                        <dd
-                          className={`${statValueClass("turnover")} text-base sm:text-lg`}
+                  </button>
+                  {sellSideOpen ? (
+                    <dl className="mt-3 space-y-0 divide-y divide-violet-500/15 dark:divide-violet-400/20">
+                      {[
+                        {
+                          label: t("adminAvgPrice"),
+                          value: formatRate(rateExtras.avgSellRate),
+                        },
+                        {
+                          label: t("adminMinPrice"),
+                          value: formatRate(rateExtras.minSellRate),
+                        },
+                        {
+                          label: t("adminMaxPrice"),
+                          value: formatRate(rateExtras.maxSellRate),
+                        },
+                      ].map((row) => (
+                        <div
+                          key={row.label}
+                          className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
                         >
-                          {row.value}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
+                          <dt className={statLabelCompactClass("turnover")}>
+                            {row.label}
+                          </dt>
+                          <dd
+                            className={`${statValueClass("turnover")} text-base sm:text-lg`}
+                          >
+                            {row.value}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : (
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className={statLabelCompactClass("turnover")}>
+                        {t("adminAvgPrice")}
+                      </span>
+                      <span
+                        className={`${statValueClass("turnover")} text-base sm:text-lg`}
+                      >
+                        {formatRate(rateExtras.avgSellRate)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

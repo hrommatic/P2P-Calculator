@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGroupPathSegments } from '../_lib/pathSegments.js';
-import { banksIndexGetHandler, banksIndexPostHandler, bankUpdateHandler, bankDeleteHandler } from '../../server/routes/banks.routes.js';
+import { bankUpdateHandler, bankDeleteHandler, banksIndexGetHandler, banksIndexPostHandler } from '../../server/routes/banks.routes.js';
 
 type RouteEntry = {
   segments: string[];
@@ -9,10 +9,10 @@ type RouteEntry = {
 };
 
 const routes: RouteEntry[] = [
-  { segments: [], method: 'GET', handler: banksIndexGetHandler },
-  { segments: [], method: 'POST', handler: banksIndexPostHandler },
   { segments: [":id"], method: 'PUT', handler: bankUpdateHandler },
   { segments: [":id"], method: 'DELETE', handler: bankDeleteHandler },
+  { segments: [], method: 'GET', handler: banksIndexGetHandler },
+  { segments: [], method: 'POST', handler: banksIndexPostHandler },
 ];
 
 function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {

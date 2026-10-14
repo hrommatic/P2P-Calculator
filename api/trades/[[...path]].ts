@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGroupPathSegments } from '../_lib/pathSegments.js';
-import { tradesIndexHandler, tradesCreateHandler, tradesExportCsvHandler, tradeUpdateHandler, tradeDeleteHandler } from '../../server/routes/trades.routes.js';
+import { tradesExportCsvHandler, tradeUpdateHandler, tradeDeleteHandler, tradesIndexHandler, tradesCreateHandler } from '../../server/routes/trades.routes.js';
 
 type RouteEntry = {
   segments: string[];
@@ -9,11 +9,11 @@ type RouteEntry = {
 };
 
 const routes: RouteEntry[] = [
-  { segments: [], method: 'GET', handler: tradesIndexHandler },
-  { segments: [], method: 'POST', handler: tradesCreateHandler },
   { segments: ["export-csv"], method: 'GET', handler: tradesExportCsvHandler },
   { segments: [":id"], method: 'PUT', handler: tradeUpdateHandler },
   { segments: [":id"], method: 'DELETE', handler: tradeDeleteHandler },
+  { segments: [], method: 'GET', handler: tradesIndexHandler },
+  { segments: [], method: 'POST', handler: tradesCreateHandler },
 ];
 
 function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {

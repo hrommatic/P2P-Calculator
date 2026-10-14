@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 const BASE = (process.argv[2] || 'https://p2p-calculator-weld.vercel.app').replace(/\/$/, '');
-const ADMIN_PASS = process.env.ADMIN_INITIAL_PASSWORD || 'ChangeMeOnFirstDeploy!';
+const TEST_LOGIN = process.env.TEST_LOGIN || 'admin';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || process.env.ADMIN_INITIAL_PASSWORD || 'ChangeMeOnFirstDeploy!';
 
 let token = '';
 let passed = 0;
@@ -74,7 +75,7 @@ await test('Public: exchanges', async () => {
 });
 
 await test('Auth: login admin', async () => {
-  const r = await req('POST', '/auth/login', { nickname: 'admin', password: ADMIN_PASS }, false);
+  const r = await req('POST', '/auth/login', { nickname: TEST_LOGIN, password: TEST_PASSWORD }, false);
   assert('login 200', r.status === 200 && r.data?.token, JSON.stringify(r.data));
   token = r.data?.token || '';
   assert('user is admin', r.data?.user?.role === 'admin');
@@ -87,7 +88,7 @@ await test('Auth: catalog', async () => {
 
 await test('Auth: me', async () => {
   const r = await req('GET', '/auth/me');
-  assert('me 200', r.status === 200 && r.data?.user?.nickname === 'admin');
+  assert('me 200', r.status === 200 && r.data?.user?.nickname === TEST_LOGIN);
 });
 
 await test('Auth: update profile', async () => {

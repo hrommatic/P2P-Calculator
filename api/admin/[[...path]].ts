@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGroupPathSegments } from '../_lib/pathSegments.js';
-import { adminOverviewHandler, adminUsersHandler, adminStudentsStatsHandler, adminGlobalBanksGetHandler, adminGlobalBanksPostHandler, adminExchangesGetHandler, adminExchangesPostHandler } from '../../server/routes/admin.routes.js';
+import { adminUserStatusHandler, adminUserProfileHandler, adminUserResetPasswordHandler, adminUserDeleteHandler, adminExchangeUpdateHandler, adminOverviewHandler, adminUsersHandler, adminStudentsStatsHandler, adminGlobalBanksGetHandler, adminGlobalBanksPostHandler, adminExchangesGetHandler, adminExchangesPostHandler } from '../../server/routes/admin.routes.js';
 
 type RouteEntry = {
   segments: string[];
@@ -9,6 +9,11 @@ type RouteEntry = {
 };
 
 const routes: RouteEntry[] = [
+  { segments: ["users",":id","status"], method: 'PUT', handler: adminUserStatusHandler },
+  { segments: ["users",":id","profile"], method: 'PUT', handler: adminUserProfileHandler },
+  { segments: ["users",":id","reset-password"], method: 'POST', handler: adminUserResetPasswordHandler },
+  { segments: ["users",":id"], method: 'DELETE', handler: adminUserDeleteHandler },
+  { segments: ["exchanges",":id"], method: 'PUT', handler: adminExchangeUpdateHandler },
   { segments: ["overview"], method: 'GET', handler: adminOverviewHandler },
   { segments: ["users"], method: 'GET', handler: adminUsersHandler },
   { segments: ["students-stats"], method: 'GET', handler: adminStudentsStatsHandler },
