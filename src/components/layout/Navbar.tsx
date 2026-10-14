@@ -8,7 +8,6 @@ import {
   History,
   Settings,
   ShieldCheck,
-  LogOut,
   Moon,
   Sun,
   Globe,
@@ -33,7 +32,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
     setTheme,
     language,
     setLanguage,
-    logout,
     t,
   } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -195,14 +193,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
             )}
 
             <button
-              onClick={logout}
-              className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors shrink-0"
-              title={t("logout")}
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-
-            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
@@ -300,17 +290,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
                 >
                   <LifeBuoy className="h-5 w-5 shrink-0 opacity-90" />
                   <span>{t("navSupport")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeMobileMenu();
-                    logout();
-                  }}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
-                >
-                  <LogOut className="h-5 w-5 shrink-0" />
-                  <span>{t("logout")}</span>
                 </button>
               </div>
             </aside>

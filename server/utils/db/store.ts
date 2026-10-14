@@ -495,23 +495,8 @@ export async function getTradesForUser(
   filters: TradeListFilters = {},
 ): Promise<Trade[]> {
   await ensureBootstrapped();
-
-  const { where, orderBy, monthDayFilter } = buildTradeListQuery(
-    userId,
-    filters,
-  );
-
-  const rows = await prisma.trade.findMany({ where, orderBy });
-  let trades = rows.map(mapTrade);
-
-  if (monthDayFilter) {
-    const { monthKey, dayFrom, dayTo } = monthDayFilter;
-    trades = trades.filter((t) =>
-      tradeMatchesKyivMonthDays(t.createdAt, monthKey, dayFrom, dayTo),
-    );
-  }
-
-  return trades;
+  const { listTradesForUser } = await import('./list-trades.js');
+  return (await listTradesForUser(userId, filters)).trades;
 }
 
 export async function getTradesForPlatform(

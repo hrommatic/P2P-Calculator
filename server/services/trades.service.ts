@@ -3,9 +3,11 @@ import type { User } from '../schemas/auth.schema.js';
 import type { Trade, CommissionType } from '../schemas/trades.schema.js';
 import { calculateTrade } from '../lib/calculation.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
+import { listTradesForUser } from '../utils/db/list-trades.js';
 import {
   createTradeRecord,
   deleteTradeRecord,
+  ensureBootstrapped,
   findTradeById,
   findUserBankForUser,
   getTradesForUser,
@@ -14,6 +16,8 @@ import {
   replaceUserBankStatsForTradeUpdate,
   updateTradeRecord,
 } from '../utils/db/store.js';
+import { clampTradesPageSize } from '../../shared/trades-pagination.js';
+import { normalizeTradeListFilters } from '../utils/db/trade-filters.js';
 
 function asCommissionType(value: unknown, fallback: CommissionType = 'percent'): CommissionType {
   if (value === 'percent' || value === 'fixed_uah' || value === 'fixed_usdt') {
@@ -23,9 +27,22 @@ function asCommissionType(value: unknown, fallback: CommissionType = 'percent'):
 }
 
 export async function handleGetTrades(req: VercelRequest, res: VercelResponse, user: User) {
+  await ensureBootstrapped();
   let targetUserId = user.id;
   if (user.role === 'admin' && req.query.targetUserId) {
     targetUserId = String(req.query.targetUserId);
+  }
+
+  const pageSize = clampTradesPageSize(
+    normalizeTradeListFilters(req.query).limit,
+  );
+  if (pageSize) {
+    const page = await listTradesForUser(targetUserId, req.query);
+    return res.json({
+      trades: page.trades,
+      nextCursor: page.nextCursor,
+      hasMore: page.hasMore,
+    });
   }
 
   const trades = await getTradesForUser(targetUserId, req.query);

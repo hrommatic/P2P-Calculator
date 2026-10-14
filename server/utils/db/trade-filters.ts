@@ -12,6 +12,8 @@ export type TradeListFilters = {
   exchange?: string | string[];
   search?: string | string[];
   sort?: string | string[];
+  limit?: string | string[];
+  cursor?: string | string[];
 };
 
 export function normalizeTradeListFilters(filters: TradeListFilters = {}) {
@@ -27,6 +29,8 @@ export function normalizeTradeListFilters(filters: TradeListFilters = {}) {
   const exchange = filters.exchange ? String(filters.exchange) : undefined;
   const search = filters.search ? String(filters.search) : undefined;
   const sort = filters.sort ? String(filters.sort) : undefined;
+  const limit = filters.limit ? String(filters.limit) : undefined;
+  const cursor = filters.cursor ? String(filters.cursor) : undefined;
 
   return {
     dateRange,
@@ -39,6 +43,8 @@ export function normalizeTradeListFilters(filters: TradeListFilters = {}) {
     exchange,
     search,
     sort,
+    limit,
+    cursor,
   };
 }
 

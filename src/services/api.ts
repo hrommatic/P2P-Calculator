@@ -121,6 +121,8 @@ export const api = {
     search?: string;
     sort?: string;
     targetUserId?: string;
+    limit?: number;
+    cursor?: string;
   }) => {
     const q = new URLSearchParams();
     if (params?.dateRange) q.set('dateRange', params.dateRange);
@@ -134,8 +136,14 @@ export const api = {
     if (params?.search) q.set('search', params.search);
     if (params?.sort) q.set('sort', params.sort);
     if (params?.targetUserId) q.set('targetUserId', params.targetUserId);
+    if (params?.limit != null) q.set('limit', String(params.limit));
+    if (params?.cursor) q.set('cursor', params.cursor);
     const queryString = q.toString() ? `?${q.toString()}` : '';
-    return request<{ trades: Trade[] }>(`/trades${queryString}`);
+    return request<{
+      trades: Trade[];
+      nextCursor?: string | null;
+      hasMore?: boolean;
+    }>(`/trades${queryString}`);
   },
 
   createTrade: (body: any) =>

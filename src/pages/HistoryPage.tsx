@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { TRADES_PAGE_SIZE } from '@/shared/trades-pagination';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { useCatalog } from '../context/CatalogContext';
@@ -27,7 +28,10 @@ export const HistoryPage: React.FC = () => {
   const { banks, exchanges, refreshCatalog } = useCatalog();
   const { tradesRevision, bumpTradesRefresh } = useTradesRefresh();
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -53,21 +57,47 @@ export const HistoryPage: React.FC = () => {
 
   const tradeActionsBusy = isSavingEdit || isDeleting;
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setIsLoading(true);
+    setNextCursor(null);
+    setHasMore(false);
     try {
-      const tRes = await api.getTrades(periodToQuery(period));
+      const tRes = await api.getTrades({
+        ...periodToQuery(period),
+        limit: TRADES_PAGE_SIZE,
+      });
       setTrades(tRes.trades);
+      setNextCursor(tRes.nextCursor ?? null);
+      setHasMore(Boolean(tRes.hasMore));
     } catch (err) {
       console.error('Error fetching trade history:', err);
     } finally {
       setIsLoading(false);
     }
+  }, [period]);
+
+  const loadMoreTrades = async () => {
+    if (!hasMore || !nextCursor || isLoadingMore || isLoading) return;
+    setIsLoadingMore(true);
+    try {
+      const tRes = await api.getTrades({
+        ...periodToQuery(period),
+        limit: TRADES_PAGE_SIZE,
+        cursor: nextCursor,
+      });
+      setTrades((prev) => [...prev, ...tRes.trades]);
+      setNextCursor(tRes.nextCursor ?? null);
+      setHasMore(Boolean(tRes.hasMore));
+    } catch (err) {
+      console.error('Error loading more trades:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   useEffect(() => {
     fetchHistory();
-  }, [period, tradesRevision]);
+  }, [fetchHistory, tradesRevision]);
 
   const handleOpenEdit = (trade: Trade) => {
     setEditingTrade(trade);
@@ -309,6 +339,21 @@ export const HistoryPage: React.FC = () => {
                 })}
               </tbody>
             </table>
+            {hasMore && (
+              <div className="flex justify-center border-t border-slate-200 dark:border-slate-800 p-4">
+                <button
+                  type="button"
+                  disabled={isLoadingMore || tradeActionsBusy}
+                  onClick={loadMoreTrades}
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg text-blue-700 dark:text-sky-300 bg-blue-50 dark:bg-sky-950/40 border border-blue-200 dark:border-sky-800 hover:bg-blue-100 dark:hover:bg-sky-900/50 transition-colors ${disabledControlClass}`}
+                >
+                  {isLoadingMore ? (
+                    <ButtonLoader label="..." />
+                  ) : null}
+                  <span>{t('loadMoreTrades')}</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
