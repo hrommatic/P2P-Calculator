@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGroupPathSegments } from '../_lib/pathSegments.js';
-import { adminOverviewHandler, adminUsersHandler, adminUserStatusHandler, adminUserProfileHandler, adminUserResetPasswordHandler, adminUserDeleteHandler, adminStudentsStatsHandler, adminGlobalBanksGetHandler, adminGlobalBanksPostHandler, adminGlobalBankUpdateHandler, adminGlobalBankDeleteHandler, adminExchangesGetHandler, adminExchangesPostHandler, adminExchangeUpdateHandler } from '../../server/routes/admin.routes.js';
+import { adminOverviewHandler, adminUsersHandler, adminStudentsStatsHandler, adminGlobalBanksGetHandler, adminGlobalBanksPostHandler, adminExchangesGetHandler, adminExchangesPostHandler } from '../../server/routes/admin.routes.js';
 
 type RouteEntry = {
   segments: string[];
@@ -11,18 +11,11 @@ type RouteEntry = {
 const routes: RouteEntry[] = [
   { segments: ["overview"], method: 'GET', handler: adminOverviewHandler },
   { segments: ["users"], method: 'GET', handler: adminUsersHandler },
-  { segments: ["users",":id","status"], method: 'PUT', handler: adminUserStatusHandler },
-  { segments: ["users",":id","profile"], method: 'PUT', handler: adminUserProfileHandler },
-  { segments: ["users",":id","reset-password"], method: 'POST', handler: adminUserResetPasswordHandler },
-  { segments: ["users",":id"], method: 'DELETE', handler: adminUserDeleteHandler },
   { segments: ["students-stats"], method: 'GET', handler: adminStudentsStatsHandler },
   { segments: ["global-banks"], method: 'GET', handler: adminGlobalBanksGetHandler },
   { segments: ["global-banks"], method: 'POST', handler: adminGlobalBanksPostHandler },
-  { segments: ["global-banks",":id"], method: 'PUT', handler: adminGlobalBankUpdateHandler },
-  { segments: ["global-banks",":id"], method: 'DELETE', handler: adminGlobalBankDeleteHandler },
   { segments: ["exchanges"], method: 'GET', handler: adminExchangesGetHandler },
   { segments: ["exchanges"], method: 'POST', handler: adminExchangesPostHandler },
-  { segments: ["exchanges",":id"], method: 'PUT', handler: adminExchangeUpdateHandler },
 ];
 
 function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, string> | null {

@@ -66,7 +66,7 @@ function parsePathPattern(pathPattern) {
   return pathPattern.split('/');
 }
 
-function buildGroupRouter(groupRoutes, depth, groupName) {
+function buildGroupRouter(groupRoutes, depth, groupName, pathPrefixAfterGroup = null) {
   const prefix = '../'.repeat(depth) + 'server/';
   const modules = [...new Set(groupRoutes.map((r) => r.module))];
   const imports = modules
@@ -84,6 +84,12 @@ function buildGroupRouter(groupRoutes, depth, groupName) {
     .join('\n');
 
   const libPrefix = '../'.repeat(depth - 1);
+  const prefixArg =
+    pathPrefixAfterGroup && pathPrefixAfterGroup.length > 0
+      ? `, ${JSON.stringify(pathPrefixAfterGroup)}`
+      : '';
+  const segmentCall = `getGroupPathSegments(req, '${groupName}'${prefixArg})`;
+
   return `import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGroupPathSegments } from '${libPrefix}_lib/pathSegments.js';
 ${imports}
@@ -114,7 +120,7 @@ function matchRoute(pathSegments: string[], route: RouteEntry): Record<string, s
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const pathSegments = getGroupPathSegments(req, '${groupName}');
+  const pathSegments = ${segmentCall};
 
   for (const route of routes) {
     if (route.method !== req.method) continue;
@@ -133,11 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 function buildPathSegmentsLib() {
   return `import type { VercelRequest } from '@vercel/node';
 
-/** Segments after /api/{group}/ for catch-all route handlers. */
-export function getGroupPathSegments(
-  req: VercelRequest,
-  groupName: string,
-): string[] {
+function readPathSegments(req: VercelRequest): string[] {
   const queryPath = req.query.path;
   if (queryPath !== undefined && queryPath !== null) {
     const parts = Array.isArray(queryPath) ? queryPath : [queryPath];
@@ -149,11 +151,32 @@ export function getGroupPathSegments(
   const idx = pathname.indexOf(marker);
   if (idx < 0) return [];
 
-  const afterApi = pathname.slice(idx + marker.length).split('/').filter(Boolean);
-  if (afterApi[0] === groupName) {
-    return afterApi.slice(1);
+  return pathname.slice(idx + marker.length).split('/').filter(Boolean);
+}
+
+/** Segments after /api/{group}/ for catch-all route handlers. */
+export function getGroupPathSegments(
+  req: VercelRequest,
+  groupName: string,
+  pathPrefixAfterGroup: string[] = [],
+): string[] {
+  const queryPath = req.query.path;
+  if (queryPath !== undefined && queryPath !== null && pathPrefixAfterGroup.length > 0) {
+    const parts = Array.isArray(queryPath) ? queryPath : [queryPath];
+    return parts.flatMap((p) => String(p).split('/').filter(Boolean));
   }
-  return afterApi;
+
+  const afterApi = readPathSegments(req);
+  if (afterApi[0] !== groupName) return [];
+
+  let segments = afterApi.slice(1);
+  if (pathPrefixAfterGroup.length > 0) {
+    for (let i = 0; i < pathPrefixAfterGroup.length; i++) {
+      if (segments[i] !== pathPrefixAfterGroup[i]) return [];
+    }
+    segments = segments.slice(pathPrefixAfterGroup.length);
+  }
+  return segments;
 }
 `;
 }
@@ -211,7 +234,6 @@ const groupFiles = [
   { name: 'trades', file: 'api/trades/[[...path]].ts', depth: 2 },
   { name: 'banks', file: 'api/banks/[[...path]].ts', depth: 2 },
   { name: 'dashboard', file: 'api/dashboard/[[...path]].ts', depth: 2 },
-  { name: 'admin', file: 'api/admin/[[...path]].ts', depth: 2 },
   { name: 'settings', file: 'api/settings/[[...path]].ts', depth: 2 },
 ];
 
@@ -220,6 +242,36 @@ let functionCount = 3;
 for (const { name, file, depth } of groupFiles) {
   fs.mkdirSync(file.slice(0, file.lastIndexOf('/')), { recursive: true });
   fs.writeFileSync(file, buildGroupRouter(groups[name], depth, name));
+  functionCount += 1;
+}
+
+const adminRoot = [];
+const adminNested = new Map();
+
+for (const route of groups.admin) {
+  const slashIdx = route.path.indexOf('/');
+  if (slashIdx === -1) {
+    adminRoot.push(route);
+    continue;
+  }
+  const prefix = route.path.slice(0, slashIdx);
+  const rest = route.path.slice(slashIdx + 1);
+  if (!adminNested.has(prefix)) adminNested.set(prefix, []);
+  adminNested.get(prefix).push({ ...route, path: rest });
+}
+
+fs.mkdirSync('api/admin', { recursive: true });
+fs.writeFileSync(
+  'api/admin/[[...path]].ts',
+  buildGroupRouter(adminRoot, 2, 'admin'),
+);
+functionCount += 1;
+
+for (const [prefix, nestedRoutes] of adminNested) {
+  const file = `api/admin/${prefix}/[[...path]].ts`;
+  const depth = file.split('/').length - 1;
+  fs.mkdirSync(`api/admin/${prefix}`, { recursive: true });
+  fs.writeFileSync(file, buildGroupRouter(nestedRoutes, depth, 'admin', [prefix]));
   functionCount += 1;
 }
 
