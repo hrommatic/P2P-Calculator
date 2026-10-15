@@ -25,6 +25,11 @@ function bankIdsForTrade(trade: TradeForBankStats): string[] {
   return [trade.buyBankId, trade.sellBankId];
 }
 
+/** Buy and sell legs on the same bank each count as one deal. */
+export function dealLegsOnBank(trade: TradeForBankStats, bankId: string): number {
+  return (trade.buyBankId === bankId ? 1 : 0) + (trade.sellBankId === bankId ? 1 : 0);
+}
+
 /** Per-bank deltas when adding (+1) or removing (−1) one trade from aggregates. */
 export function bankStatsDeltaForTrade(
   trade: TradeForBankStats,
@@ -42,7 +47,7 @@ export function bankStatsDeltaForTrade(
       buyTurnoverUah,
       sellTurnoverUah,
       netProfitUah: roundMoney(trade.netProfitUah * sign),
-      tradesCount: sign,
+      tradesCount: dealLegsOnBank(trade, bankId) * sign,
     });
   }
 

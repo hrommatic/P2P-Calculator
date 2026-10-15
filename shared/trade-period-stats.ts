@@ -1,3 +1,10 @@
+/** One saved P2P circle in the DB = buy leg + sell leg. */
+export const DEAL_LEGS_PER_SAVED_TRADE = 2;
+
+export function dealCountForSavedTrades(savedTradeCount: number): number {
+  return savedTradeCount * DEAL_LEGS_PER_SAVED_TRADE;
+}
+
 export type TradePeriodStats = {
   profit: number;
   spreadPercent: number;
@@ -44,6 +51,6 @@ export function aggregateTradePeriodStats(
       spreadWeightSum > 0 ? round2(spreadWeighted / spreadWeightSum) : 0,
     roiPercent: roiWeightSum > 0 ? round2(roiWeighted / roiWeightSum) : 0,
     totalTurnover: round2(buyTurnover + sellTurnover),
-    tradesCount: trades.length,
+    tradesCount: dealCountForSavedTrades(trades.length),
   };
 }

@@ -54,7 +54,7 @@ const sameBankTrade = {
     buyTurnoverUah: 1000,
     sellTurnoverUah: 1050,
     netProfitUah: 40,
-    tradesCount: 1,
+    tradesCount: 2,
   });
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { DASHBOARD_RECENT_TRADES_LIMIT } from "@/shared/trades-pagination";
+import { DEAL_LEGS_PER_SAVED_TRADE } from "../lib/trade-period-stats";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardTradeRow } from "../components/dashboard/DashboardTradeRow";
 import { useAuth } from "../context/AuthContext";
@@ -57,8 +58,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     tradesCount: 0,
   };
   const recentTrades = stats?.recentTrades ?? [];
+  const savedTradesInPeriod =
+    periodStats.tradesCount / DEAL_LEGS_PER_SAVED_TRADE;
   const tradesPreviewTruncated =
-    periodStats.tradesCount > recentTrades.length &&
+    savedTradesInPeriod > recentTrades.length &&
     recentTrades.length >= DASHBOARD_RECENT_TRADES_LIMIT;
 
   const displayName = user?.nickname
@@ -231,7 +234,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {tradesPreviewTruncated
               ? t("dashboardTradesPreview")
                   .replace("{shown}", String(recentTrades.length))
-                  .replace("{total}", String(periodStats.tradesCount))
+                  .replace("{total}", String(Math.round(savedTradesInPeriod)))
               : language === "en"
                 ? `${periodStats.tradesCount} trades in period`
                 : `${periodStats.tradesCount} угод за період`}

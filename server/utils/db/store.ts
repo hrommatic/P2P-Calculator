@@ -39,6 +39,10 @@ import {
   roundMoney,
   type TradeForBankStats,
 } from "../../../shared/bank-stats-delta.js";
+import {
+  DEAL_LEGS_PER_SAVED_TRADE,
+  dealCountForSavedTrades,
+} from "../../../shared/trade-period-stats.js";
 
 const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
 
@@ -449,17 +453,18 @@ export async function syncUserBankStats(userId: string) {
           let count = 0;
 
           for (const trade of trades) {
-            let involved = false;
+            let touched = false;
             if (trade.buyBankId === bank.id) {
               buyTurnover += trade.buyAmountUah;
-              involved = true;
+              count += 1;
+              touched = true;
             }
             if (trade.sellBankId === bank.id) {
               sellTurnover += trade.sellAmountUah;
-              involved = true;
-            }
-            if (involved) {
               count += 1;
+              touched = true;
+            }
+            if (touched) {
               netProfit += trade.netProfitUah;
             }
           }
@@ -738,7 +743,7 @@ export async function getAdminUsers(search?: string, status?: string) {
       profit: g._sum.netProfitUah ?? 0,
       buy: g._sum.buyAmountUah ?? 0,
       sell: g._sum.sellAmountUah ?? 0,
-      count: g._count,
+      count: dealCountForSavedTrades(g._count),
     });
   }
 
@@ -822,7 +827,7 @@ export async function getStudentsStats() {
     acc.profitAllTime += t.netProfitUah;
     acc.buyTurnover += t.buyAmountUah;
     acc.sellTurnover += t.sellAmountUah;
-    acc.tradesCount += 1;
+    acc.tradesCount += DEAL_LEGS_PER_SAVED_TRADE;
     accumulateKyivProfitBuckets(t.createdAt, t.netProfitUah, acc);
     byUser.set(t.userId, acc);
   }
