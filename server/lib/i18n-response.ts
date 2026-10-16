@@ -3,7 +3,7 @@ import {
   APP_LANGUAGE_HEADER,
   parseLanguage,
   translate,
-} from "../../shared/i18n/translate";
+} from "../../shared/i18n/translate.js";
 
 export function getRequestLanguage(req: VercelRequest) {
   const h = req.headers[APP_LANGUAGE_HEADER];

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { translations } from "../../src/i18n/translations";
+import { translations } from "./messages";
 import { localeExtra, CSV_HEADER_KEYS } from "./locale-extra";
 import { translate, intlLocaleForLanguage, parseLanguage } from "./translate";
 import type { Language } from "../../src/types";

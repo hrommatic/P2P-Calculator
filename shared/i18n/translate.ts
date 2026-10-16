@@ -1,4 +1,4 @@
-import { translations } from "../../src/i18n/translations";
+import { translations } from "./messages";
 import { localeExtra } from "./locale-extra";
 import type { Language } from "../../src/types";
 
