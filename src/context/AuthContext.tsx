@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Language, ThemeMode, SiteSettings } from '../types';
 import { api, getStoredToken, setStoredToken, removeStoredToken } from '../services/api';
-import { translations } from '../i18n/translations';
+import { translate } from '../../shared/i18n/translate';
 import { resolveCuratorTelegram } from '../lib/site-defaults';
 
 function normalizeSiteSettings(
@@ -160,16 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   };
 
-  const t = (key: string, params?: Record<string, string | number>): string => {
-    const dict = translations[language] || translations.uk;
-    let str = dict[key] || translations.uk[key] || key;
-    if (params) {
-      Object.entries(params).forEach(([pKey, pVal]) => {
-        str = str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), String(pVal));
-      });
-    }
-    return str;
-  };
+  const t = (key: string, params?: Record<string, string | number>): string =>
+    translate(language, key, params);
 
   return (
     <AuthContext.Provider

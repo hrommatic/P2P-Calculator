@@ -3,6 +3,8 @@ import { DASHBOARD_RECENT_TRADES_LIMIT } from "@/shared/trades-pagination";
 import { DEAL_LEGS_PER_SAVED_TRADE } from "../lib/trade-period-stats";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardTradeRow } from "../components/dashboard/DashboardTradeRow";
+import { TradesTableHeader } from "../components/trades/TradesTableHeader";
+import { intlLocaleForLanguage } from "../lib/intl-locale";
 import { useAuth } from "../context/AuthContext";
 import { useCurrentTab } from "../context/TabContext";
 import { api } from "../services/api";
@@ -66,17 +68,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const displayName = user?.nickname
     ? user.nickname.charAt(0).toUpperCase() + user.nickname.slice(1)
-    : "Учень";
+    : t("defaultStudentName");
 
-  const formatUah = useCallback((val: number) => {
-    return new Intl.NumberFormat("uk-UA", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(val || 0);
-  }, []);
+  const numberLocale = intlLocaleForLanguage(language);
+
+  const formatUah = useCallback(
+    (val: number) => {
+      return new Intl.NumberFormat(numberLocale, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(val || 0);
+    },
+    [numberLocale],
+  );
 
   const formatUsdt = (val: number) => {
-    return new Intl.NumberFormat("uk-UA", {
+    return new Intl.NumberFormat(numberLocale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(val || 0);
@@ -235,14 +242,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               ? t("dashboardTradesPreview")
                   .replace("{shown}", String(recentTrades.length))
                   .replace("{total}", String(Math.round(savedTradesInPeriod)))
-              : language === "en"
-                ? `${periodStats.tradesCount} trades in period`
-                : `${periodStats.tradesCount} угод за період`}
+              : t("tradesInPeriod", { count: periodStats.tradesCount })}
           </p>
         </div>
 
         {showLoader ? (
-          <PageLoader label="Завантаження даних..." className="p-8" />
+          <PageLoader label={t("loadingData")} className="p-8" />
         ) : periodStats.tradesCount === 0 ? (
           <div className="p-12 text-center space-y-3">
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
@@ -259,28 +264,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         ) : (
           <div className="overflow-x-auto bg-white dark:bg-[#111827]">
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
-                <tr>
-                  <th className="py-3 px-4">Дата / Час</th>
-                  <th className="py-3 px-4">Покупка</th>
-                  <th className="py-3 px-4">Банк покупки</th>
-                  <th className="py-3 px-4 text-right">Курс покупки</th>
-                  <th className="py-3 px-4 text-right">Сума покупки</th>
-                  <th className="py-3 px-4">Продаж</th>
-                  <th className="py-3 px-4">Банк продажу</th>
-                  <th className="py-3 px-4 text-right">Курс продажу</th>
-                  <th className="py-3 px-4 text-right">Сума продажу</th>
-                  <th className="py-3 px-4 text-right">Комісії</th>
-                  <th className="py-3 px-4 text-right">Чистий прибуток</th>
-                  <th className="py-3 px-4 text-right">Спред %</th>
-                </tr>
-              </thead>
+              <TradesTableHeader t={t} variant="dashboard" />
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
                 {recentTrades.map((trade) => (
                   <DashboardTradeRow
                     key={trade.id}
                     trade={trade}
                     formatUah={formatUah}
+                    dateLocale={numberLocale}
                   />
                 ))}
               </tbody>

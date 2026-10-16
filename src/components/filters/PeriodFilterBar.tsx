@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { KyivRangeCalendar } from "./KyivRangeCalendar";
 import {
-  periodLabelUk,
+  periodLabel,
   type PeriodFilterState,
   type PeriodPreset,
 } from "../../lib/period-filter";
@@ -43,7 +43,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
   const rangeActive = value.kind !== "preset";
 
   const customRangeLabel =
-    value.kind !== "preset" ? periodLabelUk(value) : t("filterRange");
+    value.kind !== "preset" ? periodLabel(value, presetLabels) : t("filterRange");
 
   const syncPopoverPos = useCallback(() => {
     const el = calendarBtnRef.current;
@@ -118,7 +118,7 @@ export const PeriodFilterBar: React.FC<Props> = ({
             <button
               type="button"
               className="fixed inset-0 z-40 cursor-default bg-transparent"
-              aria-label="Закрити"
+              aria-label={t("ariaClose")}
               onClick={closeCalendar}
             />
             <div

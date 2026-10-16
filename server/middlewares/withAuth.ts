@@ -19,7 +19,7 @@ export function withPublic(fn: PublicHandler) {
     try {
       return await fn(req, res);
     } catch (err) {
-      return sendServerError(res, err);
+      return sendServerError(req, res, err);
     }
   };
 }
@@ -31,7 +31,7 @@ export function withAuth(fn: AuthedHandler) {
       if (!user) return;
       return await fn(req, res, user);
     } catch (err) {
-      return sendServerError(res, err);
+      return sendServerError(req, res, err);
     }
   };
 }
@@ -41,10 +41,10 @@ export function withAdmin(fn: AuthedHandler) {
     try {
       const user = await authenticate(req, res);
       if (!user) return;
-      if (!requireAdmin(user, res)) return;
+      if (!requireAdmin(user, req, res)) return;
       return await fn(req, res, user);
     } catch (err) {
-      return sendServerError(res, err);
+      return sendServerError(req, res, err);
     }
   };
 }

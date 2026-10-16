@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { ChevronDown, ChevronUp, GripVertical, Plus, X } from 'lucide-react';
 import type { Exchange, UserBank } from '../../types';
 import type { TradeFilterId } from './useFilterLayout';
@@ -45,6 +46,7 @@ export const TradeFiltersBar: React.FC<Props> = ({
   allExchangesLabel,
   addFilterLabel,
 }) => {
+  const { t } = useAuth();
   const [addOpen, setAddOpen] = useState(false);
 
   const renderField = (id: TradeFilterId) => {
@@ -123,7 +125,7 @@ export const TradeFiltersBar: React.FC<Props> = ({
                 disabled={index === 0}
                 onClick={() => onMove(id, -1)}
                 className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-white disabled:opacity-25"
-                aria-label="Вище"
+                aria-label={t('ariaMoveUp')}
               >
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
@@ -133,7 +135,7 @@ export const TradeFiltersBar: React.FC<Props> = ({
                 disabled={index === order.length - 1}
                 onClick={() => onMove(id, 1)}
                 className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-white disabled:opacity-25"
-                aria-label="Нижче"
+                aria-label={t('ariaMoveDown')}
               >
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
@@ -149,7 +151,7 @@ export const TradeFiltersBar: React.FC<Props> = ({
                 type="button"
                 onClick={() => onRemove(id)}
                 className="shrink-0 p-2 text-slate-400 hover:text-rose-500 self-center"
-                aria-label="Прибрати фільтр"
+                aria-label={t('ariaRemoveFilter')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -173,7 +175,7 @@ export const TradeFiltersBar: React.FC<Props> = ({
               <button
                 type="button"
                 className="fixed inset-0 z-30"
-                aria-label="Закрити"
+                aria-label={t('ariaClose')}
                 onClick={() => setAddOpen(false)}
               />
               <div className="absolute left-0 top-full mt-1 z-40 min-w-[160px] py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">

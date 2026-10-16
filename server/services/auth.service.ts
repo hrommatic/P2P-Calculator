@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { jsonError, jsonOkMessage } from '../lib/i18n-response.js';
 import type { User, ThemePreference, LanguagePreference } from '../schemas/auth.schema.js';
 import { hashPassword, verifyPassword, generateToken } from '../lib/crypto.js';
 import { parseJsonBody, getClientIp, getBearerToken } from '../middlewares/helpers.js';
@@ -36,20 +37,20 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
   const siteSettings = await getSiteSettings();
 
   if (!siteSettings.allowRegistration) {
-    return res.status(403).json({ error: 'Реєстрація тимчасово призупинена адміністратором' });
+    return jsonError(res, req, 403, 'errRegistrationSuspended');
   }
 
   if (!nickname || typeof nickname !== 'string' || nickname.trim().length < 3) {
-    return res.status(400).json({ error: 'Нікнейм має містити щонайменше 3 символи' });
+    return jsonError(res, req, 400, 'errNicknameMinLength');
   }
 
   const cleanNickname = nickname.trim().toLowerCase();
   if (!/^[a-zA-Z0-9_]{3,24}$/.test(cleanNickname)) {
-    return res.status(400).json({ error: 'Нікнейм може містити лише латинські літери, цифри та _ (3-24 символи)' });
+    return jsonError(res, req, 400, 'errNicknameFormat');
   }
 
   if (!telegram || typeof telegram !== 'string') {
-    return res.status(400).json({ error: 'Вкажіть Telegram у форматі @username' });
+    return jsonError(res, req, 400, 'errTelegramFormatRequired');
   }
 
   let cleanTelegram = telegram.trim();
@@ -57,20 +58,20 @@ export async function handleAuthRegister(req: VercelRequest, res: VercelResponse
     cleanTelegram = `@${cleanTelegram}`;
   }
   if (!/^@[a-zA-Z0-9_]{3,32}$/.test(cleanTelegram)) {
-    return res.status(400).json({ error: 'Некоректний Telegram нікнейм' });
+    return jsonError(res, req, 400, 'errTelegramInvalid');
   }
 
   if (!password || typeof password !== 'string' || password.length < 6) {
-    return res.status(400).json({ error: 'Пароль має містити щонайменше 6 символів' });
+    return jsonError(res, req, 400, 'errPasswordMin6');
   }
 
   if (password !== confirmPassword) {
-    return res.status(400).json({ error: 'Паролі не співпадають' });
+    return jsonError(res, req, 400, 'errPasswordsNoMatch');
   }
 
   const existing = await findUserByNickname(cleanNickname);
   if (existing) {
-    return res.status(400).json({ error: 'Користувач із таким нікнеймом уже зареєстрований' });
+    return jsonError(res, req, 400, 'errNicknameTaken');
   }
 
   const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -114,13 +115,13 @@ export async function handleAuthLogin(req: VercelRequest, res: VercelResponse) {
   const attemptInfo = await getFailedAttempt(rateLimitKey);
   if (attemptInfo?.lockedUntil && attemptInfo.lockedUntil > Date.now()) {
     const remainingSeconds = Math.ceil((attemptInfo.lockedUntil - Date.now()) / 1000);
-    return res.status(429).json({
-      error: `Забагато невдалих спроб входу. Спробуйте знову через ${remainingSeconds} сек.`,
+    return jsonError(res, req, 429, 'errLoginRateLimit', {
+      seconds: remainingSeconds,
     });
   }
 
   if (!nickname || typeof password !== 'string') {
-    return res.status(400).json({ error: 'Введіть нікнейм та пароль' });
+    return jsonError(res, req, 400, 'errLoginCredentialsRequired');
   }
 
   const cleanNickname = String(nickname).trim().toLowerCase();
@@ -131,12 +132,12 @@ export async function handleAuthLogin(req: VercelRequest, res: VercelResponse) {
     const count = (attemptInfo?.count || 0) + 1;
     const lockedUntil = count >= 5 ? Date.now() + 5 * 60 * 1000 : undefined;
     await upsertFailedAttempt(rateLimitKey, count, lockedUntil);
-    return res.status(401).json({ error: 'Невірний нікнейм або пароль' });
+    return jsonError(res, req, 401, 'errLoginInvalid');
   }
 
   if (user.status === 'blocked') {
-    return res.status(403).json({
-      error: `Ваш акаунт заблоковано. Напишіть у Telegram куратору ${siteSettings.curatorTelegram} для відновлення доступу.`,
+    return jsonError(res, req, 403, 'errAccountBlockedCurator', {
+      curator: siteSettings.curatorTelegram,
     });
   }
 
@@ -188,34 +189,31 @@ export async function handleAuthResetPassword(req: VercelRequest, res: VercelRes
   const attemptInfo = await getFailedAttempt(rateLimitKey);
   if (attemptInfo?.lockedUntil && attemptInfo.lockedUntil > Date.now()) {
     const remainingSeconds = Math.ceil((attemptInfo.lockedUntil - Date.now()) / 1000);
-    return res.status(429).json({
-      error: `Забагато спроб. Спробуйте знову через ${remainingSeconds} сек.`,
+    return jsonError(res, req, 429, 'errResetRateLimit', {
+      seconds: remainingSeconds,
     });
   }
 
-  const genericError =
-    'Не вдалося відновити пароль. Перевірте нікнейм і Telegram, як при реєстрації.';
-
   if (!nickname || typeof nickname !== 'string' || !telegram || typeof telegram !== 'string') {
-    return res.status(400).json({ error: 'Заповніть усі поля' });
+    return jsonError(res, req, 400, 'errFillAllFields');
   }
 
   const cleanNickname = nickname.trim().toLowerCase();
   if (!/^[a-zA-Z0-9_]{3,24}$/.test(cleanNickname)) {
-    return res.status(400).json({ error: genericError });
+    return jsonError(res, req, 400, 'errResetPasswordGeneric');
   }
 
   const cleanTelegram = normalizeTelegramHandle(telegram);
   if (!cleanTelegram) {
-    return res.status(400).json({ error: 'Некоректний Telegram у форматі @username' });
+    return jsonError(res, req, 400, 'errResetTelegramInvalid');
   }
 
   if (typeof newPassword !== 'string' || newPassword.length < 6) {
-    return res.status(400).json({ error: 'Новий пароль має бути не менше 6 символів' });
+    return jsonError(res, req, 400, 'errNewPasswordMinLength');
   }
 
   if (newPassword !== confirmNewPassword) {
-    return res.status(400).json({ error: 'Паролі не співпадають' });
+    return jsonError(res, req, 400, 'errPasswordsNoMatch');
   }
 
   const user = await findUserByNickname(cleanNickname);
@@ -225,12 +223,12 @@ export async function handleAuthResetPassword(req: VercelRequest, res: VercelRes
     const count = (attemptInfo?.count || 0) + 1;
     const lockedUntil = count >= 5 ? Date.now() + 5 * 60 * 1000 : undefined;
     await upsertFailedAttempt(rateLimitKey, count, lockedUntil);
-    return res.status(400).json({ error: genericError });
+    return jsonError(res, req, 400, 'errResetPasswordGeneric');
   }
 
   if (user.status === 'blocked') {
-    return res.status(403).json({
-      error: `Ваш акаунт заблоковано. Напишіть у Telegram куратору ${siteSettings.curatorTelegram} для відновлення доступу.`,
+    return jsonError(res, req, 403, 'errAccountBlockedCurator', {
+      curator: siteSettings.curatorTelegram,
     });
   }
 
@@ -238,10 +236,7 @@ export async function handleAuthResetPassword(req: VercelRequest, res: VercelRes
   await updateUserPassword(user.id, hashPassword(newPassword));
   await deleteSessionsForUser(user.id);
 
-  return res.json({
-    success: true,
-    message: 'Пароль змінено. Увійдіть з новим паролем.',
-  });
+  return jsonOkMessage(res, req, { success: true }, 'msgPasswordChangedLogin');
 }
 
 export async function handleAuthChangePassword(req: VercelRequest, res: VercelResponse, user: User) {
@@ -250,23 +245,23 @@ export async function handleAuthChangePassword(req: VercelRequest, res: VercelRe
   const newPassword = body.newPassword;
   const confirmNewPassword = body.confirmNewPassword;
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: 'Заповніть усі поля' });
+    return jsonError(res, req, 400, 'errFillAllFields');
   }
 
   if (typeof currentPassword !== 'string' || !verifyPassword(currentPassword, user.passwordHash)) {
-    return res.status(400).json({ error: 'Поточний пароль невірний' });
+    return jsonError(res, req, 400, 'errCurrentPasswordWrong');
   }
 
   if (typeof newPassword !== 'string' || newPassword.length < 6) {
-    return res.status(400).json({ error: 'Новий пароль має бути не менше 6 символів' });
+    return jsonError(res, req, 400, 'errNewPasswordMinLength');
   }
 
   if (newPassword !== confirmNewPassword) {
-    return res.status(400).json({ error: 'Нові паролі не співпадають' });
+    return jsonError(res, req, 400, 'errNewPasswordsMismatch');
   }
 
   await updateUserPassword(user.id, hashPassword(newPassword));
-  return res.json({ success: true, message: 'Пароль успішно змінено' });
+  return jsonOkMessage(res, req, { success: true }, 'msgPasswordChangedOk');
 }
 
 export async function handleAuthUpdateProfile(req: VercelRequest, res: VercelResponse, user: User) {
@@ -281,7 +276,7 @@ export async function handleAuthUpdateProfile(req: VercelRequest, res: VercelRes
     let cleanTelegram = telegram.trim();
     if (!cleanTelegram.startsWith('@')) cleanTelegram = `@${cleanTelegram}`;
     if (!/^@[a-zA-Z0-9_]{3,32}$/.test(cleanTelegram)) {
-      return res.status(400).json({ error: 'Некоректний формат Telegram' });
+      return jsonError(res, req, 400, 'errTelegramProfileInvalid');
     }
     updates.telegram = cleanTelegram;
   }

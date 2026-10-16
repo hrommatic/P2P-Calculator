@@ -18,6 +18,9 @@ import {
 } from '../utils/db/store.js';
 import { clampTradesPageSize } from '../../shared/trades-pagination.js';
 import { normalizeTradeListFilters } from '../utils/db/trade-filters.js';
+import { jsonError, jsonOkMessage, getRequestLanguage } from '../lib/i18n-response.js';
+import { CSV_HEADER_KEYS } from '../../shared/i18n/locale-extra.js';
+import { translate, intlLocaleForLanguage } from '../../shared/i18n/translate.js';
 
 function asCommissionType(value: unknown, fallback: CommissionType = 'percent'): CommissionType {
   if (value === 'percent' || value === 'fixed_uah' || value === 'fixed_usdt') {
@@ -69,11 +72,11 @@ export async function handlePostTrade(req: VercelRequest, res: VercelResponse, u
   const customDate = body.createdAt;
 
   if (!buyExchange || !buyBankId || !buyRate) {
-    return res.status(400).json({ error: 'Вкажіть біржу покупки, банк та курс покупки' });
+    return jsonError(res, req, 400, 'errTradeBuyFieldsRequired');
   }
 
   if (!sellExchange || !sellBankId || !sellRate) {
-    return res.status(400).json({ error: 'Вкажіть біржу продажу, банк та курс продажу' });
+    return jsonError(res, req, 400, 'errTradeSellFieldsRequired');
   }
 
   const [buyBank, sellBank] = await Promise.all([
@@ -82,7 +85,7 @@ export async function handlePostTrade(req: VercelRequest, res: VercelResponse, u
   ]);
 
   if (!buyBank || !sellBank) {
-    return res.status(400).json({ error: 'Один із обраних банків не знайдено у вашому списку' });
+    return jsonError(res, req, 400, 'errTradeBankNotInList');
   }
 
   const calc = calculateTrade({
@@ -144,7 +147,7 @@ export async function handlePostTrade(req: VercelRequest, res: VercelResponse, u
 export async function handlePutTrade(req: VercelRequest, res: VercelResponse, user: User) {
   const existingTrade = await findTradeById(String(req.query.id));
   if (!existingTrade || (existingTrade.userId !== user.id && user.role !== 'admin')) {
-    return res.status(404).json({ error: 'Сделка не знайдена' });
+    return jsonError(res, req, 404, 'errTradeNotFound');
   }
 
   const body = parseJsonBody(req);
@@ -155,7 +158,7 @@ export async function handlePutTrade(req: VercelRequest, res: VercelResponse, us
   ]);
 
   if (!buyBank || !sellBank) {
-    return res.status(400).json({ error: 'Банк не знайдено' });
+    return jsonError(res, req, 400, 'errBankNotFound');
   }
 
   const calc = calculateTrade({
@@ -211,40 +214,24 @@ export async function handlePutTrade(req: VercelRequest, res: VercelResponse, us
 export async function handleDeleteTrade(req: VercelRequest, res: VercelResponse, user: User) {
   const existingTrade = await findTradeById(String(req.query.id));
   if (!existingTrade || (existingTrade.userId !== user.id && user.role !== 'admin')) {
-    return res.status(404).json({ error: 'Сделку не знайдено' });
+    return jsonError(res, req, 404, 'errTradeNotFound');
   }
 
   await deleteTradeRecord(existingTrade.id);
   await decrementUserBankStatsFromTrade(existingTrade);
-  return res.json({ success: true, message: 'Сделка видалена' });
+  return jsonOkMessage(res, req, { success: true }, 'msgTradeDeleted');
 }
 
 export async function handleTradesExportCsv(req: VercelRequest, res: VercelResponse, user: User) {
   const trades = await getTradesForUser(user.id);
 
-  const headers = [
-    'ID',
-    'Дата і час',
-    'Біржа покупки',
-    'Банк покупки',
-    'Курс покупки (UAH/USDT)',
-    'Сума покупки (UAH)',
-    'Куплено USDT',
-    'Біржа продажу',
-    'Банк продажу',
-    'Курс продажу (UAH/USDT)',
-    'Сума продажу (UAH)',
-    'Продано USDT',
-    'Комісії (UAH)',
-    'Чистий прибуток (UAH)',
-    'Рентабельність ROI (%)',
-    'Спред (%)',
-    'Коментар',
-  ];
+  const lang = getRequestLanguage(req);
+  const locale = intlLocaleForLanguage(lang);
+  const headers = CSV_HEADER_KEYS.map((key) => translate(lang, key));
 
   const rows = trades.map((t) => [
     t.id,
-    new Date(t.createdAt).toLocaleString('uk-UA'),
+    new Date(t.createdAt).toLocaleString(locale),
     t.buyExchange,
     t.buyBankName,
     t.buyRate.toFixed(2),

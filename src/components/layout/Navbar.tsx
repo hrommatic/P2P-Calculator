@@ -212,14 +212,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
             <button
               type="button"
               className="fixed inset-0 z-[100] bg-black/45 backdrop-blur-[2px] animate-[fadeIn_200ms_ease-out]"
-              aria-label="Закрити меню"
+              aria-label={t("ariaCloseMenu")}
               onClick={closeMobileMenu}
             />
             <aside
               className="fixed top-0 right-0 z-[101] flex h-dvh w-[min(88vw,20rem)] flex-col border-l border-slate-200/80 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#0f1419] animate-[slideInRight_250ms_ease-out]"
               role="dialog"
               aria-modal="true"
-              aria-label="Меню"
+              aria-label={t("ariaOpenMenu")}
             >
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
                 <div className="flex min-w-0 items-center gap-2">
@@ -234,7 +234,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
                   type="button"
                   onClick={closeMobileMenu}
                   className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  aria-label="Закрити меню"
+                  aria-label={t("ariaCloseMenu")}
                 >
                   <X className="h-5 w-5" />
                 </button>

@@ -4,6 +4,7 @@ import type { User } from '../schemas/auth.schema.js';
 import { mapUser } from '../utils/db/mappers.js';
 import { deleteSession, ensureBootstrapped } from '../utils/db/store.js';
 import { getBearerToken } from './helpers.js';
+import { jsonError } from '../lib/i18n-response.js';
 
 export async function authenticate(
   req: VercelRequest,
@@ -11,9 +12,7 @@ export async function authenticate(
 ): Promise<User | null> {
   const token = getBearerToken(req);
   if (!token) {
-    res
-      .status(401)
-      .json({ error: 'Потрібна авторизація (Authorization required)' });
+    jsonError(res, req, 401, 'errAuthRequired');
     return null;
   }
 
@@ -40,23 +39,20 @@ export async function authenticate(
   });
 
   if (!session) {
-    res.status(401).json({ error: 'Недійсний токен сесії (Invalid session)' });
+    jsonError(res, req, 401, 'errInvalidSession');
     return null;
   }
 
   if (session.expiresAt.getTime() < Date.now()) {
     await deleteSession(token);
-    res.status(401).json({ error: 'Сесія закінчилася (Session expired)' });
+    jsonError(res, req, 401, 'errSessionExpired');
     return null;
   }
 
   const user = mapUser({ ...session.user, passwordHash: '' });
 
   if (user.status === 'blocked') {
-    res.status(403).json({
-      error:
-        'Ваш акаунт заблоковано. Зверніться до куратора (Account is blocked)',
-    });
+    jsonError(res, req, 403, 'errAccountBlockedShort');
     return null;
   }
 
@@ -65,13 +61,11 @@ export async function authenticate(
 
 export function requireAdmin(
   user: User | null,
+  req: VercelRequest,
   res: VercelResponse,
 ): user is User {
   if (!user || user.role !== 'admin') {
-    res.status(403).json({
-      error:
-        'Доступ заборонено: потрібні права адміністратора (Admin rights required)',
-    });
+    jsonError(res, req, 403, 'errAdminRequired');
     return false;
   }
   return true;

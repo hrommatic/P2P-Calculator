@@ -149,7 +149,7 @@ export const AdminPage: React.FC = () => {
         if (cancelled) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
         showMsg(
-          err instanceof Error ? err.message : "Помилка завантаження огляду",
+          err instanceof Error ? err.message : t("adminLoadOverviewFailed"),
           "error",
         );
       } finally {
@@ -181,7 +181,7 @@ export const AdminPage: React.FC = () => {
       }
     } catch (err: any) {
       showMsg(
-        err.message || "Помилка завантаження даних адмін-панелі",
+        err.message || t("adminLoadSectionFailed"),
         "error",
       );
     } finally {
@@ -207,7 +207,12 @@ export const AdminPage: React.FC = () => {
     const newStatus = userItem.status === "active" ? "blocked" : "active";
     try {
       await api.setUserStatus(userItem.id, newStatus);
-      showMsg(`Статус ${userItem.nickname} змінено на ${newStatus}`);
+      showMsg(
+        t("adminStatusChanged", {
+          nickname: userItem.nickname,
+          status: newStatus,
+        }),
+      );
       loadSectionData("accounts");
     } catch (err: any) {
       showMsg(err.message, "error");
@@ -233,7 +238,7 @@ export const AdminPage: React.FC = () => {
         telegram: editTg,
         role: editRole,
       });
-      showMsg("Дані акаунта оновлено");
+      showMsg(t("adminAccountUpdated"));
       setSelectedUserToEdit(null);
       loadSectionData("accounts");
     } catch (err: any) {
@@ -248,7 +253,9 @@ export const AdminPage: React.FC = () => {
     setIsDeletingUser(true);
     try {
       await api.deleteUser(deleteUserTarget.id);
-      showMsg(`Користувача ${deleteUserTarget.nickname} видалено`);
+      showMsg(
+        t("adminUserDeletedMsg", { nickname: deleteUserTarget.nickname }),
+      );
       setDeleteUserTarget(null);
       loadSectionData("accounts");
     } catch (err: any) {
@@ -301,7 +308,7 @@ export const AdminPage: React.FC = () => {
       setBankLogoSvg(dataUrl);
       setBankLogoDirty(true);
     } catch (err: any) {
-      showMsg(err.message || "Не вдалося завантажити фото", "error");
+      showMsg(err.message || t("adminPhotoUploadFailed"), "error");
     }
   };
 
@@ -331,7 +338,7 @@ export const AdminPage: React.FC = () => {
         });
       }
       setIsBankModalOpen(false);
-      showMsg("Довідник банків оновлено");
+      showMsg(t("adminBanksCatalogUpdated"));
       await Promise.all([loadSectionData("banks"), refreshCatalog()]);
     } catch (err: any) {
       showMsg(err.message, "error");
@@ -347,7 +354,7 @@ export const AdminPage: React.FC = () => {
     setIsDeletingGlobalBank(true);
     try {
       await api.deleteGlobalBank(target.id);
-      showMsg(`Банк «${target.name}» видалено`);
+      showMsg(t("adminGlobalBankDeleted", { name: target.name }));
       setDeleteGlobalBankTarget(null);
       if (editingGlobalBank?.id === target.id) {
         setIsBankModalOpen(false);
@@ -368,7 +375,7 @@ export const AdminPage: React.FC = () => {
       await api.createAdminExchange({ name: newExName, code: newExCode });
       setNewExName("");
       setNewExCode("");
-      showMsg("Біржу додано");
+      showMsg(t("adminExchangeAdded"));
       loadSectionData("exchanges");
     } catch (err: any) {
       showMsg(err.message, "error");
@@ -524,7 +531,7 @@ export const AdminPage: React.FC = () => {
       </div>
 
       {isLoading && activeSection !== "overview" && (
-        <PageLoader label="Завантаження..." className="py-16" />
+        <PageLoader label={t("loadingGeneric")} className="py-16" />
       )}
 
       {activeSection === "overview" && (
@@ -537,7 +544,7 @@ export const AdminPage: React.FC = () => {
           />
 
           {isLoading && (
-            <PageLoader label="Завантаження..." className="py-16" />
+            <PageLoader label={t("loadingGeneric")} className="py-16" />
           )}
 
           {!isLoading && overview && (
@@ -817,7 +824,7 @@ export const AdminPage: React.FC = () => {
                 type="text"
                 value={accountSearch}
                 onChange={(e) => setAccountSearch(e.target.value)}
-                placeholder="Пошук за нікнеймом або Telegram..."
+                placeholder={t("adminSearchAccounts")}
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
             </div>
@@ -827,14 +834,14 @@ export const AdminPage: React.FC = () => {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Нікнейм</th>
-                  <th className="py-3 px-4">Telegram</th>
-                  <th className="py-3 px-4">Роль</th>
-                  <th className="py-3 px-4">Статус</th>
-                  <th className="py-3 px-4">Дата реєстрації</th>
-                  <th className="py-3 px-4 text-right">Угод</th>
-                  <th className="py-3 px-4 text-right">Прибуток</th>
-                  <th className="py-3 px-4 text-center">Дії</th>
+                  <th className="py-3 px-4">{t("nickname")}</th>
+                  <th className="py-3 px-4">{t("adminColTelegram")}</th>
+                  <th className="py-3 px-4">{t("adminColRole")}</th>
+                  <th className="py-3 px-4">{t("accountStatus")}</th>
+                  <th className="py-3 px-4">{t("adminColRegistered")}</th>
+                  <th className="py-3 px-4 text-right">{t("periodTradesCount")}</th>
+                  <th className="py-3 px-4 text-right">{t("adminColProfit")}</th>
+                  <th className="py-3 px-4 text-center">{t("tradeColActions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
@@ -927,16 +934,16 @@ export const AdminPage: React.FC = () => {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Учень</th>
-                  <th className="py-3 px-4">Telegram</th>
-                  <th className="py-3 px-4 text-right">Сьогодні</th>
-                  <th className="py-3 px-4 text-right">Вчора</th>
-                  <th className="py-3 px-4 text-right">Місяць</th>
-                  <th className="py-3 px-4 text-right">Весь час</th>
-                  <th className="py-3 px-4 text-right">Оборот покупок</th>
-                  <th className="py-3 px-4 text-right">Оборот продажів</th>
-                  <th className="py-3 px-4 text-right">Угод</th>
-                  <th className="py-3 px-4 text-center">Огляд угод</th>
+                  <th className="py-3 px-4">{t("adminStudentCol")}</th>
+                  <th className="py-3 px-4">{t("adminColTelegram")}</th>
+                  <th className="py-3 px-4 text-right">{t("filterToday")}</th>
+                  <th className="py-3 px-4 text-right">{t("filterYesterday")}</th>
+                  <th className="py-3 px-4 text-right">{t("filterMonth")}</th>
+                  <th className="py-3 px-4 text-right">{t("filterAll")}</th>
+                  <th className="py-3 px-4 text-right">{t("buyTurnover")}</th>
+                  <th className="py-3 px-4 text-right">{t("sellTurnover")}</th>
+                  <th className="py-3 px-4 text-right">{t("periodTradesCount")}</th>
+                  <th className="py-3 px-4 text-center">{t("adminTradeOverview")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
@@ -980,7 +987,7 @@ export const AdminPage: React.FC = () => {
                         className={`px-2.5 py-1 text-sm font-semibold rounded bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-sky-400 hover:bg-blue-100 transition-colors inline-flex items-center gap-1 ${disabledControlClass}`}
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Деталі</span>
+                        <span>{t("adminDetails")}</span>
                       </button>
                     </td>
                   </tr>
@@ -995,14 +1002,14 @@ export const AdminPage: React.FC = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              Загальний довідник банків (шаблони для учнів)
+              {t("adminGlobalBanksCatalogTitle")}
             </h2>
             <button
               onClick={handleOpenAddGlobalBank}
               className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Додати банк</span>
+              <span>{t("adminAddGlobalBank")}</span>
             </button>
           </div>
 
@@ -1019,7 +1026,7 @@ export const AdminPage: React.FC = () => {
                         type="button"
                         onClick={() => handleOpenEditGlobalBank(gb)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        title="Редагувати"
+                        title={t("editBank")}
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </button>
@@ -1027,7 +1034,7 @@ export const AdminPage: React.FC = () => {
                         type="button"
                         onClick={() => setDeleteGlobalBankTarget(gb)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                        title="Видалити"
+                        title={t("deleteBank")}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1048,7 +1055,7 @@ export const AdminPage: React.FC = () => {
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           <span className="text-slate-400 dark:text-slate-500">
-                            Код:{" "}
+                            {t("adminCodeLabel")}{" "}
                           </span>
                           <span className="font-mono text-slate-600 dark:text-slate-300">
                             {gb.code}
@@ -1071,7 +1078,7 @@ export const AdminPage: React.FC = () => {
             <input
               type="text"
               required
-              placeholder="Назва біржі (наприклад: Bybit)"
+              placeholder={t("adminExchangeNamePlaceholder")}
               value={newExName}
               onChange={(e) => setNewExName(e.target.value)}
               className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
@@ -1079,7 +1086,7 @@ export const AdminPage: React.FC = () => {
             <input
               type="text"
               required
-              placeholder="Код (bybit)"
+              placeholder={t("adminExchangeCodePlaceholder")}
               value={newExCode}
               onChange={(e) => setNewExCode(e.target.value)}
               className="w-28 px-3 py-2 text-sm font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
@@ -1090,9 +1097,9 @@ export const AdminPage: React.FC = () => {
               className={`px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shrink-0 inline-flex items-center justify-center min-w-[7rem] ${disabledControlClass}`}
             >
               {isAddingExchange ? (
-                <ButtonLoader label="Додавання..." />
+                <ButtonLoader label={t("adding")} />
               ) : (
-                "Додати біржу"
+                t("adminAddExchange")
               )}
             </button>
           </form>
@@ -1121,7 +1128,7 @@ export const AdminPage: React.FC = () => {
                       : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                   }`}
                 >
-                  {ex.isActive ? "Активна" : "Деактивована"}
+                  {ex.isActive ? t("adminExchangeActive") : t("adminExchangeInactive")}
                 </button>
               </div>
             ))}
@@ -1134,7 +1141,9 @@ export const AdminPage: React.FC = () => {
           <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Редагувати акаунт ({selectedUserToEdit.nickname})
+                {t("adminEditAccountTitle", {
+                  nickname: selectedUserToEdit.nickname,
+                })}
               </h3>
               <button onClick={() => setSelectedUserToEdit(null)}>
                 <X className="w-5 h-5 text-slate-400" />
@@ -1143,7 +1152,7 @@ export const AdminPage: React.FC = () => {
 
             <form onSubmit={handleSaveUserEdit} className="space-y-3 text-sm">
               <div>
-                <label className="block font-semibold mb-1">Нікнейм</label>
+                <label className="block font-semibold mb-1">{t("nickname")}</label>
                 <input
                   type="text"
                   required
@@ -1165,14 +1174,14 @@ export const AdminPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Роль</label>
+                <label className="block font-semibold mb-1">{t("adminColRole")}</label>
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
                   className="select-field w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 >
-                  <option value="student">Учень (student)</option>
-                  <option value="admin">Адміністратор (admin)</option>
+                  <option value="student">{t("adminRoleStudent")}</option>
+                  <option value="admin">{t("adminRoleAdmin")}</option>
                 </select>
               </div>
 
@@ -1183,7 +1192,7 @@ export const AdminPage: React.FC = () => {
                   onClick={() => setSelectedUserToEdit(null)}
                   className={`px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ${disabledControlClass}`}
                 >
-                  Скасувати
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -1191,9 +1200,9 @@ export const AdminPage: React.FC = () => {
                   className={`px-4 py-2 font-semibold rounded-lg bg-blue-600 text-white ${disabledControlClass}`}
                 >
                   {isSavingUserEdit ? (
-                    <ButtonLoader label="Збереження..." />
+                    <ButtonLoader label={t("savingTrade")} />
                   ) : (
-                    "Зберегти"
+                    t("save")
                   )}
                 </button>
               </div>
@@ -1207,11 +1216,12 @@ export const AdminPage: React.FC = () => {
           <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
             <Trash2 className="w-10 h-10 text-rose-500 mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Видалити банк «{deleteGlobalBankTarget.name}»?
+              {t("adminDeleteGlobalBankTitle", {
+                name: deleteGlobalBankTarget.name,
+              })}
             </h3>
             <p className="text-sm text-slate-500">
-              Шаблон зникне з довідника. Рахунки учнів залишаться, але без
-              прив&apos;язки до цього шаблону.
+              {t("adminDeleteGlobalBankHint")}
             </p>
             <div className="flex justify-center gap-2 pt-2">
               <button
@@ -1220,7 +1230,7 @@ export const AdminPage: React.FC = () => {
                 onClick={() => setDeleteGlobalBankTarget(null)}
                 className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50"
               >
-                Скасувати
+                {t("cancel")}
               </button>
               <button
                 type="button"
@@ -1229,9 +1239,9 @@ export const AdminPage: React.FC = () => {
                 className={`inline-flex items-center justify-center min-w-[8rem] px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white ${disabledControlClass}`}
               >
                 {isDeletingGlobalBank ? (
-                  <ButtonLoader label="Видалення..." />
+                  <ButtonLoader label={t("deleting")} />
                 ) : (
-                  "Видалити"
+                  t("deleteBank")
                 )}
               </button>
             </div>
@@ -1244,7 +1254,9 @@ export const AdminPage: React.FC = () => {
           <div className="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 text-center">
             <Trash2 className="w-10 h-10 text-rose-500 mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Видалити учня {deleteUserTarget.nickname}?
+              {t("adminDeleteStudentTitle", {
+                nickname: deleteUserTarget.nickname,
+              })}
             </h3>
             <p className="text-sm text-slate-500">
               {t("deleteAccountConfirm")}
@@ -1256,7 +1268,7 @@ export const AdminPage: React.FC = () => {
                 onClick={() => setDeleteUserTarget(null)}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ${disabledControlClass}`}
               >
-                Скасувати
+                {t("cancel")}
               </button>
               <button
                 type="button"
@@ -1265,9 +1277,9 @@ export const AdminPage: React.FC = () => {
                 className={`px-4 py-2 text-sm font-semibold rounded-lg bg-rose-600 text-white inline-flex items-center justify-center min-w-[8rem] ${disabledControlClass}`}
               >
                 {isDeletingUser ? (
-                  <ButtonLoader label="Видалення..." />
+                  <ButtonLoader label={t("deleting")} />
                 ) : (
-                  "Видалити назавжди"
+                  t("adminDeleteForever")
                 )}
               </button>
             </div>
@@ -1281,13 +1293,16 @@ export const AdminPage: React.FC = () => {
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Особистий журнал учня: {inspectedStudent.nickname} (
-                  {inspectedStudent.telegram})
+                  {t("adminStudentJournalTitle", {
+                    nickname: inspectedStudent.nickname,
+                    telegram: inspectedStudent.telegram,
+                  })}
                 </h3>
                 <p className="text-sm text-slate-500">
-                  Суммарний прибуток: +
-                  {formatUah(inspectedStudent.profitAllTime)} ₴ | Угод:{" "}
-                  {inspectedStudentTrades.length}
+                  {t("adminStudentProfitSummary", {
+                    profit: formatUah(inspectedStudent.profitAllTime),
+                    count: inspectedStudentTrades.length,
+                  })}
                 </p>
               </div>
               <button onClick={() => setInspectedStudent(null)}>
@@ -1297,23 +1312,23 @@ export const AdminPage: React.FC = () => {
 
             <div className="p-5 overflow-y-auto flex-1">
               {loadingInspection ? (
-                <PageLoader label="Завантаження операцій учня..." />
+                <PageLoader label={t("adminLoadingStudentTrades")} />
               ) : inspectedStudentTrades.length === 0 ? (
                 <div className="p-8 text-center text-sm text-slate-500">
-                  Учень ще не має збережених угод.
+                  {t("adminStudentNoTrades")}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
                       <tr>
-                        <th className="py-2.5 px-3">Дата</th>
-                        <th className="py-2.5 px-3">Покупка</th>
-                        <th className="py-2.5 px-3 text-right">Сума (UAH)</th>
-                        <th className="py-2.5 px-3">Продаж</th>
-                        <th className="py-2.5 px-3 text-right">Виторг (UAH)</th>
+                        <th className="py-2.5 px-3">{t("adminColDateShort")}</th>
+                        <th className="py-2.5 px-3">{t("tradeColBuy")}</th>
+                        <th className="py-2.5 px-3 text-right">{t("adminAmountUah")}</th>
+                        <th className="py-2.5 px-3">{t("tradeColSell")}</th>
+                        <th className="py-2.5 px-3 text-right">{t("adminRevenueUah")}</th>
                         <th className="py-2.5 px-3 text-right">
-                          Чистий прибуток
+                          {t("netProfit")}
                         </th>
                         <th className="py-2.5 px-3 text-right">ROI %</th>
                       </tr>
@@ -1355,7 +1370,7 @@ export const AdminPage: React.FC = () => {
                 onClick={() => setInspectedStudent(null)}
                 className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
               >
-                Закрити
+                {t("adminClose")}
               </button>
             </div>
           </div>
@@ -1383,8 +1398,8 @@ export const AdminPage: React.FC = () => {
                 className="text-base font-bold text-slate-900 dark:text-white"
               >
                 {editingGlobalBank
-                  ? "Редагувати глобальний банк"
-                  : "Додати глобальний банк"}
+                  ? t("adminEditGlobalBank")
+                  : t("adminAddGlobalBankModal")}
               </h3>
               <button
                 type="button"
@@ -1398,7 +1413,7 @@ export const AdminPage: React.FC = () => {
 
             <form onSubmit={handleSaveGlobalBank} className="space-y-3 text-sm">
               <div>
-                <label className="block font-semibold mb-1">Назва банку</label>
+                <label className="block font-semibold mb-1">{t("bankName")}</label>
                 <input
                   type="text"
                   required
@@ -1411,7 +1426,7 @@ export const AdminPage: React.FC = () => {
               {!editingGlobalBank && (
                 <div>
                   <label className="block font-semibold mb-1">
-                    Код банку (латиниця, напр. ukrsib)
+                    {t("adminBankCodeHint")}
                   </label>
                   <input
                     type="text"
@@ -1425,7 +1440,7 @@ export const AdminPage: React.FC = () => {
 
               <div>
                 <label className="block font-semibold mb-1">
-                  Стандартний ліміт обороту (UAH)
+                  {t("adminDefaultLimit")}
                 </label>
                 <input
                   type="number"
@@ -1439,18 +1454,18 @@ export const AdminPage: React.FC = () => {
 
               <div>
                 <label className="block font-semibold mb-1">
-                  Логотип банку (для всіх користувачів)
+                  {t("adminBankLogoForAll")}
                 </label>
                 <div className="inline-flex flex-col items-center gap-2">
                   <BankLogo
-                    name={bankName || "Банк"}
+                    name={bankName || t("bank")}
                     logoSvg={bankLogoSvg}
                     size="2xl"
                   />
                   <div className="flex items-center gap-1">
                     <label
                       className="inline-flex items-center justify-center p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-sky-400 transition-colors"
-                      title="Завантажити фото"
+                      title={t("adminUploadPhoto")}
                     >
                       <ImagePlus className="w-4 h-4" aria-hidden />
                       <input
@@ -1463,7 +1478,7 @@ export const AdminPage: React.FC = () => {
                     {bankLogoSvg && (
                       <button
                         type="button"
-                        title="Прибрати фото"
+                        title={t("adminRemovePhoto")}
                         onClick={() => {
                           setBankLogoSvg(undefined);
                           setBankLogoDirty(true);
@@ -1484,7 +1499,7 @@ export const AdminPage: React.FC = () => {
                   onClick={() => setIsBankModalOpen(false)}
                   className="px-4 py-2 font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  Скасувати
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -1492,9 +1507,9 @@ export const AdminPage: React.FC = () => {
                   className="inline-flex items-center justify-center gap-2 min-w-[7.5rem] px-4 py-2 font-semibold rounded-lg bg-blue-600 text-white disabled:opacity-70 disabled:pointer-events-none"
                 >
                   {isSavingGlobalBank ? (
-                    <ButtonLoader label="Збереження..." />
+                    <ButtonLoader label={t("savingTrade")} />
                   ) : (
-                    "Зберегти"
+                    t("save")
                   )}
                 </button>
               </div>

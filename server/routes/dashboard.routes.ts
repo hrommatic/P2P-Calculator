@@ -5,6 +5,6 @@ import * as controller from '../controllers/dashboard.controller.js';
 
 export const dashboardStatsHandler = withAuth(async (req, res, user) => {
   if (req.method === 'GET') return controller.handleDashboardStats(req, res, user);
-  return methodNotAllowed(res, ['GET']);
+  return methodNotAllowed(req, res, ['GET']);
 });
 

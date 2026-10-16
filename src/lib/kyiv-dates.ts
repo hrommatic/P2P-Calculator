@@ -23,19 +23,28 @@ export function mondayFirstWeekday(year: number, month: number, day: number): nu
   return w === 0 ? 6 : w - 1;
 }
 
-export function formatMonthYearUk(year: number, month: number): string {
+export function formatMonthYear(
+  year: number,
+  month: number,
+  locale = 'uk-UA',
+): string {
   const d = new Date(Date.UTC(year, month - 1, 15));
-  return d.toLocaleDateString('uk-UA', {
+  return d.toLocaleDateString(locale, {
     timeZone: KYIV_TIME_ZONE,
     month: 'long',
     year: 'numeric',
   });
 }
 
-export function formatYmdShortUk(ymd: string): string {
+/** @deprecated use formatYmdShort with locale */
+export function formatMonthYearUk(year: number, month: number): string {
+  return formatMonthYear(year, month, 'uk-UA');
+}
+
+export function formatYmdShort(ymd: string, locale = 'uk-UA'): string {
   const { year, month, day } = parseYmd(ymd);
   const d = new Date(Date.UTC(year, month - 1, day));
-  return d.toLocaleDateString('uk-UA', {
+  return d.toLocaleDateString(locale, {
     timeZone: KYIV_TIME_ZONE,
     day: 'numeric',
     month: 'short',

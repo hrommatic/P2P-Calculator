@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { intlLocaleForLanguage } from '../../lib/intl-locale';
 import {
   daysInMonth,
-  formatMonthYearUk,
+  formatMonthYear,
   getKyivYmd,
   mondayFirstWeekday,
   ymdFromParts,
@@ -20,14 +22,26 @@ type Props = {
   resetLabel: string;
 };
 
-const WEEKDAYS = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД'];
-
 export const KyivRangeCalendar: React.FC<Props> = ({
   value,
   onConfirm,
   onClose,
   resetLabel,
 }) => {
+  const { t, language } = useAuth();
+  const dateLocale = intlLocaleForLanguage(language);
+  const weekdays = useMemo(
+    () => [
+      t('calendarWeekMon'),
+      t('calendarWeekTue'),
+      t('calendarWeekWed'),
+      t('calendarWeekThu'),
+      t('calendarWeekFri'),
+      t('calendarWeekSat'),
+      t('calendarWeekSun'),
+    ],
+    [t],
+  );
   const initialView = viewMonthFromPeriod(value);
   const [viewYear, setViewYear] = useState(initialView.year);
   const [viewMonth, setViewMonth] = useState(initialView.month);
@@ -115,14 +129,14 @@ export const KyivRangeCalendar: React.FC<Props> = ({
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm font-semibold capitalize">
-          {formatMonthYearUk(viewYear, viewMonth)}
+          {formatMonthYear(viewYear, viewMonth, dateLocale)}
         </span>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => shiftMonth(-1)}
             className="p-1.5 rounded-lg text-sky-500 hover:bg-slate-800"
-            aria-label="Попередній місяць"
+            aria-label={t('ariaPrevMonth')}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -130,7 +144,7 @@ export const KyivRangeCalendar: React.FC<Props> = ({
             type="button"
             onClick={() => shiftMonth(1)}
             className="p-1.5 rounded-lg text-sky-500 hover:bg-slate-800"
-            aria-label="Наступний місяць"
+            aria-label={t('ariaNextMonth')}
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -138,7 +152,7 @@ export const KyivRangeCalendar: React.FC<Props> = ({
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-xs text-slate-500 font-semibold mb-2 text-center">
-        {WEEKDAYS.map(w => (
+        {weekdays.map(w => (
           <div key={w}>{w}</div>
         ))}
       </div>
@@ -186,7 +200,7 @@ export const KyivRangeCalendar: React.FC<Props> = ({
           onClick={handleConfirm}
           disabled={!draftFrom}
           className="w-12 h-12 flex items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-400 disabled:opacity-40 disabled:pointer-events-none shrink-0"
-          aria-label="Застосувати"
+          aria-label={t('ariaApply')}
         >
           <Check className="w-6 h-6" strokeWidth={2.5} />
         </button>

@@ -66,33 +66,15 @@ export const AuthPage: React.FC = () => {
     setResetSuccess(null);
 
     if (!resetNickname.trim() || !resetTelegram.trim() || !resetPassword || !resetConfirmPassword) {
-      setResetError(
-        language === 'en'
-          ? 'Please fill in all fields'
-          : language === 'ru'
-            ? 'Заполните все поля'
-            : 'Заповніть усі поля',
-      );
+      setResetError(t('errFillAllFields'));
       return;
     }
     if (resetPassword.length < 6) {
-      setResetError(
-        language === 'en'
-          ? 'Password must be at least 6 characters'
-          : language === 'ru'
-            ? 'Пароль должен быть не менее 6 символов'
-            : 'Пароль має містити щонайменше 6 символів',
-      );
+      setResetError(t('errPasswordMin6'));
       return;
     }
     if (resetPassword !== resetConfirmPassword) {
-      setResetError(
-        language === 'en'
-          ? 'Passwords do not match'
-          : language === 'ru'
-            ? 'Пароли не совпадают'
-            : 'Паролі не співпадають',
-      );
+      setResetError(t('errPasswordsNoMatch'));
       return;
     }
 
@@ -108,7 +90,7 @@ export const AuthPage: React.FC = () => {
       setPassword('');
       setNickname(resetNickname.trim());
     } catch (err: unknown) {
-      setResetError(err instanceof Error ? err.message : 'Помилка відновлення пароля');
+      setResetError(err instanceof Error ? err.message : t('errResetPasswordFailed'));
     } finally {
       setIsResetting(false);
     }
@@ -128,9 +110,9 @@ export const AuthPage: React.FC = () => {
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
-    if (score <= 2) return { score: 1, label: language === 'en' ? 'Weak' : language === 'ru' ? 'Слабый' : 'Слабкий', color: 'bg-rose-500' };
-    if (score <= 3) return { score: 2, label: language === 'en' ? 'Moderate' : language === 'ru' ? 'Средний' : 'Середній', color: 'bg-amber-500' };
-    return { score: 3, label: language === 'en' ? 'Strong' : language === 'ru' ? 'Надёжный' : 'Надійний', color: 'bg-emerald-500' };
+    if (score <= 2) return { score: 1, label: t('passwordStrengthWeak'), color: 'bg-rose-500' };
+    if (score <= 3) return { score: 2, label: t('passwordStrengthModerate'), color: 'bg-amber-500' };
+    return { score: 3, label: t('passwordStrengthStrong'), color: 'bg-emerald-500' };
   };
 
   const strength = getPasswordStrength(password);
@@ -144,23 +126,23 @@ export const AuthPage: React.FC = () => {
     try {
       if (mode === 'login') {
         if (!nickname.trim() || !password) {
-          throw new Error(language === 'en' ? 'Please fill in all fields' : language === 'ru' ? 'Заполните все поля' : 'Будь ласка, заповніть усі поля');
+          throw new Error(t('errFillAllFieldsRequired'));
         }
         await login(nickname.trim(), password);
       } else {
         if (!nickname.trim() || !telegram.trim() || !password || !confirmPassword) {
-          throw new Error(language === 'en' ? 'Please fill in all fields' : language === 'ru' ? 'Заполните все поля' : 'Заповніть усі обов’язкові поля');
+          throw new Error(t('errFillAllFieldsRegister'));
         }
         if (password !== confirmPassword) {
-          throw new Error(language === 'en' ? 'Passwords do not match' : language === 'ru' ? 'Пароли не совпадают' : 'Паролі не співпадають');
+          throw new Error(t('errPasswordsNoMatch'));
         }
         if (password.length < 6) {
-          throw new Error(language === 'en' ? 'Password must be at least 6 characters' : language === 'ru' ? 'Пароль должен быть не менее 6 символов' : 'Пароль має містити щонайменше 6 символів');
+          throw new Error(t('errPasswordMin6'));
         }
         await register(nickname.trim(), telegram.trim(), password, confirmPassword);
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication error');
+      setError(err.message || t('unknownError'));
     } finally {
       setIsLoading(false);
     }
@@ -301,7 +283,7 @@ export const AuthPage: React.FC = () => {
                   />
                 </div>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {language === 'en' ? 'Format: @username for curator support' : language === 'ru' ? 'Формат: @username для связи с куратором' : 'Формат: @username для зв’язку з куратором'}
+                  {t('telegramFormatHint')}
                 </p>
               </div>
             )}
@@ -342,7 +324,7 @@ export const AuthPage: React.FC = () => {
                 <div className="mt-2 space-y-1">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">
-                      {language === 'en' ? 'Password strength:' : language === 'ru' ? 'Надёжность пароля:' : 'Надійність пароля:'}
+                      {t('passwordStrengthLabel')}
                     </span>
                     <span className="font-semibold text-slate-700 dark:text-slate-300">{strength.label}</span>
                   </div>
@@ -410,7 +392,7 @@ export const AuthPage: React.FC = () => {
               className={`w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center justify-center gap-2 ${disabledControlClass}`}
             >
               {isLoading ? (
-                <ButtonLoader label={language === 'en' ? 'Processing...' : language === 'ru' ? 'Обработка...' : 'Обробка...'} />
+                <ButtonLoader label={t('processing')} />
               ) : (
                 <>
                   <span>{mode === 'login' ? t('signInBtn') : t('signUpBtn')}</span>
@@ -568,7 +550,7 @@ export const AuthPage: React.FC = () => {
                     className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
                   >
                     {isResetting ? (
-                      <ButtonLoader label={language === 'en' ? 'Saving...' : language === 'ru' ? 'Сохранение...' : 'Збереження...'} />
+                      <ButtonLoader label={t('savingTrade')} />
                     ) : (
                       t('resetPasswordBtn')
                     )}

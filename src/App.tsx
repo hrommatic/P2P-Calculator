@@ -23,7 +23,7 @@ const AdminPage = React.lazy(() =>
 );
 
 function AppContentInner() {
-  const { user, isLoading, siteSettings } = useAuth();
+  const { user, isLoading, siteSettings, t } = useAuth();
   const { catalogReady } = useCatalog();
   const queryClient = useQueryClient();
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
@@ -62,7 +62,7 @@ function AppContentInner() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0a0f1d]">
-        <PageLoader label="Завантаження P2P Calculator..." />
+        <PageLoader label={t('loadingApp')} />
       </div>
     );
   }
@@ -127,7 +127,7 @@ function AppContentInner() {
         )}
         {user.role === 'admin' && mountedTabs.admin && (
           <div className={`${panelClass('admin')} ${pageContentClass}`}>
-            <Suspense fallback={<PageLoader label="Завантаження адмін-панелі..." />}>
+            <Suspense fallback={<PageLoader label={t('loadingAdminPanel')} />}>
               <AdminPage />
             </Suspense>
           </div>
@@ -137,9 +137,9 @@ function AppContentInner() {
 
       <footer className="shrink-0 min-w-0 border-t border-slate-200/80 dark:border-slate-800/80 py-4 text-center text-sm text-slate-400 dark:text-slate-600">
         <div className={`${layoutShellClass} flex flex-col sm:flex-row items-center justify-between gap-2 min-w-0`}>
-          <span>© 2026 {siteSettings?.siteName || 'P2P Calculator'}. Всі права захищено.</span>
+          <span>© 2026 {siteSettings?.siteName || 'P2P Calculator'}. {t('footerRightsReserved')}</span>
           <div className="flex items-center gap-3 text-xs">
-            <span>Куратор: <strong className="text-blue-600 dark:text-sky-400">{resolveCuratorTelegram(siteSettings?.curatorTelegram)}</strong></span>
+            <span>{t('footerCurator')} <strong className="text-blue-600 dark:text-sky-400">{resolveCuratorTelegram(siteSettings?.curatorTelegram)}</strong></span>
           </div>
         </div>
       </footer>

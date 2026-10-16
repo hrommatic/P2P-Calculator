@@ -18,6 +18,8 @@ import {
 import { ButtonLoader, PageLoader } from '../components/ui/Loader';
 import { disabledControlClass } from '../lib/disabled-control-class';
 import { PeriodFilterBar } from '../components/filters/PeriodFilterBar';
+import { TradesTableHeader } from '../components/trades/TradesTableHeader';
+import { intlLocaleForLanguage } from '../lib/intl-locale';
 import {
   defaultPeriodFilter,
   periodToQuery,
@@ -131,7 +133,7 @@ export const HistoryPage: React.FC = () => {
       void refreshCatalog(false);
       invalidateTrades();
     } catch (err: any) {
-      setEditError(err.message || 'Помилка оновлення угоди');
+      setEditError(err.message || t('errUpdateTradeFailed'));
     } finally {
       setIsSavingEdit(false);
     }
@@ -152,8 +154,10 @@ export const HistoryPage: React.FC = () => {
     }
   };
 
+  const numberLocale = intlLocaleForLanguage(language);
+
   const formatUah = (val: number) => {
-    return new Intl.NumberFormat('uk-UA', {
+    return new Intl.NumberFormat(numberLocale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(val || 0);
@@ -186,31 +190,15 @@ export const HistoryPage: React.FC = () => {
 
       <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs overflow-hidden">
         {isLoading ? (
-          <PageLoader label="Завантаження журналу угод..." />
+          <PageLoader label={t('loadingTradeHistory')} />
         ) : trades.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-500">
-            Угод за вказаними фільтрами не знайдено.
+            {t('noTradesForFilters')}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
-                <tr>
-                  <th className="py-3 px-4">Дата / Час</th>
-                  <th className="py-3 px-4">Покупка</th>
-                  <th className="py-3 px-4">Банк покупки</th>
-                  <th className="py-3 px-4 text-right">Курс покупки</th>
-                  <th className="py-3 px-4 text-right">Сума покупки</th>
-                  <th className="py-3 px-4">Продаж</th>
-                  <th className="py-3 px-4">Банк продажу</th>
-                  <th className="py-3 px-4 text-right">Курс продажу</th>
-                  <th className="py-3 px-4 text-right">Сума продажу</th>
-                  <th className="py-3 px-4 text-right">Комісії</th>
-                  <th className="py-3 px-4 text-right">Чистий прибуток</th>
-                  <th className="py-3 px-4 text-right">ROI / Спред</th>
-                  <th className="py-3 px-4 text-center">Дії</th>
-                </tr>
-              </thead>
+              <TradesTableHeader t={t} variant="history" />
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
                 {trades.map(trade => {
                   const isProfit = trade.netProfitUah >= 0;
@@ -220,11 +208,11 @@ export const HistoryPage: React.FC = () => {
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400">
-                        {new Date(trade.createdAt).toLocaleDateString('uk-UA', {
+                        {new Date(trade.createdAt).toLocaleDateString(numberLocale, {
                           day: '2-digit',
                           month: '2-digit',
                         })}{' '}
-                        {new Date(trade.createdAt).toLocaleTimeString('uk-UA', {
+                        {new Date(trade.createdAt).toLocaleTimeString(numberLocale, {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
@@ -277,7 +265,9 @@ export const HistoryPage: React.FC = () => {
                           +{trade.roiPercent.toFixed(2)}%
                         </span>
                         <span className="text-xs text-slate-400 block">
-                          ({trade.spreadPercent.toFixed(2)}% спред)
+                          {t('spreadInline', {
+                            percent: trade.spreadPercent.toFixed(2),
+                          })}
                         </span>
                       </td>
 
@@ -356,29 +346,29 @@ export const HistoryPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 space-y-1.5">
-                <span className="font-bold text-blue-600 dark:text-sky-400 uppercase text-xs">Покупка</span>
-                <p><strong>Біржа:</strong> {selectedTrade.buyExchange}</p>
-                <p><strong>Банк:</strong> {selectedTrade.buyBankName}</p>
-                <p><strong>Курс:</strong> {selectedTrade.buyRate.toFixed(2)} ₴</p>
-                <p><strong>Сума:</strong> {formatUah(selectedTrade.buyAmountUah)} ₴</p>
+                <span className="font-bold text-blue-600 dark:text-sky-400 uppercase text-xs">{t('tradeColBuy')}</span>
+                <p><strong>{t('labelExchange')}</strong> {selectedTrade.buyExchange}</p>
+                <p><strong>{t('labelBank')}</strong> {selectedTrade.buyBankName}</p>
+                <p><strong>{t('labelRate')}</strong> {selectedTrade.buyRate.toFixed(2)} ₴</p>
+                <p><strong>{t('labelAmount')}</strong> {formatUah(selectedTrade.buyAmountUah)} ₴</p>
                 <p><strong>USDT:</strong> {selectedTrade.buyUsdtAmount.toFixed(4)}</p>
               </div>
 
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 space-y-1.5">
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase text-xs">Продаж</span>
-                <p><strong>Біржа:</strong> {selectedTrade.sellExchange}</p>
-                <p><strong>Банк:</strong> {selectedTrade.sellBankName}</p>
-                <p><strong>Курс:</strong> {selectedTrade.sellRate.toFixed(2)} ₴</p>
-                <p><strong>Сума:</strong> {formatUah(selectedTrade.sellAmountUah)} ₴</p>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase text-xs">{t('tradeColSell')}</span>
+                <p><strong>{t('labelExchange')}</strong> {selectedTrade.sellExchange}</p>
+                <p><strong>{t('labelBank')}</strong> {selectedTrade.sellBankName}</p>
+                <p><strong>{t('labelRate')}</strong> {selectedTrade.sellRate.toFixed(2)} ₴</p>
+                <p><strong>{t('labelAmount')}</strong> {formatUah(selectedTrade.sellAmountUah)} ₴</p>
                 <p><strong>USDT:</strong> {selectedTrade.sellUsdtAmount.toFixed(4)}</p>
               </div>
             </div>
 
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-sm space-y-1">
-              <p><strong>Комісії:</strong> {formatUah(selectedTrade.totalCommissionsUah)} ₴</p>
-              <p><strong>Дод. витрати:</strong> {formatUah(selectedTrade.extraExpensesUah)} ₴</p>
+              <p><strong>{t('tradeColCommissions')}:</strong> {formatUah(selectedTrade.totalCommissionsUah)} ₴</p>
+              <p><strong>{t('tradeDetailExtraExpenses')}</strong> {formatUah(selectedTrade.extraExpensesUah)} ₴</p>
               <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                Чистий прибуток: {formatUah(selectedTrade.netProfitUah)} ₴
+                {t('netProfit')}: {formatUah(selectedTrade.netProfitUah)} ₴
               </p>
               {selectedTrade.notes && (
                 <p className="text-slate-500 italic mt-2">&quot;{selectedTrade.notes}&quot;</p>
@@ -412,7 +402,7 @@ export const HistoryPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30">
-                  <h4 className="font-bold text-blue-600 dark:text-sky-400 text-sm">Покупка</h4>
+                  <h4 className="font-bold text-blue-600 dark:text-sky-400 text-sm">{t('tradeColBuy')}</h4>
                   <select
                     value={editBuyExchange}
                     onChange={(e) => setEditBuyExchange(e.target.value)}
@@ -436,7 +426,7 @@ export const HistoryPage: React.FC = () => {
                     step="0.01"
                     value={editBuyRate}
                     onChange={(e) => setEditBuyRate(e.target.value)}
-                    placeholder="Курс"
+                    placeholder={t('placeholderRateShort')}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
                   <input
@@ -444,7 +434,7 @@ export const HistoryPage: React.FC = () => {
                     step="0.01"
                     value={editBuyAmountUah}
                     onChange={(e) => setEditBuyAmountUah(e.target.value)}
-                    placeholder="Сума UAH"
+                    placeholder={t('placeholderAmountUahShort')}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
                   <input
@@ -452,13 +442,13 @@ export const HistoryPage: React.FC = () => {
                     step="0.01"
                     value={editBuyCommission}
                     onChange={(e) => setEditBuyCommission(e.target.value)}
-                    placeholder="Комісія"
+                    placeholder={t('commission')}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
                 </div>
 
                 <div className="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30">
-                  <h4 className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">Продаж</h4>
+                  <h4 className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{t('tradeColSell')}</h4>
                   <select
                     value={editSellExchange}
                     onChange={(e) => setEditSellExchange(e.target.value)}
@@ -482,7 +472,7 @@ export const HistoryPage: React.FC = () => {
                     step="0.01"
                     value={editSellRate}
                     onChange={(e) => setEditSellRate(e.target.value)}
-                    placeholder="Курс"
+                    placeholder={t('placeholderRateShort')}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
                   <input
@@ -490,7 +480,7 @@ export const HistoryPage: React.FC = () => {
                     step="0.01"
                     value={editSellAmountUah}
                     onChange={(e) => setEditSellAmountUah(e.target.value)}
-                    placeholder="Сума UAH"
+                    placeholder={t('placeholderAmountUahShort')}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
                   <input
@@ -498,7 +488,7 @@ export const HistoryPage: React.FC = () => {
                     step="0.01"
                     value={editSellCommission}
                     onChange={(e) => setEditSellCommission(e.target.value)}
-                    placeholder="Комісія"
+                    placeholder={t('commission')}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
                   />
                 </div>
@@ -509,13 +499,13 @@ export const HistoryPage: React.FC = () => {
                 step="0.01"
                 value={editExtraExpenses}
                 onChange={(e) => setEditExtraExpenses(e.target.value)}
-                placeholder="Додаткові витрати"
+                placeholder={t('extraExpenses')}
                 className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
               />
               <textarea
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Коментар"
+                placeholder={t('placeholderComment')}
                 rows={2}
                 className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
               />
@@ -533,7 +523,7 @@ export const HistoryPage: React.FC = () => {
                   disabled={isSavingEdit}
                   className={`px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 ${disabledControlClass}`}
                 >
-                  {isSavingEdit ? <ButtonLoader label="Збереження..." /> : 'Зберегти зміни'}
+                  {isSavingEdit ? <ButtonLoader label={t('savingTrade')} /> : t('saveChanges')}
                 </button>
               </div>
             </form>
@@ -564,7 +554,7 @@ export const HistoryPage: React.FC = () => {
                 onClick={handleDeleteConfirm}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-60 ${disabledControlClass}`}
               >
-                {isDeleting ? <ButtonLoader label="Видалення..." /> : t('deleteTrade')}
+                {isDeleting ? <ButtonLoader label={t('deleting')} /> : t('deleteTrade')}
               </button>
             </div>
           </div>

@@ -5,21 +5,21 @@ import * as controller from '../controllers/banks.controller.js';
 
 export const banksIndexGetHandler = withAuth(async (req, res, user) => {
   if (req.method === 'GET') return controller.handleGetBanks(req, res, user);
-  return methodNotAllowed(res, ['GET']);
+  return methodNotAllowed(req, res, ['GET']);
 });
 
 export const banksIndexPostHandler = withAuth(async (req, res, user) => {
   if (req.method === 'POST') return controller.handlePostBank(req, res, user);
-  return methodNotAllowed(res, ['POST']);
+  return methodNotAllowed(req, res, ['POST']);
 });
 
 export const bankUpdateHandler = withAuth(async (req, res, user) => {
   if (req.method === 'PUT') return controller.handlePutBank(req, res, user);
-  return methodNotAllowed(res, ['PUT']);
+  return methodNotAllowed(req, res, ['PUT']);
 });
 
 export const bankDeleteHandler = withAuth(async (req, res, user) => {
   if (req.method === 'DELETE') return controller.handleDeleteBank(req, res, user);
-  return methodNotAllowed(res, ['DELETE']);
+  return methodNotAllowed(req, res, ['DELETE']);
 });
 

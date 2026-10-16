@@ -102,7 +102,7 @@ export const SettingsPage: React.FC = () => {
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 3000);
     } catch (err: any) {
-      setProfileError(err.message || 'Помилка оновлення профілю');
+      setProfileError(err.message || t('errProfileUpdateFailed'));
     } finally {
       setIsSavingProfile(false);
     }
@@ -115,12 +115,12 @@ export const SettingsPage: React.FC = () => {
     setPasswordSuccess(false);
 
     if (newPassword.length < 6) {
-      setPasswordError('Новий пароль має бути щонайменше 6 символів');
+      setPasswordError(t('errNewPasswordMinLength'));
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      setPasswordError('Нові паролі не співпадають');
+      setPasswordError(t('errNewPasswordsMismatch'));
       return;
     }
 
@@ -137,7 +137,7 @@ export const SettingsPage: React.FC = () => {
       setConfirmNewPassword('');
       setTimeout(() => setPasswordSuccess(false), 3000);
     } catch (err: any) {
-      setPasswordError(err.message || 'Не вдалося змінити пароль');
+      setPasswordError(err.message || t('errChangePasswordFailed'));
     } finally {
       setIsSavingPassword(false);
     }
@@ -159,7 +159,7 @@ export const SettingsPage: React.FC = () => {
           <span>{t('settingsTitle')}</span>
         </h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Керування параметрами особистого кабінету, безпекою та зовнішнім виглядом
+          {t('settingsSubtitle')}
         </p>
       </div>
 
@@ -178,7 +178,7 @@ export const SettingsPage: React.FC = () => {
           {profileSuccess && (
             <div className="p-2.5 rounded-lg text-sm bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center gap-2">
               <Check className="w-3.5 h-3.5" />
-              <span>Профіль успішно оновлено</span>
+              <span>{t('profileUpdatedSuccess')}</span>
             </div>
           )}
 
@@ -228,7 +228,7 @@ export const SettingsPage: React.FC = () => {
                 disabled={isSavingProfile}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors ${disabledControlClass}`}
               >
-                {isSavingProfile ? <ButtonLoader label="Збереження..." /> : 'Зберегти Telegram'}
+                {isSavingProfile ? <ButtonLoader label={t('savingTrade')} /> : t('saveTelegramBtn')}
               </button>
             </div>
           </form>
@@ -246,7 +246,7 @@ export const SettingsPage: React.FC = () => {
           {passwordSuccess && (
             <div className="p-2.5 rounded-lg text-sm bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center gap-2">
               <Check className="w-3.5 h-3.5" />
-              <span>Пароль успішно змінено!</span>
+              <span>{t('passwordUpdatedSuccess')}</span>
             </div>
           )}
 
@@ -297,7 +297,7 @@ export const SettingsPage: React.FC = () => {
                 disabled={isSavingPassword}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors ${disabledControlClass}`}
               >
-                {isSavingPassword ? <ButtonLoader label="Збереження..." /> : t('updatePasswordBtn')}
+                {isSavingPassword ? <ButtonLoader label={t('savingTrade')} /> : t('updatePasswordBtn')}
               </button>
             </div>
           </form>

@@ -5,5 +5,5 @@ import * as controller from '../controllers/catalog.controller.js';
 
 export const catalogGetHandler = withAuth(async (req, res, user) => {
   if (req.method === 'GET') return controller.handleGetCatalog(req, res, user);
-  return methodNotAllowed(res, ['GET']);
+  return methodNotAllowed(req, res, ['GET']);
 });

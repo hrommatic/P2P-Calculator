@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { OTHER_EXCHANGE_VALUE } from '../../shared/i18n/locale-extra';
 import { useCatalog } from '../context/CatalogContext';
 import { useMarkTradesStale } from '../hooks/useInvalidateTrades';
 import { api } from '../services/api';
@@ -210,7 +211,7 @@ export const CalculatorPage: React.FC = () => {
     if (isSaving) return;
 
     if (!buyBankId || !sellBankId) {
-      setErrorMessage('Оберіть банки покупки та продажу');
+      setErrorMessage(t('errSelectBuySellBanks'));
       return;
     }
 
@@ -218,18 +219,18 @@ export const CalculatorPage: React.FC = () => {
     const sellInCatalog = banks.some((b) => b.id === sellBankId);
     if (!buyInCatalog || !sellInCatalog) {
       setErrorMessage(
-        'Обрані банки застаріли. Оновіть вибір у списку або додайте банк у розділі «Мої банки».',
+        t('errStaleBanksSelection'),
       );
       return;
     }
 
     if (numBuyRate <= 0 || numSellRate <= 0) {
-      setErrorMessage('Вкажіть коректні курси покупки та продажу');
+      setErrorMessage(t('errInvalidBuySellRates'));
       return;
     }
 
     if (numBuyAmountUah <= 0) {
-      setErrorMessage('Вкажіть суму покупки в гривнях');
+      setErrorMessage(t('errBuyAmountRequired'));
       return;
     }
 
@@ -263,7 +264,7 @@ export const CalculatorPage: React.FC = () => {
       markTradesStale();
       resetFormFields();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Не вдалося зберегти сделку');
+      setErrorMessage(err.message || t('errSaveTradeFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -284,7 +285,7 @@ export const CalculatorPage: React.FC = () => {
   };
 
   if (!catalogReady) {
-    return <PageLoader label="Завантаження калькулятора..." />;
+    return <PageLoader label={t('loadingCalculator')} />;
   }
 
   return (
@@ -349,7 +350,7 @@ export const CalculatorPage: React.FC = () => {
                   {exchanges.map(ex => (
                     <option key={ex.id} value={ex.name}>{ex.name}</option>
                   ))}
-                  <option value="Інша біржа">Інша біржа</option>
+                  <option value={OTHER_EXCHANGE_VALUE}>{t('otherExchange')}</option>
                 </select>
               </div>
 
@@ -369,7 +370,10 @@ export const CalculatorPage: React.FC = () => {
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
-                      {b.name} (Залишок: {formatUah(Math.max(0, b.turnoverLimitUah - b.buyTurnoverUah))} ₴)
+                      {t('bankOptionRemaining', {
+                        name: b.name,
+                        amount: formatUah(Math.max(0, b.turnoverLimitUah - b.buyTurnoverUah)),
+                      })}
                     </option>
                   ))}
                 </select>
@@ -452,7 +456,10 @@ export const CalculatorPage: React.FC = () => {
               <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                 <span>
-                  Увага: сума покупки ({formatUah(numBuyAmountUah)} ₴) перевищує доступний залишок ліміту обраного банку ({formatUah(buyBankAvailable)} ₴).
+                  {t('calcBuyLimitWarning', {
+                    buyAmount: formatUah(numBuyAmountUah),
+                    available: formatUah(buyBankAvailable),
+                  })}
                 </span>
               </div>
             )}
@@ -470,7 +477,8 @@ export const CalculatorPage: React.FC = () => {
                 </h2>
               </div>
               <span className="text-[10px] sm:text-xs font-mono tabular-nums text-slate-500 shrink-0">
-                Виторг: <strong className="text-emerald-600 dark:text-emerald-400">{formatUah(totalRevenueUah)} UAH</strong>
+                {t('calcRevenueLabel')}{' '}
+                <strong className="text-emerald-600 dark:text-emerald-400">{formatUah(totalRevenueUah)} UAH</strong>
               </span>
             </div>
 
@@ -488,7 +496,7 @@ export const CalculatorPage: React.FC = () => {
                   {exchanges.map(ex => (
                     <option key={ex.id} value={ex.name}>{ex.name}</option>
                   ))}
-                  <option value="Інша біржа">Інша біржа</option>
+                  <option value={OTHER_EXCHANGE_VALUE}>{t('otherExchange')}</option>
                 </select>
               </div>
 
@@ -508,7 +516,10 @@ export const CalculatorPage: React.FC = () => {
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
-                      {b.name} (Залишок: {formatUah(Math.max(0, b.turnoverLimitUah - b.sellTurnoverUah))} ₴)
+                      {t('bankOptionRemaining', {
+                        name: b.name,
+                        amount: formatUah(Math.max(0, b.turnoverLimitUah - b.sellTurnoverUah)),
+                      })}
                     </option>
                   ))}
                 </select>

@@ -19,6 +19,7 @@
     "test:path-segments": "tsx scripts/pathSegments.test.ts",
     "test:calculation": "tsx shared/calculation.test.ts",
     "test:kyiv-dates": "tsx server/lib/kyiv-dates.test.ts",
+    "test:i18n": "tsx shared/i18n/i18n.test.ts && tsx shared/i18n/api-i18n.test.ts",
     "test:unit": "npm run test:bank-stats && npm run test:path-segments && npm run test:trade-filters && npm run test:calculation && npm run test:kyiv-dates",
     "test:all": "npm run lint && npm run test:unit && npm run test:api && npm run test:banks"
   },

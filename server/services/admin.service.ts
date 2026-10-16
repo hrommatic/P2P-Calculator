@@ -3,6 +3,7 @@ import type { User, UserStatus, UserRole } from '../schemas/auth.schema.js';
 import type { GlobalBank, Exchange } from '../schemas/banks.schema.js';
 import { hashPassword, generateTemporaryPassword } from '../lib/crypto.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
+import { jsonError, jsonOkMessage } from '../lib/i18n-response.js';
 import { getNbuUsdUahRate } from '../lib/nbu-rate.js';
 import type { TradeListFilters } from '../utils/db/trade-filters.js';
 import {
@@ -58,17 +59,17 @@ export async function handleAdminUsers(req: VercelRequest, res: VercelResponse, 
 export async function handleAdminUserStatus(req: VercelRequest, res: VercelResponse, user: User) {
   const targetUser = await findUserById(String(req.query.id));
   if (!targetUser) {
-    return res.status(404).json({ error: 'Користувача не знайдено' });
+    return jsonError(res, req, 404, 'errUserNotFound');
   }
 
   if (targetUser.id === user.id) {
-    return res.status(400).json({ error: 'Неможливо змінити власний статус' });
+    return jsonError(res, req, 400, 'errCannotChangeOwnStatus');
   }
 
   const body = parseJsonBody(req);
   const status = body.status;
   if (typeof status !== 'string' || !['active', 'blocked'].includes(status)) {
-    return res.status(400).json({ error: 'Недійсний статус' });
+    return jsonError(res, req, 400, 'errInvalidStatus');
   }
 
   await updateUserStatus(targetUser.id, status as UserStatus);
@@ -80,7 +81,7 @@ export async function handleAdminUserStatus(req: VercelRequest, res: VercelRespo
 export async function handleAdminUserProfile(req: VercelRequest, res: VercelResponse, user: User) {
   const targetUser = await findUserById(String(req.query.id));
   if (!targetUser) {
-    return res.status(404).json({ error: 'Користувача не знайдено' });
+    return jsonError(res, req, 404, 'errUserNotFound');
   }
 
   const body = parseJsonBody(req);
@@ -93,7 +94,7 @@ export async function handleAdminUserProfile(req: VercelRequest, res: VercelResp
   if (typeof nickname === 'string' && nickname.trim()) {
     const cleanNick = nickname.trim().toLowerCase();
     if (await nicknameTaken(cleanNick, targetUser.id)) {
-      return res.status(400).json({ error: 'Цей нікнейм уже зайнятий' });
+      return jsonError(res, req, 400, 'errNicknameTaken');
     }
     updates.nickname = cleanNick;
   }
@@ -117,34 +118,36 @@ export async function handleAdminUserProfile(req: VercelRequest, res: VercelResp
 export async function handleAdminUserResetPassword(req: VercelRequest, res: VercelResponse, user: User) {
   const targetUser = await findUserById(String(req.query.id));
   if (!targetUser) {
-    return res.status(404).json({ error: 'Користувача не знайдено' });
+    return jsonError(res, req, 404, 'errUserNotFound');
   }
 
   const tempPassword = generateTemporaryPassword();
   await resetUserPassword(targetUser.id, hashPassword(tempPassword));
   await logAdminAction(user, 'PASSWORD_RESET', `Admin generated temporary password for ${targetUser.nickname}`, targetUser.id);
 
-  return res.json({
-    success: true,
-    temporaryPassword: tempPassword,
-    message: `Тимчасовий пароль згенеровано. Передайте його учневі особисто в Telegram ${targetUser.telegram}.`,
-  });
+  return jsonOkMessage(
+    res,
+    req,
+    { success: true, temporaryPassword: tempPassword },
+    'msgTempPasswordGenerated',
+    { telegram: targetUser.telegram },
+  );
 }
 
 export async function handleAdminUserDelete(req: VercelRequest, res: VercelResponse, user: User) {
   const targetUser = await findUserById(String(req.query.id));
   if (!targetUser) {
-    return res.status(404).json({ error: 'Користувача не знайдено' });
+    return jsonError(res, req, 404, 'errUserNotFound');
   }
 
   if (targetUser.id === user.id) {
-    return res.status(400).json({ error: 'Неможливо видалити власний адміністраторський акаунт' });
+    return jsonError(res, req, 400, 'errCannotDeleteSelfAdmin');
   }
 
   await deleteUserAndData(targetUser.id);
   await logAdminAction(user, 'USER_DELETE', `Deleted user ${targetUser.nickname} and associated data`, targetUser.id);
 
-  return res.json({ success: true, message: 'Користувача видалено' });
+  return jsonOkMessage(res, req, { success: true }, 'msgUserDeleted');
 }
 
 export async function handleAdminStudentsStats(req: VercelRequest, res: VercelResponse, _user: User) {
@@ -166,7 +169,7 @@ export async function handlePostAdminGlobalBank(req: VercelRequest, res: VercelR
   const logoSvg = body.logoSvg;
 
   if (typeof name !== 'string' || typeof code !== 'string' || !name || !code) {
-    return res.status(400).json({ error: 'Вкажіть назву та код банку' });
+    return jsonError(res, req, 400, 'errBankNameCodeRequired');
   }
 
   const newBank: GlobalBank = {
@@ -189,7 +192,7 @@ export async function handlePostAdminGlobalBank(req: VercelRequest, res: VercelR
 export async function handlePutAdminGlobalBank(req: VercelRequest, res: VercelResponse, user: User) {
   const banks = await getAllGlobalBanks();
   const bank = banks.find((b) => b.id === String(req.query.id));
-  if (!bank) return res.status(404).json({ error: 'Банк не знайдено' });
+  if (!bank) return jsonError(res, req, 404, 'errBankNotFound');
 
   const body = parseJsonBody(req);
   if (typeof body.name === 'string' && body.name) bank.name = body.name.trim();
@@ -210,12 +213,12 @@ export async function handlePutAdminGlobalBank(req: VercelRequest, res: VercelRe
 export async function handleDeleteAdminGlobalBank(req: VercelRequest, res: VercelResponse, user: User) {
   const banks = await getAllGlobalBanks();
   const bank = banks.find((b) => b.id === String(req.query.id));
-  if (!bank) return res.status(404).json({ error: 'Банк не знайдено' });
+  if (!bank) return jsonError(res, req, 404, 'errBankNotFound');
 
   await deleteGlobalBank(bank.id);
   await logAdminAction(user, 'BANK_DELETE', `Deleted global bank ${bank.name}`);
 
-  return res.json({ success: true, message: 'Банк видалено' });
+  return jsonOkMessage(res, req, { success: true }, 'msgBankDeleted');
 }
 
 export async function handleGetAdminExchanges(req: VercelRequest, res: VercelResponse, _user: User) {
@@ -229,7 +232,7 @@ export async function handlePostAdminExchange(req: VercelRequest, res: VercelRes
   const code = body.code;
 
   if (typeof name !== 'string' || typeof code !== 'string' || !name || !code) {
-    return res.status(400).json({ error: 'Вкажіть назву та код біржі' });
+    return jsonError(res, req, 400, 'errExchangeNameCodeRequired');
   }
 
   const newExchange: Exchange = {
@@ -249,7 +252,7 @@ export async function handlePostAdminExchange(req: VercelRequest, res: VercelRes
 export async function handlePutAdminExchange(req: VercelRequest, res: VercelResponse, user: User) {
   const exchanges = await getAllExchanges();
   const ex = exchanges.find((e) => e.id === String(req.query.id));
-  if (!ex) return res.status(404).json({ error: 'Біржу не знайдено' });
+  if (!ex) return jsonError(res, req, 404, 'errExchangeNotFound');
 
   const body = parseJsonBody(req);
   if (typeof body.name === 'string' && body.name) ex.name = body.name.trim();

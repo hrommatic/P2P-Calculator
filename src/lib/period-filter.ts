@@ -26,16 +26,12 @@ export function periodToQuery(p: PeriodFilterState): Record<string, string> {
   };
 }
 
-export function periodLabelUk(p: PeriodFilterState): string {
+export function periodLabel(
+  p: PeriodFilterState,
+  presetLabels: Record<PeriodPreset, string>,
+): string {
   if (p.kind === 'preset') {
-    const map: Record<PeriodPreset, string> = {
-      all: 'Увесь час',
-      today: 'Сьогодні',
-      yesterday: 'Вчора',
-      week: 'Тиждень',
-      month: 'Місяць',
-    };
-    return map[p.preset];
+    return presetLabels[p.preset];
   }
   if (p.kind === 'range') {
     if (p.dateFrom === p.dateTo) return p.dateFrom.split('-').reverse().join('.');

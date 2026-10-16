@@ -1,8 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { jsonError } from '../lib/i18n-response.js';
 
-export function methodNotAllowed(res: VercelResponse, allowed: string[]): VercelResponse {
+export function methodNotAllowed(
+  req: VercelRequest,
+  res: VercelResponse,
+  allowed: string[],
+): VercelResponse {
   res.setHeader('Allow', allowed.join(', '));
-  return res.status(405).json({ error: 'Method not allowed' });
+  return jsonError(res, req, 405, 'errMethodNotAllowed');
 }
 
 export function parseJsonBody(req: VercelRequest): Record<string, unknown> {
@@ -19,14 +24,18 @@ export function parseJsonBody(req: VercelRequest): Record<string, unknown> {
   return {};
 }
 
-export function sendServerError(res: VercelResponse, err: unknown): VercelResponse {
+export function sendServerError(
+  req: VercelRequest,
+  res: VercelResponse,
+  err: unknown,
+): VercelResponse {
   console.error(err);
   if (res.headersSent) {
     return res;
   }
   const message = err instanceof Error ? err.message : 'Internal server error';
   if (message === 'Invalid JSON body') {
-    return res.status(400).json({ error: 'Некоректне тіло запиту (Invalid JSON body)' });
+    return jsonError(res, req, 400, 'errInvalidJson');
   }
   return res.status(500).json({ error: message });
 }

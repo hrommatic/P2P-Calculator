@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { User } from '../schemas/auth.schema.js';
 import type { UserBank } from '../schemas/banks.schema.js';
 import { parseJsonBody } from '../middlewares/helpers.js';
+import { jsonError, jsonOkMessage } from '../lib/i18n-response.js';
 import {
   deleteUserBankRecord,
   createUserBank,
@@ -44,12 +45,12 @@ export async function handlePostBank(req: VercelRequest, res: VercelResponse, us
   const notes = body.notes;
 
   if (!name || typeof name !== 'string' || !name.trim()) {
-    return res.status(400).json({ error: 'Вкажіть назву банку' });
+    return jsonError(res, req, 400, 'errBankNameRequired');
   }
 
   const trimmedName = name.trim();
   if (await findDuplicateUserBankName(user.id, trimmedName)) {
-    return res.status(409).json({ error: 'Банк з такою назвою вже існує' });
+    return jsonError(res, req, 409, 'errBankNameDuplicate');
   }
 
   const limit = Math.max(1000, Number(turnoverLimitUah) || 100000);
@@ -97,7 +98,7 @@ function resolveRouteId(req: VercelRequest): string {
 export async function handlePutBank(req: VercelRequest, res: VercelResponse, user: User) {
   const bank = await findUserBankById(resolveRouteId(req));
   if (!bank || (bank.userId !== user.id && user.role !== 'admin')) {
-    return res.status(404).json({ error: 'Банк не знайдено' });
+    return jsonError(res, req, 404, 'errBankNotFound');
   }
 
   const body = parseJsonBody(req);
@@ -110,7 +111,7 @@ export async function handlePutBank(req: VercelRequest, res: VercelResponse, use
   if (name && typeof name === 'string' && name.trim()) {
     const trimmedName = name.trim();
     if (await findDuplicateUserBankName(bank.userId, trimmedName, bank.id)) {
-      return res.status(409).json({ error: 'Банк з такою назвою вже існує' });
+      return jsonError(res, req, 409, 'errBankNameDuplicate');
     }
     bank.name = trimmedName;
   }
@@ -135,9 +136,9 @@ export async function handlePutBank(req: VercelRequest, res: VercelResponse, use
 export async function handleDeleteBank(req: VercelRequest, res: VercelResponse, user: User) {
   const bank = await findUserBankById(resolveRouteId(req));
   if (!bank || (bank.userId !== user.id && user.role !== 'admin')) {
-    return res.status(404).json({ error: 'Банк не знайдено' });
+    return jsonError(res, req, 404, 'errBankNotFound');
   }
 
   await deleteUserBankRecord(bank.id);
-  return res.json({ success: true, message: 'Банк видалено' });
+  return jsonOkMessage(res, req, { success: true }, 'msgBankDeleted');
 }

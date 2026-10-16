@@ -131,32 +131,32 @@ export const BanksPage: React.FC = () => {
 
     const limitNum = parseFloat(turnoverLimit);
     if (isNaN(limitNum) || limitNum <= 0) {
-      setFormError("Вкажіть коректний ліміт обороту");
+      setFormError(t("errBankLimitInvalid"));
       return;
     }
 
     if (editingBank) {
       const trimmedName = name.trim();
       if (!trimmedName) {
-        setFormError("Вкажіть назву банку");
+        setFormError(t("errBankNameRequired"));
         return;
       }
       if (hasDuplicateName(trimmedName, editingBank.id)) {
-        setFormError("Банк з такою назвою вже існує");
+        setFormError(t("errBankNameDuplicate"));
         return;
       }
     } else {
       if (!selectedGlobalBankId) {
-        setFormError("Оберіть банк зі списку");
+        setFormError(t("errSelectBankFromList"));
         return;
       }
       const selected = globalBanks.find((g) => g.id === selectedGlobalBankId);
       if (!selected) {
-        setFormError("Обраний банк недоступний");
+        setFormError(t("errSelectedBankUnavailable"));
         return;
       }
       if (hasDuplicateName(selected.name)) {
-        setFormError("Цей банк уже додано");
+        setFormError(t("errBankAlreadyAdded"));
         return;
       }
     }
@@ -188,7 +188,7 @@ export const BanksPage: React.FC = () => {
       setIsModalOpen(false);
       void fetchBanks(undefined, true);
     } catch (err: any) {
-      setFormError(err.message || "Помилка збереження банку");
+      setFormError(err.message || t("errSaveBankFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -208,7 +208,7 @@ export const BanksPage: React.FC = () => {
       void fetchBanks(undefined, true);
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Не вдалося видалити банк";
+        err instanceof Error ? err.message : t("errDeleteBankFailed");
       setDeleteError(message);
     } finally {
       setIsDeleting(false);
@@ -247,7 +247,7 @@ export const BanksPage: React.FC = () => {
 
 
       {!catalogReady || isRefreshing ? (
-        <PageLoader label="Завантаження банківських рахунків..." />
+        <PageLoader label={t("loadingBanks")} />
       ) : banks.length === 0 ? (
         <div className="p-12 text-center bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
           <CreditCard className="w-8 h-8 text-slate-400 mx-auto" />
@@ -375,7 +375,7 @@ export const BanksPage: React.FC = () => {
                         {usagePercent}% ({formatUah(effectiveUsedBuy)} ₴)
                       </span>
                       <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
-                        Залишок:{" "}
+                        {t("bankRemaining")}{" "}
                         <strong className="text-slate-900 dark:text-white">
                           {formatUah(availableLimit)} ₴
                         </strong>
@@ -481,19 +481,18 @@ export const BanksPage: React.FC = () => {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Наприклад: Monobank (Чорна)"
+                    placeholder={t("bankNamePlaceholderExample")}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                   />
                 ) : addableGlobalBanks.length === 0 ? (
                   <p className="text-sm text-slate-500 dark:text-slate-400 py-2">
-                    Усі банки з довідника вже додані або довідник порожній.
-                    Зверніться до адміністратора.
+                    {t("banksAllCatalogAdded")}
                   </p>
                 ) : (
                   <div className="flex items-center gap-3">
                     {selectedGlobalBankId && (
                       <BankLogo
-                        name={name || "Банк"}
+                        name={name || t("bank")}
                         logoSvg={
                           globalBanks.find((g) => g.id === selectedGlobalBankId)
                             ?.logoSvg
@@ -533,13 +532,13 @@ export const BanksPage: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Коментар / Нотатки
+                  {t("banksNotesLabel")}
                 </label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Додаткова інформація"
+                  placeholder={t("bankNotesPlaceholder")}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
@@ -562,7 +561,7 @@ export const BanksPage: React.FC = () => {
                   className={`px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white ${disabledControlClass}`}
                 >
                   {isSaving ? (
-                    <ButtonLoader label="Збереження..." />
+                    <ButtonLoader label={t("savingTrade")} />
                   ) : (
                     t("saveBankBtn")
                   )}
@@ -615,7 +614,7 @@ export const BanksPage: React.FC = () => {
                 className="inline-flex items-center justify-center min-w-[8rem] px-4 py-2.5 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-70 disabled:pointer-events-none"
               >
                 {isDeleting ? (
-                  <ButtonLoader label="Видалення..." />
+                  <ButtonLoader label={t("deleting")} />
                 ) : (
                   t("deleteBank")
                 )}

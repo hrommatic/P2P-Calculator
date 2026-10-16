@@ -28,7 +28,7 @@ interface PageLoaderProps {
 }
 
 export function PageLoader({
-  label = "Завантаження...",
+  label = "Loading...",
   className = "",
 }: PageLoaderProps) {
   return (
