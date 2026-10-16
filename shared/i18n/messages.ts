@@ -1,4 +1,4 @@
-import type { Language } from "../../src/types";
+import type { Language } from "./language";
 
 export const translations: Record<Language, Record<string, string>> = {
   uk: {

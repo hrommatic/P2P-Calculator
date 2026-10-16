@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   APP_LANGUAGE_HEADER,
   parseLanguage,
-  translate,
-} from "../../shared/i18n/translate.js";
+  translateServer,
+} from "../../shared/i18n/translate-server.js";
 
 export function getRequestLanguage(req: VercelRequest) {
   const h = req.headers[APP_LANGUAGE_HEADER];
@@ -20,7 +20,7 @@ export function jsonError(
 ) {
   const lang = getRequestLanguage(req);
   return res.status(status).json({
-    error: translate(lang, key, params),
+    error: translateServer(lang, key, params),
     errorKey: key,
   });
 }
@@ -35,6 +35,6 @@ export function jsonOkMessage(
   const lang = getRequestLanguage(req);
   return res.json({
     ...payload,
-    message: translate(lang, messageKey, params),
+    message: translateServer(lang, messageKey, params),
   });
 }

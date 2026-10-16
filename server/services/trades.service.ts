@@ -20,7 +20,10 @@ import { clampTradesPageSize } from '../../shared/trades-pagination.js';
 import { normalizeTradeListFilters } from '../utils/db/trade-filters.js';
 import { jsonError, jsonOkMessage, getRequestLanguage } from '../lib/i18n-response.js';
 import { CSV_HEADER_KEYS } from '../../shared/i18n/locale-extra.js';
-import { translate, intlLocaleForLanguage } from '../../shared/i18n/translate.js';
+import {
+  intlLocaleForLanguage,
+  translateServer,
+} from '../../shared/i18n/translate-server.js';
 
 function asCommissionType(value: unknown, fallback: CommissionType = 'percent'): CommissionType {
   if (value === 'percent' || value === 'fixed_uah' || value === 'fixed_usdt') {
@@ -227,7 +230,7 @@ export async function handleTradesExportCsv(req: VercelRequest, res: VercelRespo
 
   const lang = getRequestLanguage(req);
   const locale = intlLocaleForLanguage(lang);
-  const headers = CSV_HEADER_KEYS.map((key) => translate(lang, key));
+  const headers = CSV_HEADER_KEYS.map((key) => translateServer(lang, key));
 
   const rows = trades.map((t) => [
     t.id,

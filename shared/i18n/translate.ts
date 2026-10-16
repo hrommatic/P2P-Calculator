@@ -1,6 +1,6 @@
 import { translations } from "./messages";
 import { localeExtra } from "./locale-extra";
-import type { Language } from "../../src/types";
+import type { Language } from "./language";
 
 export { CSV_HEADER_KEYS, OTHER_EXCHANGE_VALUE } from "./locale-extra";
 

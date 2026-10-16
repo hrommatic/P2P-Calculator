@@ -1,4 +1,4 @@
-import type { Language } from "../../src/types";
+import type { Language } from "./language";
 
 const uk: Record<string, string> = {
   loadingGeneric: "Завантаження...",
