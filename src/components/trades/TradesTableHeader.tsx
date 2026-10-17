@@ -10,9 +10,7 @@ type Props = {
 export const TradesTableHeader: React.FC<Props> = ({ t, variant }) => (
   <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
     <tr>
-      {variant === "history" ? (
-        <th className="py-3 px-4">{t("tradeColDateTime")}</th>
-      ) : null}
+      <th className="py-3 px-4">{t("tradeColDateTime")}</th>
       <th className="py-3 px-4">{t("tradeColBuy")}</th>
       <th className="py-3 px-4">{t("tradeColBuyBank")}</th>
       <th className="py-3 px-4 text-right">{t("tradeColBuyRate")}</th>

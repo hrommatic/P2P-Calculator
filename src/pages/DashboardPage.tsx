@@ -3,6 +3,7 @@ import { DASHBOARD_RECENT_TRADES_LIMIT } from "@/shared/trades-pagination";
 import { DEAL_LEGS_PER_SAVED_TRADE } from "../lib/trade-period-stats";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardTradeRow } from "../components/dashboard/DashboardTradeRow";
+import { useRecentTradesTableLayout } from "../components/dashboard/recentTradesTableLayout";
 import { TradesTableHeader } from "../components/trades/TradesTableHeader";
 import { intlLocaleForLanguage } from "../lib/intl-locale";
 import { useAuth } from "../context/AuthContext";
@@ -60,6 +61,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     tradesCount: 0,
   };
   const recentTrades = stats?.recentTrades ?? [];
+  const recentTradesVisible = !showLoader && periodStats.tradesCount > 0;
+  const { scrollRef: recentTradesScrollRef, columnWidths: recentTradesColumnWidths } =
+    useRecentTradesTableLayout(
+      recentTradesVisible,
+      `${language}:${recentTrades.map((trade) => trade.id).join(",")}`,
+    );
   const savedTradesInPeriod =
     periodStats.tradesCount / DEAL_LEGS_PER_SAVED_TRADE;
   const tradesPreviewTruncated =
@@ -262,8 +269,31 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto bg-white dark:bg-[#111827]">
-            <table className="w-full text-left text-sm whitespace-nowrap">
+          <div
+            ref={recentTradesScrollRef}
+            className="w-full min-w-0 overflow-x-auto bg-white dark:bg-[#111827]"
+          >
+            <table
+              className="text-left text-sm whitespace-nowrap"
+              style={
+                recentTradesColumnWidths
+                  ? {
+                      tableLayout: "fixed",
+                      width: recentTradesColumnWidths.reduce(
+                        (sum, width) => sum + width,
+                        0,
+                      ),
+                    }
+                  : { width: "max-content", minWidth: "100%" }
+              }
+            >
+              {recentTradesColumnWidths ? (
+                <colgroup>
+                  {recentTradesColumnWidths.map((width, index) => (
+                    <col key={index} style={{ width }} />
+                  ))}
+                </colgroup>
+              ) : null}
               <TradesTableHeader t={t} variant="dashboard" />
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
                 {recentTrades.map((trade) => (
@@ -271,6 +301,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     key={trade.id}
                     trade={trade}
                     formatUah={formatUah}
+                    dateLocale={numberLocale}
                   />
                 ))}
               </tbody>
