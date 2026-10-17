@@ -271,7 +271,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     key={trade.id}
                     trade={trade}
                     formatUah={formatUah}
-                    dateLocale={numberLocale}
                   />
                 ))}
               </tbody>

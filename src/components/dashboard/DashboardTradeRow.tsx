@@ -4,30 +4,16 @@ import type { Trade } from '../../types';
 type Props = {
   trade: Trade;
   formatUah: (val: number) => string;
-  dateLocale: string;
 };
 
 export const DashboardTradeRow = React.memo(function DashboardTradeRow({
   trade,
   formatUah,
-  dateLocale,
 }: Props) {
   const isProfit = trade.netProfitUah >= 0;
-  const created = new Date(trade.createdAt);
 
   return (
     <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-      <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400">
-        {created.toLocaleDateString(dateLocale, {
-          day: '2-digit',
-          month: '2-digit',
-          year: '2-digit',
-        })}{' '}
-        {created.toLocaleTimeString(dateLocale, {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
-      </td>
       <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
         {trade.buyExchange}
       </td>
