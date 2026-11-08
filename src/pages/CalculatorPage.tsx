@@ -179,9 +179,18 @@ export const CalculatorPage: React.FC = () => {
   const selectedSellBank = banks.find((b) => b.id === sellBankId);
 
   const buyBankAvailable = selectedBuyBank
-    ? Math.max(0, selectedBuyBank.turnoverLimitUah - (selectedBuyBank.buyTurnoverUah + selectedBuyBank.initialTurnoverUah))
+    ? selectedBuyBank.withoutCards
+      ? Number.POSITIVE_INFINITY
+      : Math.max(
+          0,
+          selectedBuyBank.turnoverLimitUah -
+            (selectedBuyBank.buyTurnoverUah + selectedBuyBank.initialTurnoverUah),
+        )
     : 0;
-  const isBuyOverLimit = selectedBuyBank && numBuyAmountUah > buyBankAvailable;
+  const isBuyOverLimit =
+    Boolean(selectedBuyBank) &&
+    !selectedBuyBank?.withoutCards &&
+    numBuyAmountUah > buyBankAvailable;
 
   const resetFormFields = (bankList: UserBank[] = banks) => {
     const defaultExchange = exchanges[0]?.name ?? 'Binance';
@@ -370,10 +379,23 @@ export const CalculatorPage: React.FC = () => {
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
-                      {t('bankOptionRemaining', {
-                        name: b.name,
-                        amount: formatUah(Math.max(0, b.turnoverLimitUah - b.buyTurnoverUah)),
-                      })}
+                      {b.withoutCards
+                        ? t('bankOptionWithoutCards', {
+                            name: b.name,
+                            amount: formatUah(
+                              b.buyTurnoverUah + b.initialTurnoverUah,
+                            ),
+                          })
+                        : t('bankOptionRemaining', {
+                            name: b.name,
+                            amount: formatUah(
+                              Math.max(
+                                0,
+                                b.turnoverLimitUah -
+                                  (b.buyTurnoverUah + b.initialTurnoverUah),
+                              ),
+                            ),
+                          })}
                     </option>
                   ))}
                 </select>
@@ -516,10 +538,17 @@ export const CalculatorPage: React.FC = () => {
                   )}
                   {banks.map(b => (
                     <option key={b.id} value={b.id}>
-                      {t('bankOptionRemaining', {
-                        name: b.name,
-                        amount: formatUah(Math.max(0, b.turnoverLimitUah - b.sellTurnoverUah)),
-                      })}
+                      {b.withoutCards
+                        ? t('bankOptionWithoutCards', {
+                            name: b.name,
+                            amount: formatUah(b.sellTurnoverUah),
+                          })
+                        : t('bankOptionRemaining', {
+                            name: b.name,
+                            amount: formatUah(
+                              Math.max(0, b.turnoverLimitUah - b.sellTurnoverUah),
+                            ),
+                          })}
                     </option>
                   ))}
                 </select>

@@ -67,6 +67,7 @@ export function mapUserBank(row: PrismaUserBank): UserBank {
     userId: row.userId,
     name: row.name,
     turnoverLimitUah: row.turnoverLimitUah,
+    withoutCards: row.withoutCards,
     initialTurnoverUah: row.initialTurnoverUah,
     buyTurnoverUah: row.buyTurnoverUah,
     sellTurnoverUah: row.sellTurnoverUah,

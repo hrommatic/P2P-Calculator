@@ -12,6 +12,7 @@ import { api } from "../services/api";
 import { dashboardStatsKey } from "../lib/trades-query-keys";
 import { PlusCircle, ArrowRight, ArrowLeftRight } from "lucide-react";
 import { PageLoader } from "../components/ui/Loader";
+import { AnimatedNumber } from "../components/ui/AnimatedNumber";
 import { PeriodFilterBar } from "../components/filters/PeriodFilterBar";
 import {
   defaultPeriodFilter,
@@ -98,13 +99,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const nbuRate = stats?.usdUahRate ?? null;
 
-  const formatTurnoverValue = (uah: number) => {
-    if (turnoverInUsdt && nbuRate && nbuRate > 0) {
-      return formatUsdt(uah / nbuRate);
-    }
-    return formatUah(uah);
-  };
-
   const turnoverUnitLabel = turnoverInUsdt && nbuRate ? "USDT" : "UAH";
 
   const toggleTurnoverUnit = () => {
@@ -135,6 +129,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     week: t("filterWeek"),
     month: t("filterMonth"),
   };
+
+  const statsAnimKey = `${JSON.stringify(period)}:${turnoverInUsdt}:${activityView}`;
 
   return (
     <div className="space-y-6 min-w-0 max-w-full">
@@ -174,7 +170,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
           <p className={statValueClass("profit")}>
             {periodStats.profit < 0 ? "-" : ""}
-            {formatUah(Math.abs(periodStats.profit))}{" "}
+            <AnimatedNumber
+              value={Math.abs(periodStats.profit)}
+              format={formatUah}
+              restartKey={statsAnimKey}
+            />{" "}
             <span className={statUnitClass("profit")}>UAH</span>
           </p>
         </div>
@@ -186,7 +186,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
           <p className={statValueClass("roi")}>
             {periodStats.roiPercent < 0 ? "-" : ""}
-            {Math.abs(periodStats.roiPercent).toFixed(2)}%
+            <AnimatedNumber
+              value={Math.abs(periodStats.roiPercent)}
+              format={(n) => n.toFixed(2)}
+              restartKey={statsAnimKey}
+            />
+            %
           </p>
         </div>
 
@@ -207,7 +212,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             />
           </div>
           <p className={statValueClass("turnover")}>
-            {formatTurnoverValue(periodStats.totalTurnover)}{" "}
+            <AnimatedNumber
+              value={
+                turnoverInUsdt && nbuRate && nbuRate > 0
+                  ? periodStats.totalTurnover / nbuRate
+                  : periodStats.totalTurnover
+              }
+              format={
+                turnoverInUsdt && nbuRate && nbuRate > 0
+                  ? formatUsdt
+                  : formatUah
+              }
+              restartKey={statsAnimKey}
+            />{" "}
             <span className={statUnitClass("turnover")}>
               {turnoverUnitLabel}
             </span>
@@ -232,9 +249,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             />
           </div>
           <p className={statValueClass(activityTheme)}>
-            {activityView === "trades"
-              ? periodStats.tradesCount
-              : stats?.banksCount || 0}
+            <AnimatedNumber
+              value={
+                activityView === "trades"
+                  ? periodStats.tradesCount
+                  : stats?.banksCount || 0
+              }
+              format={(n) => String(Math.round(n))}
+              restartKey={statsAnimKey}
+            />
           </p>
         </button>
       </div>

@@ -27,6 +27,12 @@ const uk: Record<string, string> = {
   bankNotesPlaceholder: "Додаткова інформація",
   bankRemaining: "Залишок:",
   bankOptionRemaining: "{name} (Залишок: {amount} ₴)",
+  bankOptionWithoutCards: "{name} (оборот: {amount} ₴)",
+  bankWithoutCards: "Без карт",
+  bankWithoutCardsHint:
+    "Окремий банк для P2P без карт: ліміт не зменшується, оборот лише зростає.",
+  bankWithoutCardsVolume: "Оборот без карт",
+  bankUnlimitedLabel: "Без ліміту",
   banksAllCatalogAdded:
     "Усі банки з довідника вже додані або довідник порожній. Зверніться до адміністратора.",
   banksNotesLabel: "Коментар / Нотатки",
@@ -225,6 +231,12 @@ const ru: Record<string, string> = {
   bankNotesPlaceholder: "Дополнительная информация",
   bankRemaining: "Остаток:",
   bankOptionRemaining: "{name} (Остаток: {amount} ₴)",
+  bankOptionWithoutCards: "{name} (оборот: {amount} ₴)",
+  bankWithoutCards: "Без карт",
+  bankWithoutCardsHint:
+    "Отдельный банк для P2P без карт: лимит не уменьшается, оборот только растёт.",
+  bankWithoutCardsVolume: "Оборот без карт",
+  bankUnlimitedLabel: "Без лимита",
   banksAllCatalogAdded:
     "Все банки из справочника уже добавлены или справочник пуст. Обратитесь к администратору.",
   banksNotesLabel: "Комментарий / заметки",
@@ -423,6 +435,12 @@ const en: Record<string, string> = {
   bankNotesPlaceholder: "Additional notes",
   bankRemaining: "Remaining:",
   bankOptionRemaining: "{name} (Remaining: {amount} ₴)",
+  bankOptionWithoutCards: "{name} (volume: {amount} ₴)",
+  bankWithoutCards: "No cards",
+  bankWithoutCardsHint:
+    "Separate bank for cardless P2P: limit does not decrease, volume only grows.",
+  bankWithoutCardsVolume: "Cardless volume",
+  bankUnlimitedLabel: "Unlimited",
   banksAllCatalogAdded:
     "All catalog banks are already added or the catalog is empty. Contact an administrator.",
   banksNotesLabel: "Comment / notes",

@@ -17,6 +17,7 @@ import { ButtonLoader, PageLoader } from "../components/ui/Loader";
 import { disabledControlClass } from "../lib/disabled-control-class";
 import { BankLogo } from "../components/banks/BankLogo";
 import { resolveBankLogoSvg } from "../lib/resolve-bank-logo";
+import { isWithoutCardsBankCode } from "../../shared/bank-codes";
 
 function getAddableGlobalBanks(
   banks: UserBank[],
@@ -57,6 +58,14 @@ export const BanksPage: React.FC = () => {
     () => getAddableGlobalBanks(banks, globalBanks),
     [banks, globalBanks],
   );
+
+  const selectedGlobalBank = useMemo(
+    () => globalBanks.find((g) => g.id === selectedGlobalBankId),
+    [globalBanks, selectedGlobalBankId],
+  );
+  const formIsWithoutCards = editingBank
+    ? Boolean(editingBank.withoutCards)
+    : isWithoutCardsBankCode(selectedGlobalBank?.code);
 
   const fetchBanks = async (sync?: boolean, quiet = false) => {
     if (!quiet) setIsRefreshing(true);
@@ -129,8 +138,15 @@ export const BanksPage: React.FC = () => {
 
     setFormError(null);
 
-    const limitNum = parseFloat(turnoverLimit);
-    if (isNaN(limitNum) || limitNum <= 0) {
+    const limitNum = formIsWithoutCards
+      ? Math.max(
+          1000,
+          parseFloat(turnoverLimit) ||
+            selectedGlobalBank?.defaultLimitUah ||
+            100000,
+        )
+      : parseFloat(turnoverLimit);
+    if (!formIsWithoutCards && (isNaN(limitNum) || limitNum <= 0)) {
       setFormError(t("errBankLimitInvalid"));
       return;
     }
@@ -164,11 +180,18 @@ export const BanksPage: React.FC = () => {
     setIsSaving(true);
     try {
       if (editingBank) {
-        const { bank } = await api.updateBank(editingBank.id, {
+        const payload: {
+          name: string;
+          notes: string;
+          turnoverLimitUah?: number;
+        } = {
           name: name.trim(),
-          turnoverLimitUah: limitNum,
           notes: notes.trim(),
-        });
+        };
+        if (!editingBank.withoutCards) {
+          payload.turnoverLimitUah = limitNum;
+        }
+        const { bank } = await api.updateBank(editingBank.id, payload);
         setBanksLocal((prev) =>
           prev.map((b) => (b.id === bank.id ? bank : b)),
         );
@@ -268,14 +291,15 @@ export const BanksPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {banks.map((bank) => {
 
+            const isUnlimited = Boolean(bank.withoutCards);
             const effectiveUsedBuy =
               bank.buyTurnoverUah + bank.initialTurnoverUah;
-            const availableLimit = Math.max(
-              0,
-              bank.turnoverLimitUah - effectiveUsedBuy,
-            );
-            const usagePercent =
-              bank.turnoverLimitUah > 0
+            const availableLimit = isUnlimited
+              ? Infinity
+              : Math.max(0, bank.turnoverLimitUah - effectiveUsedBuy);
+            const usagePercent = isUnlimited
+              ? 0
+              : bank.turnoverLimitUah > 0
                 ? Math.min(
                     100,
                     Math.round(
@@ -284,8 +308,9 @@ export const BanksPage: React.FC = () => {
                   )
                 : 0;
 
-            const isExceeded = effectiveUsedBuy >= bank.turnoverLimitUah;
-            const isWarning = usagePercent >= 80 && !isExceeded;
+            const isExceeded =
+              !isUnlimited && effectiveUsedBuy >= bank.turnoverLimitUah;
+            const isWarning = !isUnlimited && usagePercent >= 80 && !isExceeded;
 
             return (
               <div
@@ -340,47 +365,73 @@ export const BanksPage: React.FC = () => {
 
 
                   <div className="space-y-1.5 mb-4">
-                    <div className="flex items-center justify-between text-sm font-semibold">
-                      <span className="text-slate-500 dark:text-slate-400">
-                        {t("turnoverLimit")}
-                      </span>
-                      <span className="font-mono tabular-nums text-slate-900 dark:text-white">
-                        {formatUah(bank.turnoverLimitUah)} ₴
-                      </span>
-                    </div>
+                    {isUnlimited ? (
+                      <>
+                        <div className="flex items-center justify-between text-sm font-semibold gap-2">
+                          <span className="text-slate-500 dark:text-slate-400">
+                            {t("bankWithoutCardsVolume")}
+                          </span>
+                          <span className="inline-flex items-center rounded-md bg-teal-500/15 px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-300">
+                            {t("bankWithoutCards")}
+                          </span>
+                        </div>
+                        <p className="font-mono tabular-nums text-lg font-extrabold text-teal-800 dark:text-teal-200">
+                          {formatUah(
+                            bank.buyTurnoverUah +
+                              bank.sellTurnoverUah +
+                              bank.initialTurnoverUah,
+                          )}{" "}
+                          ₴
+                        </p>
+                        <p className="text-xs text-teal-700/90 dark:text-teal-300/90">
+                          {t("bankWithoutCardsHint")}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between text-sm font-semibold gap-2">
+                          <span className="text-slate-500 dark:text-slate-400">
+                            {t("turnoverLimit")}
+                          </span>
+                          <span className="font-mono tabular-nums text-slate-900 dark:text-white">
+                            {formatUah(bank.turnoverLimitUah)} ₴
+                          </span>
+                        </div>
 
-                    <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          isExceeded
-                            ? "bg-rose-500"
-                            : isWarning
-                              ? "bg-amber-500"
-                              : "bg-blue-600 dark:bg-sky-500"
-                        }`}
-                        style={{ width: `${usagePercent}%` }}
-                      />
-                    </div>
+                        <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              isExceeded
+                                ? "bg-rose-500"
+                                : isWarning
+                                  ? "bg-amber-500"
+                                  : "bg-blue-600 dark:bg-sky-500"
+                            }`}
+                            style={{ width: `${usagePercent}%` }}
+                          />
+                        </div>
 
-                    <div className="flex items-center justify-between text-xs">
-                      <span
-                        className={`font-semibold ${
-                          isExceeded
-                            ? "text-rose-600"
-                            : isWarning
-                              ? "text-amber-600"
-                              : "text-slate-500"
-                        }`}
-                      >
-                        {usagePercent}% ({formatUah(effectiveUsedBuy)} ₴)
-                      </span>
-                      <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
-                        {t("bankRemaining")}{" "}
-                        <strong className="text-slate-900 dark:text-white">
-                          {formatUah(availableLimit)} ₴
-                        </strong>
-                      </span>
-                    </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span
+                            className={`font-semibold ${
+                              isExceeded
+                                ? "text-rose-600"
+                                : isWarning
+                                  ? "text-amber-600"
+                                  : "text-slate-500"
+                            }`}
+                          >
+                            {usagePercent}% ({formatUah(effectiveUsedBuy)} ₴)
+                          </span>
+                          <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                            {t("bankRemaining")}{" "}
+                            <strong className="text-slate-900 dark:text-white">
+                              {formatUah(availableLimit)} ₴
+                            </strong>
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
 
@@ -516,19 +567,28 @@ export const BanksPage: React.FC = () => {
                 )}
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {t("turnoverLimit")} *
-                </label>
-                <input
-                  type="number"
-                  step="1000"
-                  required
-                  value={turnoverLimit}
-                  onChange={(e) => setTurnoverLimit(e.target.value)}
-                  className="w-full px-3 py-2 font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
+              {formIsWithoutCards ? (
+                <div className="rounded-lg border border-teal-200/80 dark:border-teal-900/50 bg-teal-50/80 dark:bg-teal-950/30 px-3 py-2.5 text-sm text-teal-800 dark:text-teal-200">
+                  <p className="font-semibold">{t("bankWithoutCards")}</p>
+                  <p className="text-xs mt-0.5 opacity-90">
+                    {t("bankWithoutCardsHint")}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {t("turnoverLimit")} *
+                  </label>
+                  <input
+                    type="number"
+                    step="1000"
+                    required
+                    value={turnoverLimit}
+                    onChange={(e) => setTurnoverLimit(e.target.value)}
+                    className="w-full px-3 py-2 font-mono tabular-nums rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">

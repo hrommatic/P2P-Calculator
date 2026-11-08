@@ -57,21 +57,31 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   if (!response.ok) {
+    const lang = parseLanguage(getAppLanguage());
     const isHtml =
       typeof data === 'string' &&
       (data.trimStart().startsWith('<!') || contentType?.includes('text/html'));
-    if (isHtml || (response.status === 404 && endpoint.startsWith('/auth'))) {
-      throw new Error(
-        translate(parseLanguage(getAppLanguage()), 'errApiUnavailableLocal'),
-      );
+    const emptyBody =
+      data == null ||
+      data === '' ||
+      (typeof data === 'string' && data.trim() === '');
+    // Vite proxy returns 502/text when local API (:3000) is down
+    const apiDown =
+      isHtml ||
+      response.status === 502 ||
+      response.status === 503 ||
+      response.status === 504 ||
+      (response.status === 404 && endpoint.startsWith('/auth')) ||
+      (emptyBody && response.status >= 500);
+    if (apiDown) {
+      throw new Error(translate(lang, 'errApiUnavailableLocal'));
     }
-    const lang = parseLanguage(getAppLanguage());
     const errorMsg =
-      data?.error ||
-      (typeof data === 'string'
+      (typeof data === 'object' && data && (data.error || data.message)) ||
+      (typeof data === 'string' && data.trim()
         ? data
         : translate(lang, 'unknownError'));
-    throw new Error(errorMsg);
+    throw new Error(String(errorMsg));
   }
 
   return data as T;

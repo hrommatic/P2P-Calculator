@@ -156,8 +156,6 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-between transition-colors bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100">
-
-
       <div className={`${layoutShellClass} py-4 flex items-center justify-between`}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-sm shadow-blue-500/20">
@@ -578,7 +576,6 @@ export const AuthPage: React.FC = () => {
       <footer className="w-full text-center py-4 text-sm text-slate-400 dark:text-slate-600">
         © 2026 P2P Calculator. All rights reserved.
       </footer>
-
     </div>
   );
 };

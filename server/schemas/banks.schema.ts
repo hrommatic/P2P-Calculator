@@ -15,6 +15,8 @@ export interface UserBank {
   globalBankId?: string;
   name: string;
   turnoverLimitUah: number;
+  /** P2P без карт — без ліміту */
+  withoutCards: boolean;
   initialTurnoverUah: number;
   buyTurnoverUah: number;
   sellTurnoverUah: number;

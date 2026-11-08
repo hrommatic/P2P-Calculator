@@ -77,8 +77,6 @@ function AppContentInner() {
   return (
     <TabProvider tab={currentTab}>
     <div className="flex h-dvh max-h-dvh max-w-[100vw] flex-col overflow-hidden bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100 transition-colors">
-
-
       <Navbar
         currentTab={currentTab}
         onSelectTab={(tab) => selectTab(tab as AppTab)}
@@ -143,7 +141,6 @@ function AppContentInner() {
           </div>
         </div>
       </footer>
-
     </div>
     </TabProvider>
   );

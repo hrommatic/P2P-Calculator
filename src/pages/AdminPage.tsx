@@ -34,6 +34,7 @@ import {
   ImageOff,
 } from "lucide-react";
 import { ButtonLoader, PageLoader } from "../components/ui/Loader";
+import { AnimatedNumber } from "../components/ui/AnimatedNumber";
 import { disabledControlClass } from "../lib/disabled-control-class";
 import { PeriodFilterBar } from "../components/filters/PeriodFilterBar";
 import {
@@ -430,14 +431,8 @@ export const AdminPage: React.FC = () => {
 
   const nbuRate = overview?.usdUahRate ?? null;
 
-  const formatTurnoverValue = (uah: number) => {
-    if (turnoverInUsdt && nbuRate && nbuRate > 0) {
-      return formatUsdt(uah / nbuRate);
-    }
-    return formatUah(uah);
-  };
-
   const turnoverUnitLabel = turnoverInUsdt && nbuRate ? "USDT" : "UAH";
+  const statsAnimKey = `${JSON.stringify(period)}:${turnoverInUsdt}`;
 
   /** На sm+ картки в два стовпці — згортання однієї синхронно з іншою. */
   const toggleBuySideOpen = useCallback(() => {
@@ -564,7 +559,11 @@ export const AdminPage: React.FC = () => {
                   </div>
                   <p className={statValueClass("profit")}>
                     {periodStats.profit < 0 ? "-" : ""}
-                    {formatUah(Math.abs(periodStats.profit))}{" "}
+                    <AnimatedNumber
+                      value={Math.abs(periodStats.profit)}
+                      format={formatUah}
+                      restartKey={statsAnimKey}
+                    />{" "}
                     <span className={statUnitClass("profit")}>UAH</span>
                   </p>
                 </div>
@@ -583,7 +582,12 @@ export const AdminPage: React.FC = () => {
                   </div>
                   <p className={statValueClass("roi")}>
                     {periodStats.roiPercent < 0 ? "-" : ""}
-                    {Math.abs(periodStats.roiPercent).toFixed(2)}%
+                    <AnimatedNumber
+                      value={Math.abs(periodStats.roiPercent)}
+                      format={(n) => n.toFixed(2)}
+                      restartKey={statsAnimKey}
+                    />
+                    %
                   </p>
                 </div>
 
@@ -604,7 +608,19 @@ export const AdminPage: React.FC = () => {
                     />
                   </div>
                   <p className={statValueClass("turnover")}>
-                    {formatTurnoverValue(periodStats.totalTurnover)}{" "}
+                    <AnimatedNumber
+                      value={
+                        turnoverInUsdt && nbuRate && nbuRate > 0
+                          ? periodStats.totalTurnover / nbuRate
+                          : periodStats.totalTurnover
+                      }
+                      format={
+                        turnoverInUsdt && nbuRate && nbuRate > 0
+                          ? formatUsdt
+                          : formatUah
+                      }
+                      restartKey={statsAnimKey}
+                    />{" "}
                     <span className={statUnitClass("turnover")}>
                       {turnoverUnitLabel}
                     </span>
@@ -624,7 +640,11 @@ export const AdminPage: React.FC = () => {
                     />
                   </div>
                   <p className={statValueClass("trades")}>
-                    {periodStats.tradesCount}
+                    <AnimatedNumber
+                      value={periodStats.tradesCount}
+                      format={(n) => String(Math.round(n))}
+                      restartKey={statsAnimKey}
+                    />
                   </p>
                 </div>
               </div>

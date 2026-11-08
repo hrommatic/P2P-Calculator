@@ -62,6 +62,8 @@ model UserBank {
   globalBankId       String?  @map("global_bank_id")
   name               String
   turnoverLimitUah   Float    @map("turnover_limit_uah")
+  /** P2P без карт — крутити без ліміту картки */
+  withoutCards       Boolean  @default(false) @map("without_cards")
   initialTurnoverUah Float    @map("initial_turnover_uah")
   buyTurnoverUah     Float    @map("buy_turnover_uah")
   sellTurnoverUah    Float    @map("sell_turnover_uah")

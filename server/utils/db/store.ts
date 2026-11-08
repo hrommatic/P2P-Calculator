@@ -43,15 +43,57 @@ import {
   DEAL_LEGS_PER_SAVED_TRADE,
   dealCountForSavedTrades,
 } from "../../../shared/trade-period-stats.js";
+import {
+  WITHOUT_CARDS_BANK_CODE,
+  WITHOUT_CARDS_BANK_ID,
+} from "../../../shared/bank-codes.js";
 
 const TX_OPTIONS = { maxWait: 15000, timeout: 60000 };
 
 const exchangesCache = createTTLCache<Exchange[]>(60_000);
 const globalBanksCache = createTTLCache<GlobalBank[]>(60_000);
 
+let withoutCardsCatalogEnsured = false;
+
 export function invalidateReferenceDataCache(): void {
   exchangesCache.clear();
   globalBanksCache.clear();
+}
+
+/** Ensure catalog bank «Без карт» exists on already-seeded databases. */
+async function ensureWithoutCardsGlobalBank(): Promise<void> {
+  if (withoutCardsCatalogEnsured) return;
+  const existing = await prisma.globalBank.findFirst({
+    where: {
+      OR: [{ id: WITHOUT_CARDS_BANK_ID }, { code: WITHOUT_CARDS_BANK_CODE }],
+    },
+  });
+  if (!existing) {
+    await prisma.globalBank.create({
+      data: {
+        id: WITHOUT_CARDS_BANK_ID,
+        name: "Без карт",
+        code: WITHOUT_CARDS_BANK_CODE,
+        defaultLimitUah: 100000,
+        color: "#0D9488",
+        logoSvg: null,
+        isActive: true,
+        createdAt: new Date(),
+      },
+    });
+    invalidateReferenceDataCache();
+  } else if (!existing.isActive || existing.code !== WITHOUT_CARDS_BANK_CODE) {
+    await prisma.globalBank.update({
+      where: { id: existing.id },
+      data: {
+        code: WITHOUT_CARDS_BANK_CODE,
+        isActive: true,
+        name: existing.name?.trim() ? existing.name : "Без карт",
+      },
+    });
+    invalidateReferenceDataCache();
+  }
+  withoutCardsCatalogEnsured = true;
 }
 
 let bootstrapPromise: Promise<void> | null = null;
@@ -72,6 +114,7 @@ export async function ensureBootstrapped(): Promise<void> {
     throw err;
   });
   await bootstrapPromise;
+  await ensureWithoutCardsGlobalBank();
 }
 
 export async function pingDatabase(): Promise<void> {
@@ -233,6 +276,7 @@ export async function registerUserWithBanks(
           globalBankId: b.globalBankId ?? null,
           name: b.name,
           turnoverLimitUah: b.turnoverLimitUah,
+          withoutCards: b.withoutCards ?? false,
           initialTurnoverUah: b.initialTurnoverUah,
           buyTurnoverUah: b.buyTurnoverUah,
           sellTurnoverUah: b.sellTurnoverUah,
@@ -324,6 +368,7 @@ export async function createUserBank(bank: UserBank) {
       globalBankId: bank.globalBankId ?? null,
       name: bank.name,
       turnoverLimitUah: bank.turnoverLimitUah,
+      withoutCards: bank.withoutCards ?? false,
       initialTurnoverUah: bank.initialTurnoverUah,
       buyTurnoverUah: bank.buyTurnoverUah,
       sellTurnoverUah: bank.sellTurnoverUah,
@@ -345,6 +390,7 @@ export async function updateUserBankRecord(bank: UserBank) {
     data: {
       name: bank.name,
       turnoverLimitUah: bank.turnoverLimitUah,
+      withoutCards: bank.withoutCards ?? false,
       initialTurnoverUah: bank.initialTurnoverUah,
       notes: bank.notes ?? null,
       color: bank.color ?? null,

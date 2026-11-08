@@ -3,6 +3,11 @@ import { prisma } from '../../lib/prisma.js';
 import type { User, SiteSettings } from '../../schemas/auth.schema.js';
 import type { GlobalBank, Exchange } from '../../schemas/banks.schema.js';
 import type { AuditLog, DatabaseSchema } from '../../schemas/admin.schema.js';
+import {
+  WITHOUT_CARDS_BANK_CODE,
+  WITHOUT_CARDS_BANK_ID,
+} from '../../../shared/bank-codes.js';
+
 function getSeedGlobalBanks(now: string): GlobalBank[] {
   return [
     { id: 'gb_mono', name: 'Monobank', code: 'mono', defaultLimitUah: 100000, color: '#101010', isActive: true, createdAt: now },
@@ -13,6 +18,15 @@ function getSeedGlobalBanks(now: string): GlobalBank[] {
     { id: 'gb_raiff', name: 'Raiffeisen', code: 'raiff', defaultLimitUah: 150000, color: '#CA8A04', isActive: true, createdAt: now },
     { id: 'gb_oschad', name: 'Oschadbank', code: 'oschad', defaultLimitUah: 100000, color: '#059669', isActive: true, createdAt: now },
     { id: 'gb_sport', name: 'Sportbank', code: 'sport', defaultLimitUah: 80000, color: '#7C3AED', isActive: true, createdAt: now },
+    {
+      id: WITHOUT_CARDS_BANK_ID,
+      name: 'Без карт',
+      code: WITHOUT_CARDS_BANK_CODE,
+      defaultLimitUah: 100000,
+      color: '#0D9488',
+      isActive: true,
+      createdAt: now,
+    },
   ];
 }
 

@@ -13,6 +13,7 @@ import {
   syncUserBankStats,
   updateUserBankRecord,
 } from '../utils/db/store.js';
+import { isWithoutCardsBankCode } from '../../shared/bank-codes.js';
 
 export { syncUserBankStats };
 
@@ -53,20 +54,22 @@ export async function handlePostBank(req: VercelRequest, res: VercelResponse, us
     return jsonError(res, req, 409, 'errBankNameDuplicate');
   }
 
-  const limit = Math.max(1000, Number(turnoverLimitUah) || 100000);
-  const initial = Math.max(0, Number(initialTurnoverUah) || 0);
   const globalBanks = await getActiveGlobalBanks();
   const matchedGlobal = typeof globalBankId === 'string'
     ? globalBanks.find((g) => g.id === globalBankId)
     : null;
+  const withoutCards = isWithoutCardsBankCode(matchedGlobal?.code);
+  const limit = Math.max(1000, Number(turnoverLimitUah) || matchedGlobal?.defaultLimitUah || 100000);
+  const initial = Math.max(0, Number(initialTurnoverUah) || 0);
   const now = new Date().toISOString();
 
   const newBank: UserBank = {
     id: `ub_${user.id}_${Date.now().toString(36)}`,
     userId: user.id,
     globalBankId: matchedGlobal?.id,
-    name: trimmedName,
+    name: matchedGlobal?.name?.trim() || trimmedName,
     turnoverLimitUah: limit,
+    withoutCards,
     initialTurnoverUah: initial,
     buyTurnoverUah: 0,
     sellTurnoverUah: 0,
@@ -115,7 +118,8 @@ export async function handlePutBank(req: VercelRequest, res: VercelResponse, use
     }
     bank.name = trimmedName;
   }
-  if (turnoverLimitUah !== undefined) {
+  // withoutCards is derived from catalog bank code at create-time; do not flip via API
+  if (turnoverLimitUah !== undefined && !bank.withoutCards) {
     bank.turnoverLimitUah = Math.max(1000, Number(turnoverLimitUah) || 0);
   }
   if (initialTurnoverUah !== undefined) {
